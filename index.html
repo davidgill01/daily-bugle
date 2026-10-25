@@ -1,2221 +1,369 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-  <title>Lucas's Bounty Board & Loot Vault</title>
-  <!-- Tailwind CSS -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Daily Bugle Bounty Board</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Canvas Confetti -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Comic & Modern Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            comic: ['"Bungee"', 'cursive'],
-            sans: ['"Inter"', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              red: '#DC2626',
-              blue: '#2563EB',
-              emerald: '#10B981',
-              dark: '#0B0F19',
-              card: '#161F30'
-            }
-          }
-        }
-      }
-    }
-  </script>
 
   <style>
-    * {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-    input, textarea, select {
-      user-select: auto;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 9999px;
-    }
-    .glow-blue {
-      box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;800;900&display=swap');
+    .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
+    .font-body { font-family: 'Inter', sans-serif; }
+    .brick-pattern {
+      background-color: #0b1120;
+      background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans pb-16 selection:bg-blue-600 selection:text-white">
+<body class="brick-pattern text-slate-100 font-body min-h-screen pb-20 select-none">
 
-  <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-3 sm:px-6 py-2.5 shadow-xl">
-    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
-      
-      <!-- Brand & Title -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-red-600 via-blue-600 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-blue-950/50">
-          <i class="fa-solid fa-spider text-xl sm:text-2xl"></i>
-        </div>
-        <div>
-          <h1 class="font-comic text-base sm:text-lg tracking-wide flex items-center gap-1.5">
-            <span class="text-red-500 font-black">DAILY BUGLE</span>
-            <span class="text-blue-500 font-black">BOUNTY BOARD</span>
-          </h1>
-          <p class="text-[11px] text-slate-400 font-semibold">Earn • Spend • Save for Big LEGO</p>
+  <!-- HEADER -->
+  <header class="bg-slate-900/90 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-4 py-3 flex justify-between items-center shadow-xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg border border-red-400">
+        <i class="fa-solid fa-spider"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-comic tracking-wide leading-none">
+          <span class="text-red-500 font-black">DAILY BUGLE</span> 
+          <span class="text-blue-500 font-black">BOUNTY BOARD</span>
+        </h1>
+        <div class="flex items-center gap-2 mt-1">
+          <button onclick="openSyncModal()" id="syncBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1.5 hover:border-blue-500 transition">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span> 
+            <span id="syncText">Tap to Connect Phone & Tablet</span>
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Action buttons & Mode Switcher -->
-      <div class="flex items-center gap-2">
-        <button id="soundToggleBtn" onclick="toggleSound()" title="Sound On/Off" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 flex items-center justify-center transition border border-slate-700">
-          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
-        </button>
-
-        <button onclick="toggleFullscreen()" title="Tablet Fullscreen" class="hidden sm:flex w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 items-center justify-center transition border border-slate-700">
-          <i class="fa-solid fa-expand"></i>
-        </button>
-
-        <div id="roleBadgeContainer">
-          <!-- Populated by JS -->
-        </div>
-      </div>
+    <!-- PARENT PIN TOGGLE -->
+    <div class="flex items-center gap-2">
+      <button id="modeToggleBtn" onclick="toggleParentMode()" class="px-3.5 py-1.5 rounded-xl font-bold text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-500">
+        <i class="fa-solid fa-lock text-xs"></i> <span>Parent Unlock</span>
+      </button>
     </div>
   </header>
 
-  <!-- ================= MAIN CONTAINER ================= -->
-  <main class="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-3 flex-1 space-y-4">
+  <!-- MAIN HUD & CONTENT -->
+  <main class="max-w-4xl mx-auto px-4 pt-4">
 
-    <!-- ================= DYNAMIC FINANCIAL HERO TRACKER ================= -->
-    <section class="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 border-2 border-blue-500/30 rounded-3xl p-4 sm:p-5 shadow-2xl relative overflow-hidden">
-      <!-- Watermark Background Icon -->
-      <div class="absolute -right-6 -bottom-6 opacity-10 pointer-events-none text-blue-500 text-8xl">
-        <i class="fa-solid fa-trophy"></i>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center relative z-10">
-        
-        <!-- Active Target Info -->
-        <div class="md:col-span-5 space-y-1">
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full text-[11px] font-black uppercase tracking-wider">
-            <i class="fa-solid fa-bullseye"></i> Current Primary Target
-          </div>
-          <h2 id="activeGoalName" class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            LEGO Daily Bugle Set
-          </h2>
-          <p id="activeGoalMeta" class="text-xs text-slate-300">
-            Selected from your Top 10 Wishlist • Tap Wishlist tab to switch target!
-          </p>
+    <!-- HERO TARGET DISPLAY -->
+    <section class="bg-slate-900 border-2 border-blue-600 rounded-2xl p-4 mb-5 shadow-2xl relative">
+      <div class="flex flex-col sm:flex-row items-center gap-4">
+        <div class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0">
+          <img id="hudGoalImg" src="https://images.brickset.com/sets/images/76178-1.jpg" class="w-full h-full object-cover" alt="Goal">
+          <span class="absolute bottom-0 inset-x-0 bg-red-600/90 text-[10px] font-black text-center text-white py-0.5">TARGET</span>
         </div>
-
-        <!-- 3 Financial Stat Blocks (Available Cash, Total Earned, Total Spent) -->
-        <div class="md:col-span-7 grid grid-cols-3 gap-2 sm:gap-3">
-          <!-- Available Balance -->
-          <div class="bg-slate-950/80 border-2 border-emerald-500/40 rounded-2xl p-2.5 sm:p-3 text-center shadow-inner">
-            <span class="text-[10px] uppercase font-extrabold text-emerald-400 block tracking-wider">Ready to Spend</span>
-            <div id="displayAvailableCash" class="text-2xl sm:text-3xl font-black text-emerald-400 font-comic">$0</div>
-            <span class="text-[10px] text-slate-400">In Lucas's Pocket</span>
+        <div class="flex-1 w-full text-center sm:text-left">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-xs font-bold text-red-400 uppercase tracking-wider">Saving Up For</span>
+              <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight">LEGO Daily Bugle</h2>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-400 block">Bank Balance</span>
+              <span id="hudCashTotal" class="text-2xl font-black text-blue-400 font-comic tracking-wide">$0.00</span>
+            </div>
           </div>
 
-          <!-- Total Earned -->
-          <div class="bg-slate-950/80 border border-slate-700/80 rounded-2xl p-2.5 sm:p-3 text-center shadow-inner">
-            <span class="text-[10px] uppercase font-bold text-blue-400 block tracking-wider">All-Time Earned</span>
-            <div id="displayTotalEarned" class="text-lg sm:text-xl font-black text-blue-300 font-comic mt-0.5">$0</div>
-            <span class="text-[10px] text-slate-400">Total Bounties</span>
-          </div>
-
-          <!-- Total Spent -->
-          <div class="bg-slate-950/80 border border-slate-700/80 rounded-2xl p-2.5 sm:p-3 text-center shadow-inner">
-            <span class="text-[10px] uppercase font-bold text-rose-400 block tracking-wider">Total Spent</span>
-            <div id="displayTotalSpent" class="text-lg sm:text-xl font-black text-rose-400 font-comic mt-0.5">$0</div>
-            <span class="text-[10px] text-slate-400">In Loot Vault</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Savings Progress Bar for Active Goal -->
-      <div class="mt-4 pt-3 border-t border-slate-800">
-        <div class="flex justify-between items-center text-xs font-bold mb-1.5 px-1">
-          <span class="text-slate-300" id="goalProgressPercent">0% Funded</span>
-          <span class="text-blue-300 font-semibold" id="goalRemainingText">$100 needed</span>
-        </div>
-
-        <div class="w-full h-6 bg-slate-950 rounded-full p-1 border border-slate-700 relative overflow-hidden flex items-center">
-          <div id="goalProgressBar" class="h-full bg-gradient-to-r from-red-600 via-blue-600 to-emerald-400 rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-2 text-[10px] font-black text-white shadow-lg" style="width: 0%">
-            <span id="goalBarInner"></span>
+          <div class="mt-3">
+            <div class="w-full bg-slate-950 rounded-full h-5 border border-slate-700 p-0.5 relative overflow-hidden">
+              <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-700 relative" style="width: 0%;">
+                <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+              </div>
+            </div>
+            <div class="flex justify-between text-xs font-bold mt-1.5 text-slate-400">
+              <span id="hudProgressRatio">$0 of $100</span>
+              <span id="hudProgressPercent" class="text-blue-400 font-extrabold">0% Complete</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= APP NAVIGATION TABS ================= -->
-    <nav class="flex items-center gap-2 overflow-x-auto pb-1 custom-scroll">
-      <button onclick="switchAppTab('bounties')" id="navTabBounties" class="px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-blue-600 text-white shadow-lg">
-        <i class="fa-solid fa-list-check"></i> <span>Chore Bounties</span> (<span id="tabCountAvailable">0</span>)
+    <!-- NAVIGATION TABS -->
+    <div class="flex gap-2 border-b border-slate-800 pb-2 mb-4">
+      <button onclick="switchTab('bounties')" id="tab-bounties" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2">
+        <i class="fa-solid fa-list-check"></i> <span>Bounties</span>
       </button>
-
-      <button onclick="switchAppTab('wishlist')" id="navTabWishlist" class="px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-slate-900 text-slate-300 hover:text-white border border-slate-800">
+      <button onclick="switchTab('wishlist')" id="tab-wishlist" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
         <i class="fa-solid fa-star text-blue-400"></i> <span>Top 10 Wishlist</span>
       </button>
-
-      <button onclick="switchAppTab('loot')" id="navTabLoot" class="px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-slate-900 text-slate-300 hover:text-white border border-slate-800">
-        <i class="fa-solid fa-box-open text-sky-400"></i> <span>My Loot & Spending</span> (<span id="tabCountLoot">0</span>)
+      <button onclick="switchTab('loot')" id="tab-loot" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+        <i class="fa-solid fa-boxes-stacked text-red-400"></i> <span>Loot & Spent</span>
       </button>
+    </div>
 
-      <button onclick="openLogPurchaseModal()" class="ml-auto px-3.5 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-blue-600 hover:bg-blue-500 text-white shadow-lg active:scale-95 border border-blue-500/50">
-        <i class="fa-solid fa-cart-shopping"></i> <span>I Bought Something!</span>
-      </button>
-    </nav>
-
-    <!-- ================= TAB 1: CHORE BOUNTIES ================= -->
-    <section id="sectionBounties" class="space-y-4">
-      
-      <!-- Sub filters -->
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex gap-1.5 p-1 bg-slate-900 border border-slate-800 rounded-2xl">
-          <button onclick="setChoreFilter('available')" id="filterBtnAvailable" class="px-3.5 py-2 rounded-xl text-xs font-bold transition bg-blue-600 text-white">
-            Available (<span id="subCountAvailable">0</span>)
-          </button>
-          <button onclick="setChoreFilter('pending')" id="filterBtnPending" class="px-3.5 py-2 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white">
-            Needs Inspection (<span id="subCountPending">0</span>)
-          </button>
-          <button onclick="setChoreFilter('completed')" id="filterBtnCompleted" class="px-3.5 py-2 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white">
-            Done & Paid (<span id="subCountCompleted">0</span>)
-          </button>
-        </div>
-
-        <div class="text-xs text-slate-400 flex items-center gap-1.5 font-medium px-2">
-          <i class="fa-solid fa-hand-pointer text-blue-400"></i> Tap any task to claim reward!
-        </div>
-      </div>
-
-      <!-- Task Cards Grid -->
-      <div id="bountiesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-        <!-- Rendered by JS -->
-      </div>
-    </section>
-
-    <!-- ================= TAB 2: TOP 10 SAVINGS WISHLIST ================= -->
-    <section id="sectionWishlist" class="hidden space-y-4">
-      
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xl">
-        <div>
-          <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
-            <i class="fa-solid fa-trophy text-blue-400"></i> Top 10 Dream Wishlist
-          </h3>
-          <p class="text-xs text-slate-400 mt-0.5">
-            Rank what you want to save for! Tap <strong class="text-blue-400">Make Target</strong> to track any set on your main bar.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button onclick="openWishlistModal()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md active:scale-95 flex items-center gap-1.5">
-            <i class="fa-solid fa-plus"></i> Add Item to Top 10
-          </button>
-        </div>
-      </div>
-
-      <!-- Wishlist Item List -->
-      <div id="wishlistContainer" class="space-y-3">
-        <!-- Rendered by JS -->
-      </div>
-    </section>
-
-    <!-- ================= TAB 3: SPENT ITEMS & INVENTORY ================= -->
-    <section id="sectionLoot" class="hidden space-y-4">
-      
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-xl">
-        <div>
-          <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
-            <i class="fa-solid fa-shield-cat text-sky-400"></i> Lucas's Loot Vault & Spent Tracker
-          </h3>
-          <p class="text-xs text-slate-400 mt-0.5">
-            Everything Lucas worked for and bought with his hard-earned money!
-          </p>
-        </div>
-
-        <button onclick="openLogPurchaseModal()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md active:scale-95 flex items-center gap-1.5">
-          <i class="fa-solid fa-receipt"></i> Record New Purchase
+    <!-- VIEW: BOUNTIES -->
+    <div id="view-bounties">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-black text-slate-200">Available Chores</h3>
+        <button id="addChoreBtn" onclick="openNewChoreModal()" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-plus"></i> Post New Bounty
         </button>
       </div>
+      <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+    </div>
 
-      <!-- Loot Category Filter Bar -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs custom-scroll" id="lootCategoryFilters">
-        <!-- Rendered by JS -->
-      </div>
-
-      <!-- Loot Cards Grid -->
-      <div id="lootGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-        <!-- Rendered by JS -->
-      </div>
-    </section>
-
-    <!-- ================= PARENT COMMAND CENTER (When in Parent Mode) ================= -->
-    <section id="sectionParentAdmin" class="hidden space-y-5">
-      
-      <!-- Parent Notification Card -->
-      <div class="bg-slate-900 border-2 border-blue-600/40 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl">
-            <i class="fa-solid fa-user-shield"></i>
-          </div>
-          <div>
-            <h3 class="font-bold text-lg text-white">Parent Management Hub</h3>
-            <p class="text-xs text-slate-300">Inspect finished chores, award cash, post new bounties, or reset balances.</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button onclick="openNewChoreModal()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg active:scale-95 flex items-center gap-1.5">
-            <i class="fa-solid fa-plus-circle"></i> Create New Bounty
-          </button>
-          <button onclick="promptResetDefaults()" class="px-3 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs border border-red-500/50">
-            <i class="fa-solid fa-rotate-left"></i> Restore Original Sheet
-          </button>
+    <!-- VIEW: WISHLIST -->
+    <div id="view-wishlist" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="text-lg font-black text-slate-200">Top 10 Wishlist</h3>
+          <p class="text-xs text-slate-400">Tap "Make Target" to track it on your main screen!</p>
         </div>
       </div>
+      <div id="wishlistContainer" class="space-y-2.5"></div>
+    </div>
 
-      <!-- Inspection Queue -->
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <h4 class="font-bold text-blue-400 flex items-center gap-2 text-sm uppercase tracking-wider">
-            <i class="fa-solid fa-clipboard-check"></i> Awaiting Your Inspection (<span id="adminPendingCount">0</span>)
-          </h4>
-          <span class="text-xs text-slate-400">Review job quality & sign off</span>
+    <!-- VIEW: LOOT -->
+    <div id="view-loot" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h3 class="text-lg font-black text-slate-200">Purchased Loot Vault</h3>
+          <p class="text-xs text-slate-400">Items bought with chore earnings.</p>
         </div>
-        <div id="adminPendingList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <!-- Rendered by JS -->
-        </div>
+        <button onclick="openLogPurchaseModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-receipt"></i> Log Purchase
+        </button>
       </div>
-
-      <!-- Roster of All Chores -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3">
-        <h4 class="font-bold text-base text-white">Full Chore Master Roster</h4>
-        <div id="adminFullChoreList" class="space-y-2 max-h-96 overflow-y-auto pr-1 custom-scroll">
-          <!-- Rendered by JS -->
-        </div>
-      </div>
-    </section>
+      <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </div>
 
   </main>
 
-  <!-- ================= MODALS & POPUPS ================= -->
-
-  <!-- 1. PIN Modal for Parent Mode -->
-  <div id="pinModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 w-full max-w-sm shadow-2xl text-center space-y-4">
-      <div class="w-14 h-14 bg-blue-900/40 text-blue-400 border border-blue-700/50 rounded-2xl flex items-center justify-center mx-auto text-2xl">
-        <i class="fa-solid fa-lock"></i>
+  <!-- MODAL: TWO-DEVICE SYNC SETUP -->
+  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-2xl p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <i class="fa-solid fa-tower-broadcast text-blue-400"></i> Connect Phone & Tablet
+        </h3>
+        <button onclick="closeSyncModal()" class="text-red-400 hover:text-red-300 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <div>
-        <h3 class="font-bold text-lg text-white">Parent Passcode</h3>
-        <p class="text-xs text-slate-400 mt-1">Enter your 4-digit PIN (Default is <strong class="text-blue-400 font-mono">1234</strong>)</p>
-      </div>
-
-      <div class="flex justify-center my-2">
-        <input type="password" id="pinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-3xl font-mono tracking-widest py-2 rounded-xl bg-slate-950 border-2 border-slate-700 text-white focus:border-blue-500 focus:outline-none">
-      </div>
-      <p id="pinError" class="text-xs font-semibold text-red-500 hidden">Incorrect PIN. Try 1234</p>
-
-      <div class="grid grid-cols-2 gap-2 pt-1">
-        <button onclick="closePinModal()" class="py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">Cancel</button>
-        <button onclick="verifyPin()" class="py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg transition">Unlock</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. Chore Detail & Kid Claim Modal -->
-  <div id="choreDetailModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl space-y-4 text-left relative overflow-hidden max-h-[92vh] overflow-y-auto custom-scroll">
-      <div class="flex items-start justify-between gap-3">
-        <div class="space-y-1">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span id="detailChoreCategory" class="text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 inline-block">Yard / Outdoor</span>
-            <span id="detailChoreLocation" class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-800 inline-flex items-center gap-1">
-              <i class="fa-solid fa-location-dot"></i> <span>Outside</span>
-            </span>
-          </div>
-          <h3 id="detailChoreTitle" class="text-2xl font-black text-white leading-tight">Chore Title</h3>
-        </div>
-        <div class="text-right shrink-0">
-          <span class="text-[10px] uppercase text-slate-400 block font-bold">Reward</span>
-          <div class="text-3xl font-black text-blue-400 font-comic" id="detailChoreReward">$10</div>
-        </div>
-      </div>
-
-      <!-- AI Mission Intel Briefing -->
-      <div class="bg-slate-950/90 border border-blue-500/40 rounded-2xl p-4 space-y-3.5 shadow-inner">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <span class="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-            <i class="fa-solid fa-robot text-sm"></i> Spider-Hero Mission Briefing
-          </span>
-          <span class="text-[10px] text-slate-400 font-semibold" id="detailMissionDifficulty">Effort: Moderate</span>
-        </div>
-
-        <!-- Tools Needed -->
-        <div>
-          <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
-            <i class="fa-solid fa-toolbox text-blue-400"></i> Tools & Gear Needed:
-          </span>
-          <div id="detailChoreTools" class="flex flex-wrap gap-1.5 text-xs">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Step-by-Step Interactive Checklist -->
-        <div>
-          <span class="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
-            <span class="flex items-center gap-1"><i class="fa-solid fa-list-ol text-blue-400"></i> Mission Steps (Tap as you complete):</span>
-            <span id="detailChecklistProgress" class="text-[10px] text-blue-400 font-bold">0/0 Done</span>
-          </span>
-          <div id="detailChoreSteps" class="space-y-1.5">
-            <!-- Interactive checkboxes rendered by JS -->
-          </div>
-        </div>
-
-        <!-- Safety & Pro Tip -->
-        <div id="detailChoreSafetyBox" class="p-2.5 rounded-xl bg-blue-900/20 border border-blue-600/30 text-xs text-blue-200 flex items-start gap-2">
-          <i class="fa-solid fa-shield-halved text-blue-400 text-sm mt-0.5 shrink-0"></i>
-          <div>
-            <strong class="font-bold block text-blue-300 text-[11px] uppercase">Pro Hero Tip:</strong>
-            <span id="detailChoreSafety">Ask Dad to double-check when you're almost done!</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-800 pt-2">
-        <div>
-          <span>Difficulty:</span>
-          <span id="detailChoreStars" class="text-blue-400 ml-1">★★★☆☆</span>
-        </div>
-        <div id="detailChoreStatus" class="font-bold"></div>
-      </div>
-
-      <div id="detailChoreActions" class="pt-1">
-        <!-- Populated by JS -->
-      </div>
-
-      <button onclick="closeChoreDetailModal()" class="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition">
-        Go Back
-      </button>
-    </div>
-  </div>
-
-  <!-- 3. Record / Log Purchase Modal (Kid & Parent Editable) -->
-  <div id="logPurchaseModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-xl bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold">
-            <i class="fa-solid fa-cart-shopping"></i>
-          </div>
-          <h3 class="font-black text-lg text-white">Log a Purchase</h3>
-        </div>
-        <button onclick="closeLogPurchaseModal()" class="text-red-400 hover:text-red-300 text-lg"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <p class="text-xs text-slate-300">
-        Did you buy a new set or toy? This will add it to your <strong class="text-sky-400">Loot Vault</strong> and deduct the price from your current cash balance.
+      <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+        Type any family sync word below (e.g. <span class="text-blue-400 font-bold">gill-bounty-board</span>). Enter the <strong>exact same word</strong> on your phone and on Lucas's tablet.
       </p>
-
-      <form id="purchaseForm" onsubmit="handlePurchaseSubmit(event)" class="space-y-3.5">
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">What did you buy?</label>
-          <input type="text" id="purchaseTitle" required placeholder="e.g. Spider-Man Minifigures" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Amount Spent ($)</label>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
-              <input type="number" id="purchaseAmount" required min="1" max="999" step="any" placeholder="20" class="w-full pl-8 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold focus:border-blue-500 focus:outline-none">
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Category</label>
-            <select id="purchaseCategory" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-xs font-semibold">
-              <option value="LEGO & Marvel">🦸 LEGO & Marvel</option>
-              <option value="Toys & Games">🎮 Toys & Games</option>
-              <option value="Treats & Snacks">🍕 Treats & Snacks</option>
-              <option value="Books & Comics">📚 Books & Comics</option>
-              <option value="Other Stuff">🎒 Other Stuff</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Optional Quick Image picker or custom URL -->
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Image URL (Optional)</label>
-          <input type="url" id="purchaseImage" placeholder="https://..." class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none text-xs">
-          <div class="flex gap-1.5 mt-2 overflow-x-auto pb-1 text-[11px] custom-scroll">
-            <button type="button" onclick="setPurchasePresetImg('venom')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">🕷️ Venom Set</button>
-            <button type="button" onclick="setPurchasePresetImg('minifigs')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">🦸 Minifig Pack</button>
-            <button type="button" onclick="setPurchasePresetImg('genericLego')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0">🧱 LEGO Brick</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Notes / Why you bought it</label>
-          <input type="text" id="purchaseNotes" placeholder="e.g. Bought with Dad at the LEGO Store" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs placeholder-slate-500 focus:border-blue-500 focus:outline-none">
-        </div>
-
-        <div class="flex items-center gap-3 pt-2">
-          <button type="button" onclick="closeLogPurchaseModal()" class="w-1/2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">Cancel</button>
-          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg active:scale-95 transition">Confirm & Deduct</button>
-        </div>
-      </form>
+      <input id="syncRoomInput" type="text" placeholder="e.g. gill-bounty-board" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-blue-500 mb-4 uppercase tracking-wider" />
+      <div class="flex gap-2 justify-end">
+        <button onclick="closeSyncModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button onclick="saveSyncRoom()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">Save & Sync Now</button>
+      </div>
     </div>
   </div>
 
-  <!-- 4. Wishlist Add / Edit Modal (Kid & Parent Editable) -->
-  <div id="wishlistModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 id="wishlistModalTitle" class="font-black text-lg text-white">Add to Top 10 Wishlist</h3>
-        <button onclick="closeWishlistModal()" class="text-red-400 hover:text-red-300 text-lg"><i class="fa-solid fa-xmark"></i></button>
+  <!-- MODAL: ADD BOUNTY -->
+  <div id="choreModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-2xl p-5 shadow-2xl">
+      <h3 class="text-lg font-black text-white mb-3">Post New Bounty</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
+          <input id="newChoreTitle" type="text" placeholder="e.g. Clean up side near BBQ" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Reward Value ($)</label>
+          <input id="newChoreReward" type="number" placeholder="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Location</label>
+          <input id="newChoreLocation" type="text" placeholder="Backyard / Inside" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
       </div>
-
-      <form id="wishlistForm" onsubmit="handleWishlistSubmit(event)" class="space-y-3.5">
-        <input type="hidden" id="wishlistId">
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Set / Item Name</label>
-          <input type="text" id="wishlistTitle" required placeholder="e.g. LEGO Daily Bugle 76178" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Target Price ($)</label>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
-              <input type="number" id="wishlistPrice" required min="1" max="2000" step="1" placeholder="100" class="w-full pl-8 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold focus:border-blue-500 focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Category</label>
-            <select id="wishlistCategory" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-xs">
-              <option value="LEGO Marvel">🦸 LEGO Marvel</option>
-              <option value="LEGO Star Wars">🚀 LEGO Star Wars</option>
-              <option value="LEGO City / General">🏙️ LEGO General</option>
-              <option value="Gaming / Toys">🎮 Gaming / Toys</option>
-              <option value="Gear / Outdoor">⛺ Gear / Outdoor</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Store / Web Link</label>
-          <input type="url" id="wishlistUrl" placeholder="https://www.lego.com/... or Amazon" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none text-xs">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Image URL</label>
-          <input type="url" id="wishlistImage" placeholder="https://..." class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none text-xs">
-          
-          <div class="mt-2">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Or Quick Pick Famous LEGO Sets:</span>
-            <div class="grid grid-cols-2 gap-1.5 text-xs">
-              <button type="button" onclick="setWishlistPreset('bugle')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-left text-[11px] truncate">🏢 Daily Bugle (76178)</button>
-              <button type="button" onclick="setWishlistPreset('sanctum')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-left text-[11px] truncate">🔮 Sanctum Sanctorum</button>
-              <button type="button" onclick="setWishlistPreset('finalBattle')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-left text-[11px] truncate">🕸️ Spidey Final Battle</button>
-              <button type="button" onclick="setWishlistPreset('falcon')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-left text-[11px] truncate">🚀 Millennium Falcon</button>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Why I want it / Notes</label>
-          <textarea id="wishlistNotes" rows="2" placeholder="e.g. Has 25 minifigures and Green Goblin!" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs placeholder-slate-500 focus:border-blue-500 focus:outline-none"></textarea>
-        </div>
-
-        <div class="flex items-center gap-3 pt-2">
-          <button type="button" onclick="closeWishlistModal()" class="w-1/2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">Cancel</button>
-          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg active:scale-95 transition">Save Wish</button>
-        </div>
-      </form>
+      <div class="flex gap-2 justify-end mt-4">
+        <button onclick="closeNewChoreModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button onclick="saveNewChore()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">Post Bounty</button>
+      </div>
     </div>
   </div>
 
-  <!-- 5. Create / Edit Bounty Form Modal (Parent Only) -->
-  <div id="newChoreModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto custom-scroll">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 id="choreFormTitle" class="font-black text-lg text-white">Post New Chore Bounty</h3>
-        <button onclick="closeNewChoreModal()" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-xmark"></i></button>
+  <!-- MODAL: LOG PURCHASE -->
+  <div id="purchaseModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-2xl p-5 shadow-2xl">
+      <h3 class="text-lg font-black text-white mb-3">Log a Purchase</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">What did he buy?</label>
+          <input id="purchaseTitle" type="text" placeholder="e.g. Spider-Man Minifigures" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Cost ($)</label>
+          <input id="purchasePrice" type="number" placeholder="20" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+        </div>
       </div>
-
-      <!-- AI Auto-Generator Header Button -->
-      <div class="p-3 bg-gradient-to-r from-blue-950/60 to-slate-900 border border-blue-500/40 rounded-2xl flex items-center justify-between gap-2">
-        <div class="text-xs">
-          <div class="font-bold text-white flex items-center gap-1.5">
-            <i class="fa-solid fa-wand-magic-sparkles text-blue-400"></i> AI Mission Briefing
-          </div>
-          <div class="text-[11px] text-slate-400">Type a title like "wash the dog" or "build a shelf" and let AI write the steps!</div>
-        </div>
-        <button type="button" id="btnAiGenerateBriefing" onclick="generateAiMissionBriefing()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-md active:scale-95 flex items-center gap-1.5 shrink-0 transition">
-          <i class="fa-solid fa-sparkles"></i> Auto-Generate
-        </button>
+      <div class="flex gap-2 justify-end mt-4">
+        <button onclick="closeLogPurchaseModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button onclick="savePurchase()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">Confirm & Deduct</button>
       </div>
-
-      <form id="choreForm" onsubmit="handleChoreFormSubmit(event)" class="space-y-3.5">
-        <input type="hidden" id="choreFormId">
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Chore Name</label>
-          <input type="text" id="choreTitleInput" required placeholder="e.g. Wash the dog or Build a shelf" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-sm">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Bounty ($)</label>
-            <div class="relative">
-              <span class="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
-              <input type="number" id="choreRewardInput" required min="1" max="500" step="1" placeholder="10" class="w-full pl-8 pr-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold focus:border-blue-500 focus:outline-none">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Location</label>
-            <select id="choreLocationInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-xs">
-              <option value="Outside / Yard">🌳 Outside / Yard</option>
-              <option value="Inside / House">🏠 Inside / House</option>
-              <option value="Garage / Workshop">🔧 Garage / Workshop</option>
-              <option value="Bathroom">🛁 Bathroom</option>
-              <option value="Kitchen / Dining">🍽️ Kitchen / Dining</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Category</label>
-            <select id="choreCategoryInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-xs">
-              <option value="Outdoor & Yard">Outdoor & Yard</option>
-              <option value="Fix-It & Tools">Fix-It & Tools</option>
-              <option value="Pet Care & Animals">Pet Care & Animals</option>
-              <option value="Cleaning & Tidy">Cleaning & Tidy</option>
-              <option value="Family Helper">Family Helper</option>
-              <option value="Big Project">Big Project</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Effort / Difficulty</label>
-            <select id="choreDiffInput" class="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-blue-500 focus:outline-none text-xs">
-              <option value="1">★☆☆☆☆ (Quick 5 min task)</option>
-              <option value="2">★★☆☆☆ (Simple 15 min job)</option>
-              <option value="3" selected>★★★☆☆ (Moderate 30 min effort)</option>
-              <option value="4">★★★★☆ (Hard 1 hour work)</option>
-              <option value="5">★★★★★ (Master project)</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Tools & Supplies Needed (comma separated)</label>
-          <input type="text" id="choreToolsInput" placeholder="e.g. Dog shampoo, 2 dry towels, warm water cup, brush" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-blue-500 focus:outline-none">
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Step-by-Step Instructions (one per line)</label>
-          <textarea id="choreStepsInput" rows="4" placeholder="1. Gather the tools&#10;2. Start the task&#10;3. Put tools away when finished" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-blue-500 focus:outline-none font-sans"></textarea>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Safety / Pro Tip for Lucas</label>
-          <input type="text" id="choreSafetyInput" placeholder="e.g. Keep soapy water out of the dog's eyes & ears!" class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:border-blue-500 focus:outline-none">
-        </div>
-
-        <div class="flex items-center gap-3 pt-2">
-          <button type="button" onclick="closeNewChoreModal()" class="w-1/2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">Cancel</button>
-          <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg transition">Save Bounty</button>
-        </div>
-      </form>
     </div>
   </div>
 
-  <!-- Toast Notification -->
-  <div id="toastNotification" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 border-2 border-blue-500 text-white text-xs sm:text-sm font-black px-4 py-3 rounded-2xl shadow-2xl z-50 transition-all opacity-0 pointer-events-none transform translate-y-4 flex items-center gap-2">
-    <i class="fa-solid fa-bell text-blue-400 text-base"></i>
-    <span id="toastMessage">Notification message</span>
-  </div>
-
-  <!-- ================= JAVASCRIPT APPLICATION CORE ================= -->
   <script>
-    /* ================= INITIAL SEED DATA ================= */
-    // 1. Chores from your authentic handwritten list with complete AI-ready briefings
-    const DEFAULT_CHORES = [
-      {
-        id: 'c1',
-        title: 'Can deposit',
-        reward: 6,
-        category: 'Outdoor & Yard',
-        location: 'Outside / Yard',
-        difficulty: 1,
-        desc: 'Sort bottles & cans and load them into bins for recycling depot.',
-        tools: ['Work gloves', 'Tote bucket', 'Recycling bins'],
-        steps: ['Sort glass from aluminum cans', 'Rinse out sticky soda residue', 'Pack neatly into the back of the car or sorting crates'],
-        safety: 'Watch out for sharp pull-tabs or cracked glass!',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c2',
-        title: 'Fix Drain',
-        reward: 10,
-        category: 'Fix-It & Tools',
-        location: 'Outside / Yard',
-        difficulty: 3,
-        desc: 'Clear debris blockages from the outdoor drain cover and test flow.',
-        tools: ['Hand trowel', 'Garden hose with spray nozzle', 'Stiff scrubbing brush', 'Bucket'],
-        steps: ['Lift up the metal drain grate safely', 'Scoop leaves and sludge into your bucket', 'Scrub the rim and hose down for clear water flow', 'Carefully replace the grate flush with the ground'],
-        safety: 'Wash hands thoroughly with soap right after touching garden sludge.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c3',
-        title: 'Wash out Sandpit',
-        reward: 5,
-        category: 'Outdoor & Yard',
-        location: 'Outside / Yard',
-        difficulty: 2,
-        desc: 'Hose down sandpit edges, remove fallen leaves and tidy toys.',
-        tools: ['Garden hose', 'Hand rake', 'Bucket for twigs & leaves'],
-        steps: ['Rake out fallen leaves and twigs from the sand', 'Wipe down the plastic border ledges', 'Organize sand shovels, buckets, and digger trucks neatly', 'Cover with tarp if available'],
-        safety: 'Do not spray hose towards any electrical outlets or windows.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c4',
-        title: 'BBQ Clean',
-        reward: 5,
-        category: 'Cleaning & Tidy',
-        location: 'Outside / Yard',
-        difficulty: 2,
-        desc: 'Scrape down hotplate, empty drip tray and wipe side shelves.',
-        tools: ['Brass grill scraper', 'Damp sponge or paper towels', 'Warm soapy water'],
-        steps: ['Ensure BBQ is completely cold before starting', 'Scrape down grill plates toward drip channel', 'Wipe stainless steel shelves and handles with sponge', 'Dispose of used paper towels into the bin'],
-        safety: 'Never touch a BBQ while hot. Double-check gas dials are OFF.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c5',
-        title: 'Fix the tap washer',
-        reward: 5,
-        category: 'Fix-It & Tools',
-        location: 'Outside / Yard',
-        difficulty: 3,
-        desc: 'Help isolate water supply and replace rubber washer with Dad.',
-        tools: ['Adjustable wrench', 'New tap washer set', 'Towel', 'Pliers'],
-        steps: ['Help Dad locate and turn the mains shutoff tap', 'Hold the towel to catch remaining drops', 'Hand the correct size wrench and new black washer to Dad', 'Turn the tap back on gently to test for zero dripping'],
-        safety: 'Keep fingers clear of heavy wrench jaws and watch for pinched skin.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c6',
-        title: 'Clean up Side near BBQ',
-        reward: 10,
-        category: 'Outdoor & Yard',
-        location: 'Outside / Yard',
-        difficulty: 3,
-        desc: 'Stack timber and equipment neatly, rake up dry leaves.',
-        tools: ['Garden broom', 'Rake', 'Wheelbarrow or green waste bin'],
-        steps: ['Gather loose timber off cuts and stack horizontally along the fence', 'Rake up dry leaves and sweep paving stones clean', 'Wheel green waste to the green bin'],
-        safety: 'Watch for splinters on timber—wear tough work gloves!',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c7',
-        title: 'Lucas Babysitting',
-        reward: 2,
-        category: 'Family Helper',
-        location: 'Inside / House',
-        difficulty: 1,
-        desc: 'Entertain and help supervise brother safely.',
-        tools: ['Board game or LEGO bricks', 'Storybook', 'Positive superhero attitude'],
-        steps: ['Keep eyes on your brother and keep him away from steps or hot stoves', 'Build a LEGO tower together or read a book chapter', 'Help him put toys away when playtime is finished'],
-        safety: 'Call Mom or Dad immediately if anyone trips or needs help.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c8',
-        title: 'Clothes rack',
-        reward: 5,
-        category: 'Cleaning & Tidy',
-        location: 'Inside / House',
-        difficulty: 2,
-        desc: 'Help bring in dry laundry and arrange nicely on the rack.',
-        tools: ['Laundry basket', 'Clothes pegs container'],
-        steps: ['Unclip dry clothes from the line without letting them drop on grass', 'Fold towels in half neatly', 'Stack into laundry basket and bring inside to the rack'],
-        safety: 'Watch your fingers when opening or folding the metal drying rack.',
-        status: 'completed',
-        completedAt: 'Earlier'
-      },
-      {
-        id: 'c9',
-        title: 'Clean up Corner & Dig out',
-        reward: 10,
-        category: 'Outdoor & Yard',
-        location: 'Outside / Yard',
-        difficulty: 3,
-        desc: 'Dig out compacted dirt and roots in corner garden bed.',
-        tools: ['Garden spade', 'Hand trowel', 'Gardening gloves', 'Bucket'],
-        steps: ['Put on garden gloves', 'Use the spade to loosen hard dirt in the corner bed', 'Pull out stubborn weed roots and place into bucket', 'Level the fresh loosened soil with your trowel'],
-        safety: 'Mind your toes when digging down with the spade blade.',
-        status: 'available'
-      },
-      {
-        id: 'c10',
-        title: 'Plant the big tree',
-        reward: 10,
-        category: 'Outdoor & Yard',
-        location: 'Outside / Yard',
-        difficulty: 4,
-        desc: 'Dig deep planting hole, position tree, backfill soil and heavy soak.',
-        tools: ['Large spade', 'Tree seedling / pot', 'Bag of potting mix / mulch', 'Watering can or hose'],
-        steps: ['Dig a hole twice as wide as the tree root ball', 'Carefully slide tree from pot with Dad without breaking roots', 'Stand tree straight and backfill with rich soil mix', 'Give it a thorough soaking with the hose'],
-        safety: 'Tree root balls are heavy—always lift with your legs and with Dad.',
-        status: 'available'
-      },
-      {
-        id: 'c11',
-        title: 'Secret Room',
-        reward: 30,
-        category: 'Cleaning & Tidy',
-        location: 'Inside / House',
-        difficulty: 4,
-        desc: 'Major declutter, organize storage crates, vacuum carpet.',
-        tools: ['Vacuum cleaner', 'Storage bins', 'Microfiber dust cloth', 'Trash bag'],
-        steps: ['Pick up loose floor items and sort into keep, donate, or trash', 'Stack storage tubs with labels facing forward', 'Dust shelves and window sills top-to-bottom', 'Vacuum the entire carpet edge to edge'],
-        safety: 'Do not overload power sockets or jerk the vacuum cord.',
-        status: 'available'
-      },
-      {
-        id: 'c12',
-        title: 'Gutters Project',
-        reward: 100,
-        category: 'Big Project',
-        location: 'Outside / Yard',
-        difficulty: 5,
-        desc: 'Ground crew support, gather gutter muck, flush downpipes.',
-        tools: ['Bucket', 'Garden hose with brass jet nozzle', 'Safety glasses', 'Work gloves'],
-        steps: ['Stay on the ground as ground safety commander for Dad', 'Catch leaves and muck Dad drops down into the yard bucket', 'Flush downpipes with hose to ensure water flows cleanly out the bottom', 'Pack away hose reel and put tools away'],
-        safety: 'Ground crew rule: Never stand directly under the ladder while Dad is climbing.',
-        status: 'available'
-      },
-      {
-        id: 'c13',
-        title: 'Daybed Delivery',
-        reward: 20,
-        category: 'Fix-It & Tools',
-        location: 'Inside / House',
-        difficulty: 3,
-        desc: 'Help unbox and position heavy timber daybed parts into place.',
-        tools: ['Box cutter (Dad handles)', 'Floor blanket', 'Rubber mallet'],
-        steps: ['Lay blanket on floor to prevent scratches', 'Help guide flatpack timber pieces into the room', 'Hold slats steady while Dad tightens bolts', 'Clear and fold cardboard flat for recycling'],
-        safety: 'Watch your toes and wear sneakers when moving heavy wood panels.',
-        status: 'available'
-      }
-    ];
-
-    // 3. Top 10 Wishlist Goals
-    const DEFAULT_WISHLIST = [
-      {
-        id: 'w1',
-        title: 'LEGO Marvel Daily Bugle (76178)',
-        price: 100,
-        category: 'LEGO Marvel',
-        image: 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com/en-us/product/daily-bugle-76178',
-        notes: 'The giant skyscraper with 25 Marvel characters and Spider-Mobile!',
-        isActiveTarget: true
-      },
-      {
-        id: 'w2',
-        title: 'LEGO Sanctum Sanctorum (76218)',
-        price: 85,
-        category: 'LEGO Marvel',
-        image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com/en-us/product/sanctum-sanctorum-76218',
-        notes: 'Doctor Strange 3-level magical mansion.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w3',
-        title: 'Spider-Man Final Battle (76261)',
-        price: 65,
-        category: 'LEGO Marvel',
-        image: 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com/en-us/product/spider-man-final-battle-76261',
-        notes: 'Statue of Liberty head with all 3 Spider-Men!',
-        isActiveTarget: false
-      },
-      {
-        id: 'w4',
-        title: 'LEGO Millennium Falcon',
-        price: 90,
-        category: 'LEGO Star Wars',
-        image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com/en-us/product/millennium-falcon-75257',
-        notes: 'Han Solo and Chewbacca spaceship.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w5',
-        title: 'Miles Morales Mech vs Morbius',
-        price: 25,
-        category: 'LEGO Marvel',
-        image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com',
-        notes: 'Super cool posable mech suit.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w6',
-        title: 'Marvel Spider-Tank Building Set',
-        price: 45,
-        category: 'LEGO Marvel',
-        image: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.lego.com',
-        notes: 'Heavy crawler vehicle.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w7',
-        title: 'Nintendo Switch Game Card',
-        price: 50,
-        category: 'Gaming / Toys',
-        image: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.amazon.com',
-        notes: 'New Mario or Pokemon adventure.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w8',
-        title: 'RC Off-Road Dune Buggy',
-        price: 35,
-        category: 'Gaming / Toys',
-        image: 'https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.amazon.com',
-        notes: 'High speed vehicle for backyard racing.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w9',
-        title: 'Marvel Graphic Novel Treasury',
-        price: 20,
-        category: 'Gear / Outdoor',
-        image: 'https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.amazon.com',
-        notes: 'Giant book full of Spider-Man comics.',
-        isActiveTarget: false
-      },
-      {
-        id: 'w10',
-        title: 'Walkie Talkie 3-Pack Long Range',
-        price: 30,
-        category: 'Gear / Outdoor',
-        image: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=600&auto=format&fit=crop&q=80',
-        url: 'https://www.amazon.com',
-        notes: 'For secret missions across the house and yard.',
-        isActiveTarget: false
-      }
-    ];
-
-    /* ================= STATE ================= */
-    let chores = [];
-    let lootItems = [];
-    let wishlistItems = [];
-    let currentRole = 'kid'; // 'kid' or 'parent'
-    let currentAppTab = 'bounties';
-    let choreFilter = 'available';
-    let activeLootCategory = 'ALL';
-    let soundEnabled = true;
-
-    function init() {
-      const storedChores = localStorage.getItem('lucas_chores');
-      chores = storedChores ? JSON.parse(storedChores) : [...DEFAULT_CHORES];
-
-      const storedLoot = localStorage.getItem('lucas_loot');
-      lootItems = storedLoot ? JSON.parse(storedLoot) : [...DEFAULT_LOOT];
-
-      const storedWishlist = localStorage.getItem('lucas_wishlist');
-      wishlistItems = storedWishlist ? JSON.parse(storedWishlist) : [...DEFAULT_WISHLIST];
-
-      renderAll();
-    }
-
-    function saveAll() {
-      localStorage.setItem('lucas_chores', JSON.stringify(chores));
-      localStorage.setItem('lucas_loot', JSON.stringify(lootItems));
-      localStorage.setItem('lucas_wishlist', JSON.stringify(wishlistItems));
-      renderAll();
-    }
-
-    /* ================= COMPUTED FINANCIALS ================= */
-    function getTotalEarned() {
-      return chores
-        .filter(c => c.status === 'completed')
-        .reduce((sum, c) => sum + (Number(c.reward) || 0), 0);
-    }
-
-    function getTotalSpent() {
-      return lootItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    }
-
-    function getAvailableCash() {
-      const available = getTotalEarned() - getTotalSpent();
-      return Math.max(0, available);
-    }
-
-    function getActiveGoal() {
-      const found = wishlistItems.find(w => w.isActiveTarget);
-      return found || wishlistItems[0] || { title: 'LEGO Daily Bugle', price: 100 };
-    }
-
-    /* ================= SOUND ENGINE ================= */
-    let audioCtx = null;
-    function getAudioContext() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-
-    function playSound(type) {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getAudioContext();
-        const now = ctx.currentTime;
-        if (type === 'coin') {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(987.77, now);
-          osc.frequency.setValueAtTime(1318.51, now + 0.08);
-          gain.gain.setValueAtTime(0.25, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.45);
-        } else if (type === 'cash') {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.setValueAtTime(880, now + 0.1);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.38);
-        } else if (type === 'fanfare') {
-          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + i * 0.08);
-            gain.gain.setValueAtTime(0.2, now + i * 0.08);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.5);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now + i * 0.08);
-            osc.stop(now + i * 0.08 + 0.55);
-          });
-        } else if (type === 'click') {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(500, now);
-          gain.gain.setValueAtTime(0.08, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.07);
-        }
-      } catch (err) {}
-    }
-
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      const icon = document.getElementById('soundIcon');
-      if (soundEnabled) {
-        icon.className = 'fa-solid fa-volume-high';
-        showToast('Sound On 🔔');
-        playSound('click');
-      } else {
-        icon.className = 'fa-solid fa-volume-xmark text-slate-500';
-        showToast('Sound Muted 🔇');
-      }
-    }
-
-    /* ================= MAIN RENDER PIPELINE ================= */
-    function renderAll() {
-      renderFinancials();
-      renderNavigation();
-      renderBountiesTab();
-      renderWishlistTab();
-      renderLootTab();
-      renderParentAdmin();
-    }
-
-    function renderFinancials() {
-      const earned = getTotalEarned();
-      const spent = getTotalSpent();
-      const available = getAvailableCash();
-      const activeGoal = getActiveGoal();
-
-      document.getElementById('displayAvailableCash').textContent = `$${available}`;
-      document.getElementById('displayTotalEarned').textContent = `$${earned}`;
-      document.getElementById('displayTotalSpent').textContent = `$${spent}`;
-
-      document.getElementById('activeGoalName').innerHTML = `
-        ${escapeHtml(activeGoal.title)} 
-        <span class="text-xs font-normal text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-lg border border-blue-400/30">$${activeGoal.price} Target</span>
-      `;
-
-      const targetPrice = Math.max(1, Number(activeGoal.price) || 100);
-      const percent = Math.min(Math.round((available / targetPrice) * 100), 100);
-      const remaining = targetPrice - available;
-
-      document.getElementById('goalProgressPercent').textContent = `${percent}% Reached! (${available} of $${targetPrice})`;
-      
-      if (remaining <= 0) {
-        document.getElementById('goalRemainingText').innerHTML = `
-          🎉 <strong class="text-emerald-400 font-black">GOAL READY TO BUY!</strong> Tap "I Bought Something" to claim!
-        `;
-      } else {
-        document.getElementById('goalRemainingText').innerHTML = `
-          Need <strong class="text-blue-400 font-bold">$${remaining} more</strong> to unlock this set! 🧱
-        `;
-      }
-
-      document.getElementById('goalProgressBar').style.width = `${percent}%`;
-      document.getElementById('goalBarInner').textContent = available > 0 ? `$${available}` : '';
-    }
-
-    function renderNavigation() {
-      const roleBox = document.getElementById('roleBadgeContainer');
-      if (currentRole === 'kid') {
-        roleBox.innerHTML = `
-          <button onclick="setRole('parent')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-black text-xs flex items-center gap-1.5 border border-slate-700 shadow-sm transition">
-            <i class="fa-solid fa-lock text-blue-400"></i> Parent
-          </button>
-        `;
-        document.getElementById('sectionParentAdmin').classList.add('hidden');
-      } else {
-        roleBox.innerHTML = `
-          <button onclick="setRole('kid')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs flex items-center gap-1.5 shadow-lg shadow-blue-950/50 transition">
-            <i class="fa-solid fa-child text-sm"></i> Kid Mode
-          </button>
-        `;
-        if (currentAppTab === 'parentAdmin') {
-          document.getElementById('sectionParentAdmin').classList.remove('hidden');
-        }
-      }
-
-      document.getElementById('tabCountAvailable').textContent = chores.filter(c => c.status === 'available').length;
-      document.getElementById('tabCountLoot').textContent = lootItems.length;
-    }
-
-    function switchAppTab(tab) {
-      currentAppTab = tab;
-      playSound('click');
-
-      const tabs = ['bounties', 'wishlist', 'loot'];
-      tabs.forEach(t => {
-        const btn = document.getElementById(`navTab${capitalize(t)}`);
-        const section = document.getElementById(`section${capitalize(t)}`);
-        if (t === tab) {
-          btn.className = "px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-blue-600 text-white shadow-lg";
-          section.classList.remove('hidden');
-        } else {
-          btn.className = "px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition flex items-center gap-2 shrink-0 bg-slate-900 text-slate-300 hover:text-white border border-slate-800";
-          section.classList.add('hidden');
-        }
-      });
-
-      if (currentRole === 'parent') {
-        document.getElementById('sectionParentAdmin').classList.remove('hidden');
-      } else {
-        document.getElementById('sectionParentAdmin').classList.add('hidden');
-      }
-    }
-
-    /* ================= TAB 1: BOUNTIES LOGIC ================= */
-    function setChoreFilter(filter) {
-      choreFilter = filter;
-      playSound('click');
-      ['available', 'pending', 'completed'].forEach(f => {
-        const btn = document.getElementById(`filterBtn${capitalize(f)}`);
-        if (f === filter) {
-          btn.className = "px-3.5 py-2 rounded-xl text-xs font-black transition bg-blue-600 text-white shadow-md";
-        } else {
-          btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white";
-        }
-      });
-      renderBountiesTab();
-    }
-
-    function renderBountiesTab() {
-      const avail = chores.filter(c => c.status === 'available');
-      const pending = chores.filter(c => c.status === 'pending');
-      const done = chores.filter(c => c.status === 'completed');
-
-      document.getElementById('subCountAvailable').textContent = avail.length;
-      document.getElementById('subCountPending').textContent = pending.length;
-      document.getElementById('subCountCompleted').textContent = done.length;
-
-      let list = avail;
-      if (choreFilter === 'pending') list = pending;
-      if (choreFilter === 'completed') list = done;
-
-    /* ================= TAB 1: BOUNTIES LOGIC & DETAILED BRIEFING ================= */
-    let activeDetailChore = null;
-    let checkedSteps = {};
-
-    function openChoreDetailModal(id) {
-      playSound('click');
-      activeDetailChore = chores.find(c => c.id === id);
-      if (!activeDetailChore) return;
-
-      document.getElementById('detailChoreTitle').textContent = activeDetailChore.title;
-      document.getElementById('detailChoreReward').textContent = `$${activeDetailChore.reward}`;
-      document.getElementById('detailChoreCategory').textContent = activeDetailChore.category;
-      document.getElementById('detailChoreStars').textContent = getStarString(activeDetailChore.difficulty);
-
-      // Location
-      const locEl = document.getElementById('detailChoreLocation');
-      const locText = activeDetailChore.location || 'Inside or Outside';
-      locEl.innerHTML = `<i class="fa-solid fa-location-dot"></i> <span>${escapeHtml(locText)}</span>`;
-
-      // Tools List
-      const toolsContainer = document.getElementById('detailChoreTools');
-      const tools = Array.isArray(activeDetailChore.tools) && activeDetailChore.tools.length > 0
-        ? activeDetailChore.tools
-        : ['Basic supplies or ask Dad'];
-      
-      toolsContainer.innerHTML = tools.map(tool => `
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold">
-          <i class="fa-solid fa-check text-blue-400 text-[10px]"></i> ${escapeHtml(tool)}
-        </span>
-      `).join('');
-
-      // Steps interactive checklist
-      const steps = Array.isArray(activeDetailChore.steps) && activeDetailChore.steps.length > 0
-        ? activeDetailChore.steps
-        : [activeDetailChore.desc || 'Complete the task with high effort and put tools away.'];
-
-      if (!checkedSteps[activeDetailChore.id]) {
-        checkedSteps[activeDetailChore.id] = new Array(steps.length).fill(false);
-      }
-
-      renderStepsChecklist(steps);
-
-      // Safety Tip
-      const safetyText = activeDetailChore.safety || 'Take your time, be thorough, and do a proud job!';
-      document.getElementById('detailChoreSafety').textContent = safetyText;
-
-      const statusEl = document.getElementById('detailChoreStatus');
-      const actionEl = document.getElementById('detailChoreActions');
-
-      if (activeDetailChore.status === 'available') {
-        statusEl.innerHTML = `<span class="text-emerald-400 font-bold">● Available</span>`;
-        actionEl.innerHTML = `
-          <button onclick="submitChoreForInspection('${activeDetailChore.id}')" class="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm sm:text-base shadow-xl active:scale-95 flex items-center justify-center gap-2 transition">
-            <i class="fa-solid fa-circle-check text-lg"></i> I Finished This! Claim $${activeDetailChore.reward}
-          </button>
-        `;
-      } else if (activeDetailChore.status === 'pending') {
-        statusEl.innerHTML = `<span class="text-blue-400 font-bold">● In Inspection</span>`;
-        actionEl.innerHTML = `
-          <div class="p-3 bg-blue-500/10 border border-blue-500/30 rounded-2xl text-center text-xs text-blue-300 font-bold">
-            Great job! Dad will inspect the work and hit approve to add $${activeDetailChore.reward} to your wallet.
-          </div>
-        `;
-      } else {
-        statusEl.innerHTML = `<span class="text-slate-400 font-bold">● Completed & Paid</span>`;
-        actionEl.innerHTML = `
-          <div class="p-3 bg-slate-800 rounded-2xl text-center text-xs text-emerald-400 font-bold">
-            ✓ Done! Earned $${activeDetailChore.reward}.
-          </div>
-        `;
-      }
-
-      document.getElementById('choreDetailModal').classList.remove('hidden');
-    }
-
-    function renderStepsChecklist(steps) {
-      if (!activeDetailChore) return;
-      const choreId = activeDetailChore.id;
-      const checks = checkedSteps[choreId] || [];
-      const total = steps.length;
-      const completed = checks.filter(Boolean).length;
-
-      document.getElementById('detailChecklistProgress').textContent = `${completed}/${total} Done`;
-
-      const container = document.getElementById('detailChoreSteps');
-      container.innerHTML = steps.map((step, idx) => {
-        const isDone = Boolean(checks[idx]);
-        return `
-          <div onclick="toggleStepCheck('${choreId}', ${idx})" class="p-2.5 rounded-xl border transition cursor-pointer flex items-start gap-2.5 ${isDone ? 'bg-blue-950/40 border-blue-600/50 text-slate-300' : 'bg-slate-900 border-slate-800 text-slate-100 hover:border-slate-700'}">
-            <div class="w-5 h-5 rounded-md flex items-center justify-center text-xs shrink-0 mt-0.5 border ${isDone ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-950 border-slate-700 text-transparent'}">
-              <i class="fa-solid fa-check"></i>
-            </div>
-            <div class="text-xs leading-relaxed flex-1 ${isDone ? 'line-through text-slate-400' : ''}">
-              <strong class="text-blue-400 mr-1">${idx + 1}.</strong> ${escapeHtml(step)}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function toggleStepCheck(choreId, index) {
-      if (!checkedSteps[choreId]) {
-        const chore = chores.find(c => c.id === choreId);
-        const len = (chore && chore.steps) ? chore.steps.length : 3;
-        checkedSteps[choreId] = new Array(len).fill(false);
-      }
-      checkedSteps[choreId][index] = !checkedSteps[choreId][index];
-      playSound('click');
-      if (activeDetailChore && activeDetailChore.steps) {
-        renderStepsChecklist(activeDetailChore.steps);
-      }
-    }
-
-    function closeChoreDetailModal() {
-      document.getElementById('choreDetailModal').classList.add('hidden');
-    }
-    /* ================= AI MISSION BRIEFING GENERATOR ================= */
-    async function generateAiMissionBriefing() {
-      const title = document.getElementById('choreTitleInput').value.trim();
-      const btn = document.getElementById('btnAiGenerateBriefing');
-      
-      if (!title) {
-        showToast('Please type a Chore Name first! (e.g. "wash the dog")');
-        document.getElementById('choreTitleInput').focus();
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Writing...`;
-
-      try {
-        // Attempt Gemini API call via generateContent endpoint
-        const systemPrompt = `You are an expert parenting chore coach for an 8-year-old boy named Lucas who loves Spider-Man and LEGO.
-Given a household chore or project name, create an age-appropriate, exciting mission briefing JSON for him.
-Always return JSON with:
-{
-  "location": "Outside / Yard" | "Inside / House" | "Garage / Workshop" | "Bathroom" | "Kitchen / Dining",
-  "category": "Outdoor & Yard" | "Fix-It & Tools" | "Pet Care & Animals" | "Cleaning & Tidy" | "Family Helper" | "Big Project",
-  "difficulty": 1 to 5 (integer),
-  "reward": recommended fair dollar bounty (integer between 5 and 50),
-  "tools": ["array", "of", "3-5", "specific", "tools/supplies"],
-  "steps": ["Step 1 concise action", "Step 2 concise action", "Step 3 concise action", "Step 4 putting tools away"],
-  "safety": "Important safety warning or pro tip written for an 8 year old"
-}`;
-
-        const userQuery = `Generate an age-appropriate mission briefing for Lucas for this chore: "${title}"`;
-        const apiKey = "";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-        const payload = {
-          contents: [{ parts: [{ text: userQuery }] }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: {
-            responseMimeType: "application/json"
-          }
-        };
-
-        let resultJson = null;
-        try {
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await response.json();
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            resultJson = JSON.parse(text);
-          }
-        } catch (apiErr) {
-          // Fallback to local intelligent heuristics if offline or throttling
-        }
-
-        if (!resultJson) {
-          resultJson = getHeuristicMissionBriefing(title);
-        }
-
-        applyBriefingToForm(resultJson);
-        playSound('coin');
-        showToast('Generated AI Mission Briefing! 🤖⚡');
-
-      } catch (err) {
-        const fallback = getHeuristicMissionBriefing(title);
-        applyBriefingToForm(fallback);
-        showToast('Generated Mission Briefing! ⚡');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Auto-Generate`;
-      }
-    }
-
-    function applyBriefingToForm(briefing) {
-      if (briefing.reward && !document.getElementById('choreRewardInput').value) {
-        document.getElementById('choreRewardInput').value = briefing.reward;
-      }
-      if (briefing.location) {
-        document.getElementById('choreLocationInput').value = briefing.location;
-      }
-      if (briefing.category) {
-        document.getElementById('choreCategoryInput').value = briefing.category;
-      }
-      if (briefing.difficulty) {
-        document.getElementById('choreDiffInput').value = briefing.difficulty;
-      }
-      if (briefing.tools && Array.isArray(briefing.tools)) {
-        document.getElementById('choreToolsInput').value = briefing.tools.join(', ');
-      }
-      if (briefing.steps && Array.isArray(briefing.steps)) {
-        document.getElementById('choreStepsInput').value = briefing.steps.join('\n');
-      }
-      if (briefing.safety) {
-        document.getElementById('choreSafetyInput').value = briefing.safety;
-      }
-    }
-
-    // Smart on-device fallback templates for common jobs
-    function getHeuristicMissionBriefing(title) {
-      const lower = title.toLowerCase();
-
-      if (lower.includes('dog') || lower.includes('puppy') || lower.includes('pet')) {
-        return {
-          location: 'Outside / Yard',
-          category: 'Pet Care & Animals',
-          difficulty: 3,
-          reward: 15,
-          tools: ['Dog shampoo', '2 large dry towels', 'Plastic cup for rinsing', 'Dog brush', 'Treats for reward'],
-          steps: [
-            'Brush out loose fur before wetting the dog',
-            'Use warm water with the cup to gently wet the coat from the neck down',
-            'Lather with gentle dog shampoo and massage into the coat',
-            'Rinse thoroughly with clean warm water until no bubbles remain',
-            'Wrap immediately in a dry towel and give a yummy dog treat'
-          ],
-          safety: 'Keep soapy water completely out of the dog’s eyes and ears! Hold onto the collar so they don’t bolt.'
-        };
-      }
-
-      if (lower.includes('shelf') || lower.includes('build') || lower.includes('assemble') || lower.includes('furniture')) {
-        return {
-          location: 'Inside / House',
-          category: 'Fix-It & Tools',
-          difficulty: 4,
-          reward: 20,
-          tools: ['Phillips screwdriver', 'Rubber mallet', 'Assembly manual', 'Floor blanket', 'Parts tray'],
-          steps: [
-            'Spread the blanket down so floor and wood parts do not get scratched',
-            'Sort wooden panels, screws, and wooden dowels into neat piles',
-            'Follow the manual page by page and hold pieces steady while Dad tightens bolts',
-            'Tap dowels gently into place with the rubber mallet',
-            'Recycle cardboard and pack tools back into Dad\'s toolbox'
-          ],
-          safety: 'Wear sneakers so wood panels don’t hurt your toes. Ask Dad to handle sharp screws.'
-        };
-      }
-
-      if (lower.includes('room') || lower.includes('clean') || lower.includes('tidy') || lower.includes('declutter')) {
-        return {
-          location: 'Inside / House',
-          category: 'Cleaning & Tidy',
-          difficulty: 2,
-          reward: 10,
-          tools: ['Storage tubs', 'Trash bag', 'Microfiber cloth', 'Vacuum cleaner'],
-          steps: [
-            'Clear the floor: sort clothes into hamper, toys into bins',
-            'Make your bed and straighten pillows',
-            'Wipe dust off table tops and desks',
-            'Vacuum carpet from the far corner toward the doorway'
-          ],
-          safety: 'Never yank cords from electrical wall sockets. Pull gently by the plug.'
-        };
-      }
-
-      if (lower.includes('car') || lower.includes('wash')) {
-        return {
-          location: 'Outside / Yard',
-          category: 'Outdoor & Yard',
-          difficulty: 3,
-          reward: 15,
-          tools: ['Wash bucket with car soap', 'Large soft sponge', 'Garden hose with nozzle', 'Microfiber drying towel'],
-          steps: [
-            'Rinse the whole car with the hose to knock loose grit off',
-            'Soap up the sponge and scrub from top roof down to wheels',
-            'Rinse all soapy suds off with clean water',
-            'Dry windows and bodywork with the microfiber cloth to prevent water spots'
-          ],
-          safety: 'Watch out for driveway puddles so you don’t slip. Keep car windows rolled up tight!'
-        };
-      }
-
-      // General task fallback
-      return {
-        location: 'Outside / Yard',
-        category: 'Outdoor & Yard',
-        difficulty: 3,
-        reward: 10,
-        tools: ['Work gloves', 'Tidy bucket or bin', 'Cleanup rag or brush'],
-        steps: [
-          'Inspect the area and gather your tools before starting',
-          'Work methodically from one side to the other',
-          'Ask Dad for a quick inspection check when 90% done',
-          'Put all equipment and tools back where you got them'
-        ],
-        safety: 'Wear gloves to protect your hands and ask Dad for assistance with heavy lifting.'
-      };
-    }
-    }
-
-    /* ================= TAB 2: TOP 10 WISHLIST LOGIC ================= */
-    function renderWishlistTab() {
-      const container = document.getElementById('wishlistContainer');
-      const available = getAvailableCash();
-
-      if (wishlistItems.length === 0) {
-        container.innerHTML = `
-          <div class="py-12 bg-slate-900/50 border border-dashed border-slate-800 rounded-3xl text-center text-slate-400 text-sm">
-            Your wishlist is empty. Tap "+ Add Item" to put in your dream sets!
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = wishlistItems.map((item, index) => {
-        const rank = index + 1;
-        const targetPercent = Math.min(Math.round((available / item.price) * 100), 100);
-        const isAffordable = available >= item.price;
-        const isActive = item.isActiveTarget;
-
-        return `
-          <div class="bg-slate-900 border-2 ${isActive ? 'border-blue-500 shadow-xl glow-blue' : 'border-slate-800'} rounded-3xl p-3 sm:p-4 flex flex-col md:flex-row items-center justify-between gap-4 transition hover:border-slate-700">
-            
-            <!-- Left: Rank & Image & Info -->
-            <div class="flex items-center gap-3 w-full md:w-auto">
-              <!-- Reorder buttons (Tablet friendly) -->
-              <div class="flex flex-col gap-1 shrink-0">
-                <button onclick="moveWishlistItem(${index}, -1)" ${index === 0 ? 'disabled class="opacity-20"' : 'class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs active:scale-95"'} title="Move Up">
-                  <i class="fa-solid fa-chevron-up"></i>
-                </button>
-                <div class="w-7 text-center font-comic font-black text-blue-400 text-sm">#${rank}</div>
-                <button onclick="moveWishlistItem(${index}, 1)" ${index === wishlistItems.length - 1 ? 'disabled class="opacity-20"' : 'class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs active:scale-95"'} title="Move Down">
-                  <i class="fa-solid fa-chevron-down"></i>
-                </button>
-              </div>
-
-              <!-- Thumbnail image -->
-              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center relative">
-                ${item.image ? `
-                  <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/100x100/1e293b/3b82f6?text=LEGO';">
-                ` : `
-                  <i class="fa-solid fa-shapes text-slate-600 text-2xl"></i>
-                `}
-                ${isActive ? `
-                  <span class="absolute top-1 right-1 bg-blue-600 text-white font-black text-[9px] px-1 rounded shadow">ACTIVE</span>
-                ` : ''}
-              </div>
-
-              <!-- Name & Details -->
-              <div class="space-y-1 flex-1 min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                    ${item.category || 'LEGO'}
-                  </span>
-                  ${isAffordable ? `
-                    <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700">
-                      ✨ CAN BUY NOW!
-                    </span>
-                  ` : ''}
-                </div>
-                
-                <h4 class="font-extrabold text-base text-white leading-tight truncate sm:whitespace-normal">
-                  ${escapeHtml(item.title)}
-                </h4>
-
-                <p class="text-xs text-slate-400 line-clamp-1">
-                  ${escapeHtml(item.notes || 'No notes added')}
-                </p>
-
-                <!-- Mini progress to this item -->
-                <div class="flex items-center gap-2 pt-0.5 max-w-xs">
-                  <div class="w-24 h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                    <div class="h-full bg-blue-500 rounded-full" style="width: ${targetPercent}%"></div>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-400">${targetPercent}%</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right: Price, Target selector & Links -->
-            <div class="flex items-center justify-between md:justify-end gap-2.5 w-full md:w-auto border-t md:border-t-0 pt-2 md:pt-0 border-slate-800">
-              <div class="text-left md:text-right mr-1">
-                <span class="text-[10px] uppercase text-slate-400 block font-bold">Goal Price</span>
-                <span class="font-comic font-black text-xl text-blue-400">$${item.price}</span>
-              </div>
-
-              <!-- Primary target toggle -->
-              ${isActive ? `
-                <button class="px-3.5 py-2 rounded-xl bg-blue-600/20 text-blue-300 border border-blue-500/40 text-xs font-black cursor-default">
-                  ★ Active Target
-                </button>
-              ` : `
-                <button onclick="setActiveTarget('${item.id}')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold active:scale-95 transition">
-                  Set As Target
-                </button>
-              `}
-
-              ${item.url ? `
-                <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs border border-slate-700" title="Open Store Link">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </a>
-              ` : ''}
-
-              <!-- Edit & Delete -->
-              <button onclick="openEditWishlistModal('${item.id}')" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs border border-slate-700" title="Edit Wish">
-                <i class="fa-solid fa-pencil"></i>
-              </button>
-              <button onclick="deleteWishlistItem('${item.id}')" class="w-9 h-9 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white flex items-center justify-center text-xs border border-red-500/30 transition" title="Remove Wish">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-
-          </div>
-        `;
-      }).join('');
-    }
-
-    function moveWishlistItem(index, direction) {
-      const newIndex = index + direction;
-      if (newIndex < 0 || newIndex >= wishlistItems.length) return;
-      const temp = wishlistItems[index];
-      wishlistItems[index] = wishlistItems[newIndex];
-      wishlistItems[newIndex] = temp;
-      saveAll();
-      playSound('click');
-    }
-
-    function setActiveTarget(id) {
-      wishlistItems.forEach(w => w.isActiveTarget = (w.id === id));
-      saveAll();
-      playSound('fanfare');
-      fireConfetti(false);
-      const target = wishlistItems.find(w => w.id === id);
-      showToast(`Set "${target.title}" as your primary savings goal! 🎯`);
-    }
-
-    function openWishlistModal() {
-      document.getElementById('wishlistModalTitle').textContent = 'Add to Top 10 Wishlist';
-      document.getElementById('wishlistId').value = '';
-      document.getElementById('wishlistTitle').value = '';
-      document.getElementById('wishlistPrice').value = '';
-      document.getElementById('wishlistCategory').value = 'LEGO Marvel';
-      document.getElementById('wishlistUrl').value = '';
-      document.getElementById('wishlistImage').value = '';
-      document.getElementById('wishlistNotes').value = '';
-      document.getElementById('wishlistModal').classList.remove('hidden');
-    }
-
-    function openEditWishlistModal(id) {
-      const item = wishlistItems.find(w => w.id === id);
-      if (!item) return;
-      document.getElementById('wishlistModalTitle').textContent = 'Edit Wishlist Item';
-      document.getElementById('wishlistId').value = item.id;
-      document.getElementById('wishlistTitle').value = item.title;
-      document.getElementById('wishlistPrice').value = item.price;
-      document.getElementById('wishlistCategory').value = item.category || 'LEGO Marvel';
-      document.getElementById('wishlistUrl').value = item.url || '';
-      document.getElementById('wishlistImage').value = item.image || '';
-      document.getElementById('wishlistNotes').value = item.notes || '';
-      document.getElementById('wishlistModal').classList.remove('hidden');
-    }
-
-    function closeWishlistModal() {
-      document.getElementById('wishlistModal').classList.add('hidden');
-    }
-
-    function handleWishlistSubmit(e) {
-      e.preventDefault();
-      const id = document.getElementById('wishlistId').value;
-      const title = document.getElementById('wishlistTitle').value.trim();
-      const price = parseFloat(document.getElementById('wishlistPrice').value) || 50;
-      const category = document.getElementById('wishlistCategory').value;
-      const url = document.getElementById('wishlistUrl').value.trim();
-      const image = document.getElementById('wishlistImage').value.trim();
-      const notes = document.getElementById('wishlistNotes').value.trim();
-
-      if (!title) return;
-
-      if (id) {
-        const item = wishlistItems.find(w => w.id === id);
-        if (item) {
-          item.title = title;
-          item.price = price;
-          item.category = category;
-          item.url = url;
-          item.image = image;
-          item.notes = notes;
-        }
-        showToast('Wishlist item updated! ⭐');
-      } else {
-        const newItem = {
-          id: 'w_' + Date.now(),
-          title,
-          price,
-          category,
-          url,
-          image,
-          notes,
-          isActiveTarget: wishlistItems.length === 0
-        };
-        wishlistItems.push(newItem);
-        showToast('Added to your Top 10! ⭐');
-      }
-
-      saveAll();
-      closeWishlistModal();
-      playSound('coin');
-    }
-
-    function deleteWishlistItem(id) {
-      const item = wishlistItems.find(w => w.id === id);
-      const conf = confirm(`Remove "${item ? item.title : 'this item'}" from Top 10?`);
-      if (conf) {
-        const wasActive = item && item.isActiveTarget;
-        wishlistItems = wishlistItems.filter(w => w.id !== id);
-        if (wasActive && wishlistItems.length > 0) {
-          wishlistItems[0].isActiveTarget = true;
-        }
-        saveAll();
-        playSound('click');
-        showToast('Wishlist item removed');
-      }
-    }
-
-    function setWishlistPreset(preset) {
-      if (preset === 'bugle') {
-        document.getElementById('wishlistTitle').value = 'LEGO Marvel Daily Bugle (76178)';
-        document.getElementById('wishlistPrice').value = '100';
-        document.getElementById('wishlistCategory').value = 'LEGO Marvel';
-        document.getElementById('wishlistImage').value = 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=600&auto=format&fit=crop&q=80';
-        document.getElementById('wishlistUrl').value = 'https://www.lego.com/en-us/product/daily-bugle-76178';
-        document.getElementById('wishlistNotes').value = 'Huge skyscraper with 25 Marvel characters & Goblin explosion!';
-      } else if (preset === 'sanctum') {
-        document.getElementById('wishlistTitle').value = 'LEGO Sanctum Sanctorum (76218)';
-        document.getElementById('wishlistPrice').value = '85';
-        document.getElementById('wishlistCategory').value = 'LEGO Marvel';
-        document.getElementById('wishlistImage').value = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80';
-        document.getElementById('wishlistUrl').value = 'https://www.lego.com/en-us/product/sanctum-sanctorum-76218';
-      } else if (preset === 'finalBattle') {
-        document.getElementById('wishlistTitle').value = 'Spider-Man Final Battle (76261)';
-        document.getElementById('wishlistPrice').value = '65';
-        document.getElementById('wishlistCategory').value = 'LEGO Marvel';
-        document.getElementById('wishlistImage').value = 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=600&auto=format&fit=crop&q=80';
-        document.getElementById('wishlistUrl').value = 'https://www.lego.com/en-us/product/spider-man-final-battle-76261';
-      } else if (preset === 'falcon') {
-        document.getElementById('wishlistTitle').value = 'LEGO Millennium Falcon (75257)';
-        document.getElementById('wishlistPrice').value = '90';
-        document.getElementById('wishlistCategory').value = 'LEGO Star Wars';
-        document.getElementById('wishlistImage').value = 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80';
-        document.getElementById('wishlistUrl').value = 'https://www.lego.com/en-us/product/millennium-falcon-75257';
-      }
-      playSound('click');
-    }
-
-    /* ================= TAB 3: SPENT ITEMS & INVENTORY LOGIC ================= */
-    function renderLootTab() {
-      const categories = ['ALL', 'LEGO & Marvel', 'Toys & Games', 'Treats & Snacks', 'Books & Comics', 'Other Stuff'];
-      const filterBar = document.getElementById('lootCategoryFilters');
-      
-      filterBar.innerHTML = categories.map(cat => {
-        const isSel = activeLootCategory === cat;
-        return `
-          <button onclick="setLootCategoryFilter('${cat}')" class="px-3 py-1.5 rounded-xl font-bold transition shrink-0 ${isSel ? 'bg-blue-600 text-white shadow' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'}">
-            ${cat}
-          </button>
-        `;
-      }).join('');
-
-      let filtered = lootItems;
-      if (activeLootCategory !== 'ALL') {
-        filtered = lootItems.filter(l => l.category === activeLootCategory);
-      }
-
-      const grid = document.getElementById('lootGrid');
-      if (filtered.length === 0) {
-        grid.innerHTML = `
-          <div class="col-span-full py-12 px-4 bg-slate-900/50 border border-dashed border-slate-800 rounded-3xl text-center">
-            <i class="fa-solid fa-box-open text-slate-600 text-3xl mb-2"></i>
-            <h4 class="font-bold text-white text-base">No items logged here yet!</h4>
-            <p class="text-xs text-slate-400 mt-1">Whenever you buy something, tap "Record New Purchase" to log it.</p>
-          </div>
-        `;
-        return;
-      }
-
-      grid.innerHTML = filtered.map(item => {
-        return `
-          <div class="bg-slate-900 border-2 border-slate-800 hover:border-blue-500/40 rounded-3xl p-4 shadow-lg flex flex-col justify-between transition">
-            <div>
-              <div class="flex items-center justify-between gap-2 mb-2">
-                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-sky-300 border border-slate-700">
-                  ${escapeHtml(item.category || 'Loot')}
-                </span>
-                <span class="font-comic font-black text-rose-400 text-lg">
-                  -$${item.amount}
-                </span>
-              </div>
-
-              <div class="w-full h-36 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden mb-3 relative flex items-center justify-center">
-                ${item.image ? `
-                  <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/400x200/161F30/2563eb?text=Purchased+Loot';">
-                ` : `
-                  <div class="text-center text-slate-600">
-                    <i class="fa-solid fa-award text-4xl mb-1 text-blue-500/40"></i>
-                    <p class="text-[11px] font-bold">Loot Item Unlocked</p>
-                  </div>
-                `}
-                <span class="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur px-2 py-0.5 rounded-lg text-[10px] text-slate-300 font-semibold border border-slate-700">
-                  <i class="fa-regular fa-calendar mr-1"></i> ${item.date || 'Purchased'}
-                </span>
-              </div>
-
-              <h4 class="font-black text-base text-white leading-snug">${escapeHtml(item.title)}</h4>
-              <p class="text-xs text-slate-400 mt-1 line-clamp-2">${escapeHtml(item.notes || 'Purchased with chore earnings.')}</p>
-            </div>
-
-            <div class="flex items-center justify-between border-t border-slate-800/80 pt-2.5 mt-3 text-xs text-slate-400">
-              <span class="text-[11px] text-emerald-400 font-bold">✓ In Personal Collection</span>
-              <button onclick="deleteLootItem('${item.id}')" class="text-red-400 hover:text-red-300 p-1 transition" title="Refund / Delete this log">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function setLootCategoryFilter(cat) {
-      activeLootCategory = cat;
-      playSound('click');
-      renderLootTab();
-    }
-
-    function openLogPurchaseModal() {
-      document.getElementById('purchaseTitle').value = '';
-      document.getElementById('purchaseAmount').value = '';
-      document.getElementById('purchaseCategory').value = 'LEGO & Marvel';
-      document.getElementById('purchaseImage').value = '';
-      document.getElementById('purchaseNotes').value = '';
-      document.getElementById('logPurchaseModal').classList.remove('hidden');
-    }
-
-    function closeLogPurchaseModal() {
-      document.getElementById('logPurchaseModal').classList.add('hidden');
-    }
-
-    function handlePurchaseSubmit(e) {
-      e.preventDefault();
-      const title = document.getElementById('purchaseTitle').value.trim();
-      const amount = parseFloat(document.getElementById('purchaseAmount').value) || 0;
-      const category = document.getElementById('purchaseCategory').value;
-      const image = document.getElementById('purchaseImage').value.trim();
-      const notes = document.getElementById('purchaseNotes').value.trim();
-
-      if (!title || amount <= 0) return;
-
-      const newLoot = {
-        id: 'l_' + Date.now(),
-        title,
-        amount,
-        category,
-        image,
-        notes,
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      };
-
-      lootItems.unshift(newLoot);
-      saveAll();
-      closeLogPurchaseModal();
-      playSound('cash');
-      fireConfetti(true);
-      showToast(`Logged "$${amount} for ${title}"! Balance adjusted. 🛒`);
-    }
-
-    function deleteLootItem(id) {
-      const item = lootItems.find(l => l.id === id);
-      const conf = confirm(`Remove "${item ? item.title : 'this item'}" from Loot Vault? This will return +$${item ? item.amount : 0} back to his available cash.`);
-      if (conf) {
-        lootItems = lootItems.filter(l => l.id !== id);
-        saveAll();
-        playSound('coin');
-        showToast('Item refunded back to wallet!');
-      }
-    }
-
-    function setPurchasePresetImg(preset) {
-      if (preset === 'venom') {
-        document.getElementById('purchaseImage').value = 'https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=600&auto=format&fit=crop&q=80';
-      } else if (preset === 'minifigs') {
-        document.getElementById('purchaseImage').value = 'https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=600&auto=format&fit=crop&q=80';
-      } else if (preset === 'genericLego') {
-        document.getElementById('purchaseImage').value = 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop&q=80';
-      }
-      playSound('click');
-    }
-
-    /* ================= PARENT ADMIN LOGIC ================= */
-    function renderParentAdmin() {
-      const pendingList = chores.filter(c => c.status === 'pending');
-      document.getElementById('adminPendingCount').textContent = pendingList.length;
-
-      const pendingContainer = document.getElementById('adminPendingList');
-      if (pendingList.length === 0) {
-        pendingContainer.innerHTML = `
-          <div class="col-span-full p-4 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs text-center">
-            No completed chores currently waiting for your inspection.
-          </div>
-        `;
-      } else {
-        pendingContainer.innerHTML = pendingList.map(c => `
-          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-blue-950/40 to-slate-900 border-2 border-blue-500/50 flex items-center justify-between gap-3 shadow-lg">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Awaiting Sign-off</span>
-                <span class="text-xs font-black text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-700">+$${c.reward}</span>
-              </div>
-              <h5 class="font-extrabold text-white text-sm mt-0.5">${escapeHtml(c.title)}</h5>
-              <p class="text-xs text-slate-400">${escapeHtml(c.desc || 'No notes')}</p>
-            </div>
-
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="parentRejectChore('${c.id}')" title="Return to available" class="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">
-                Needs More
-              </button>
-              <button onclick="parentApproveChore('${c.id}')" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg active:scale-95 flex items-center gap-1 transition">
-                <i class="fa-solid fa-check"></i> Approve
-              </button>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      // Full Chore Roster
-      const rosterContainer = document.getElementById('adminFullChoreList');
-      rosterContainer.innerHTML = chores.map(c => {
-        let statusBadge = 'bg-slate-800 text-slate-300';
-        if (c.status === 'completed') statusBadge = 'bg-emerald-950 text-emerald-400 border border-emerald-800';
-        if (c.status === 'pending') statusBadge = 'bg-blue-950 text-blue-300 border border-blue-800';
-
-        return `
-          <div class="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-800 text-xs gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <span class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center font-bold text-blue-400 shrink-0 font-comic">
-                $${c.reward}
-              </span>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-white truncate ${c.status === 'completed' ? 'line-through text-slate-500' : ''}">${escapeHtml(c.title)}</span>
-                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${statusBadge}">${c.status}</span>
-                </div>
-                <span class="text-[10px] text-slate-400">${c.category}</span>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-1 shrink-0">
-              ${c.status === 'completed' ? `
-                <button onclick="toggleChoreStatus('${c.id}', 'available')" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-[11px] font-semibold">
-                  <i class="fa-solid fa-rotate-left mr-1"></i> Re-list
-                </button>
-              ` : `
-                <button onclick="parentApproveChore('${c.id}')" class="px-2 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-500 transition">
-                  Quick Pay
-                </button>
-              `}
-              <button onclick="openEditChoreModal('${c.id}')" class="w-7 h-7 rounded-lg bg-slate-900 text-slate-300 hover:text-white flex items-center justify-center">
-                <i class="fa-solid fa-pencil text-[10px]"></i>
-              </button>
-              <button onclick="deleteChore('${c.id}')" class="w-7 h-7 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white flex items-center justify-center transition">
-                <i class="fa-solid fa-trash text-[10px]"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function parentApproveChore(id) {
-      const c = chores.find(item => item.id === id);
-      if (c) {
-        c.status = 'completed';
-        c.completedAt = new Date().toLocaleDateString();
-        saveAll();
-        playSound('fanfare');
-        fireConfetti(true);
-        showToast(`Approved "${c.title}"! +$${c.reward} added to Lucas's balance! 💰`);
-      }
-    }
-
-    function parentRejectChore(id) {
-      const c = chores.find(item => item.id === id);
-      if (c) {
-        c.status = 'available';
-        saveAll();
-        playSound('click');
-        showToast(`Returned "${c.title}" to available so he can finish properly.`);
-      }
-    }
-
-    function toggleChoreStatus(id, newStatus) {
-      const c = chores.find(item => item.id === id);
-      if (c) {
-        c.status = newStatus;
-        saveAll();
-        playSound('click');
-      }
-    }
-
-    function deleteChore(id) {
-      const c = chores.find(item => item.id === id);
-      if (confirm(`Delete "${c ? c.title : 'chore'}"?`)) {
-        chores = chores.filter(item => item.id !== id);
-        saveAll();
-        playSound('click');
-        showToast('Chore removed.');
-      }
-    }
-
-    function openNewChoreModal() {
-      document.getElementById('choreFormTitle').textContent = 'Post New Chore Bounty';
-      document.getElementById('choreFormId').value = '';
-      document.getElementById('choreTitleInput').value = '';
-      document.getElementById('choreRewardInput').value = '';
-      document.getElementById('choreLocationInput').value = 'Outside / Yard';
-      document.getElementById('choreCategoryInput').value = 'Outdoor & Yard';
-      document.getElementById('choreDiffInput').value = '3';
-      document.getElementById('choreToolsInput').value = '';
-      document.getElementById('choreStepsInput').value = '';
-      document.getElementById('choreSafetyInput').value = '';
-      document.getElementById('newChoreModal').classList.remove('hidden');
-    }
-
-    function openEditChoreModal(id) {
-      const c = chores.find(item => item.id === id);
-      if (!c) return;
-      document.getElementById('choreFormTitle').textContent = 'Edit Chore Bounty';
-      document.getElementById('choreFormId').value = c.id;
-      document.getElementById('choreTitleInput').value = c.title;
-      document.getElementById('choreRewardInput').value = c.reward;
-      document.getElementById('choreLocationInput').value = c.location || 'Outside / Yard';
-      document.getElementById('choreCategoryInput').value = c.category;
-      document.getElementById('choreDiffInput').value = c.difficulty || 3;
-      document.getElementById('choreToolsInput').value = Array.isArray(c.tools) ? c.tools.join(', ') : '';
-      document.getElementById('choreStepsInput').value = Array.isArray(c.steps) ? c.steps.join('\n') : (c.desc || '');
-      document.getElementById('choreSafetyInput').value = c.safety || '';
-      document.getElementById('newChoreModal').classList.remove('hidden');
-    }
-
-    function handleChoreFormSubmit(e) {
-      e.preventDefault();
-      const id = document.getElementById('choreFormId').value;
-      const title = document.getElementById('choreTitleInput').value.trim();
-      const reward = parseFloat(document.getElementById('choreRewardInput').value) || 5;
-      const location = document.getElementById('choreLocationInput').value;
-      const category = document.getElementById('choreCategoryInput').value;
-      const difficulty = parseInt(document.getElementById('choreDiffInput').value) || 3;
-      
-      const rawTools = document.getElementById('choreToolsInput').value;
-      const tools = rawTools.split(',').map(t => t.trim()).filter(Boolean);
-
-      const rawSteps = document.getElementById('choreStepsInput').value;
-      const steps = rawSteps.split('\n').map(s => s.trim()).filter(Boolean);
-
-      const safety = document.getElementById('choreSafetyInput').value.trim();
-
-      if (!title) return;
-
-      if (id) {
-        const c = chores.find(item => item.id === id);
-        if (c) {
-          c.title = title;
-          c.reward = reward;
-          c.location = location;
-          c.category = category;
-          c.difficulty = difficulty;
-          c.tools = tools;
-          c.steps = steps;
-          c.safety = safety;
-          c.desc = steps.join('. ');
-        }
-        showToast('Chore and Mission Intel updated!');
-      } else {
-        chores.unshift({
-          id: 'c_' + Date.now(),
-          title,
-          reward,
-          location,
-          category,
-          difficulty,
-          tools,
-          steps,
-          safety,
-          desc: steps.join('. '),
-          status: 'available'
-        });
-        showToast(`Posted new $${reward} bounty with AI briefing! 🎯`);
-      }
-
-      saveAll();
-      closeNewChoreModal();
-      playSound('coin');
-    }
-
-    function promptResetDefaults() {
-      const conf = confirm('Reset all chores, loot vault, and top 10 wishlist back to default values?');
-      if (conf) {
-        chores = JSON.parse(JSON.stringify(DEFAULT_CHORES));
-        lootItems = JSON.parse(JSON.stringify(DEFAULT_LOOT));
-        wishlistItems = JSON.parse(JSON.stringify(DEFAULT_WISHLIST));
-        saveAll();
-        playSound('fanfare');
-        showToast('Restored all defaults!');
-      }
-    }
-
-    /* ================= ROLE TOGGLE & PASSCODE ================= */
-    function setRole(role) {
-      if (role === 'parent' && currentRole !== 'parent') {
-        document.getElementById('pinInput').value = '';
-        document.getElementById('pinError').classList.add('hidden');
-        document.getElementById('pinModal').classList.remove('hidden');
-        setTimeout(() => document.getElementById('pinInput').focus(), 150);
-        return;
-      }
-
-      currentRole = role;
-      playSound('click');
-      renderAll();
-      showToast(role === 'parent' ? 'Parent Command Mode Active' : "Lucas's Kid Mode Active");
-    }
-
-    function verifyPin() {
-      const pin = document.getElementById('pinInput').value;
-      if (pin === '1234') {
-        currentRole = 'parent';
-        closePinModal();
-        playSound('fanfare');
-        renderAll();
-        showToast('Parent PIN Verified!');
-      } else {
-        document.getElementById('pinError').classList.remove('hidden');
-        playSound('click');
-      }
-    }
-
-    function closePinModal() {
-      document.getElementById('pinModal').classList.add('hidden');
-    }
-
-    /* ================= UTILITY HELPERS ================= */
-    function getCategoryIcon(cat) {
-      switch (cat) {
-        case 'Outdoor & Yard': return { icon: 'fa-solid fa-tree', color: 'text-emerald-400' };
-        case 'Fix-It & Tools': return { icon: 'fa-solid fa-wrench', color: 'text-blue-400' };
-        case 'Cleaning & Tidy': return { icon: 'fa-solid fa-broom', color: 'text-sky-400' };
-        case 'Family Helper': return { icon: 'fa-solid fa-heart', color: 'text-red-400' };
-        case 'Big Project': return { icon: 'fa-solid fa-star', color: 'text-blue-400' };
-        default: return { icon: 'fa-solid fa-list-check', color: 'text-indigo-400' };
-      }
-    }
-
-    function getStarString(diff) {
-      const count = Math.max(1, Math.min(5, Number(diff) || 3));
-      return '★'.repeat(count) + '☆'.repeat(5 - count);
-    }
-
-    function capitalize(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str).replace(/[&<>"']/g, m => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-      })[m]);
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toastNotification');
-      document.getElementById('toastMessage').textContent = msg;
-      toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-      }, 3000);
-    }
-
-    function fireConfetti(big = false) {
-      if (typeof confetti !== 'function') return;
-      if (big) {
-        confetti({
-          particleCount: 80,
-          spread: 80,
-          origin: { y: 0.6 },
-          colors: ['#DC2626', '#2563EB', '#10B981', '#38BDF8']
-        });
-      } else {
-        confetti({
-          particleCount: 30,
-          spread: 50,
-          origin: { y: 0.7 },
-          colors: ['#2563EB', '#10B981', '#DC2626']
-        });
-      }
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-      }
-    }
-
-    window.onload = function() {
-      init();
+    const DEFAULT_DATA = {
+      activeTargetId: "w1",
+      bounties: [
+        { id: "b1", title: "Wash out Sandpit", reward: 5, status: "completed", location: "Backyard" },
+        { id: "b2", title: "Fix the Tap Washer", reward: 5, status: "completed", location: "Outside Tap" },
+        { id: "b3", title: "BBQ Clean", reward: 5, status: "completed", location: "Patio Grill" },
+        { id: "b4", title: "Plant the Big Tree", reward: 10, status: "open", location: "Backyard" },
+        { id: "b5", title: "Clean Up Side Near BBQ", reward: 10, status: "completed", location: "Side Yard" },
+        { id: "b6", title: "Gutters Project Assistant", reward: 100, status: "open", location: "Roof Edge / Yard" },
+        { id: "b7", title: "Secret Room Cleanup", reward: 30, status: "open", location: "Secret Room" }
+      ],
+      wishlist: [
+        { id: "w1", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg" },
+        { id: "w2", title: "Spider-Man Final Battle", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg" },
+        { id: "w3", title: "Venom & Sandman Extension", price: 20, image: "https://images.brickset.com/sets/images/76280-1.jpg" }
+      ],
+      loot: [
+        { id: "l1", title: "Venom & Sandman Set", price: 20, date: "2026-10-20" },
+        { id: "l2", title: "Spider-Man Minifigures Pack", price: 42, date: "2026-10-24" }
+      ]
     };
-  </script>
-</body>
-</html>
+
+    let appState = JSON.parse(localStorage.getItem('gill_bounty_state')) || DEFAULT_DATA;
+    let isParent = false;
+    let syncRoom = localStorage.getItem('gill_sync_room') || '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (syncRoom) {
+        setupSyncBadge(true);
+        fetchRemoteState();
+        setInterval(fetchRemoteState, 4000); // Poll every 4 seconds for live two-device sync
+      }
+      renderAll();
+    });
+
+    function setupSyncBadge(active) {
+      const dot = document.getElementById('syncDot');
+      const text = document.getElementById('syncText');
+      if (active) {
+        dot.className = 'w-2 h-2 rounded-full bg-blue-400 animate-pulse';
+        text.textContent = `Sync Room: ${syncRoom}`;
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        text.textContent = 'Tap to Connect Phone & Tablet';
+      }
+    }
+
+    async function fetchRemoteState() {
+      if (!syncRoom) return;
+      try {
+        const res = await fetch(`https://kvdb.io/4y9hC9N2Tq6v9mB9kX8b2B/${syncRoom}`);
+        if (res.ok) {
+          const remote = await res.json();
+          if (remote && remote.bounties) {
+            appState = remote;
+            localStorage.setItem('gill_bounty_state', JSON.stringify(appState));
+            renderAll();
+          }
+        }
+      } catch (e) {
+        console.log("Polling check...", e);
+      }
+    }
+
+    async function pushState() {
+      localStorage.setItem('gill_bounty_state', JSON.stringify(appState));
+      renderAll();
+      if (!syncRoom) return;
+      try {
+        await fetch(`https://kvdb.io/4y9hC9N2Tq6v9mB9kX8b2B/${syncRoom}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appState)
+        });
+      } catch (e) {
+        console.error("Cloud push failed:", e);
+      }
+    }
+
+    function renderAll() {
+      const earned = appState.bounties.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.reward, 0);
+      const spent = appState.loot.reduce((sum, l) => sum + l.price, 0);
+      const balance = Math.max(0, earned - spent);
+
+      const activeGoal = appState.wishlist.find(w => w.id === appState.activeTargetId) || appState.wishlist[0];
+      const goalCost = activeGoal ? activeGoal.price : 100;
+      const progress = Math.min(100, Math.round((balance / goalCost) * 100));
+
+      document.getElementById('hudCashTotal').textContent = `$${balance}.00`;
+      if (activeGoal) {
+        document.getElementById('hudGoalTitle').textContent = activeGoal.title;
+        document.getElementById('hudGoalImg').src = activeGoal.image;
+        document.getElementById('hudProgressRatio').textContent = `$${balance} of $${goalCost}`;
+        document.getElementById('hudProgressPercent').textContent = `${progress}% Complete`;
+        document.getElementById('hudProgressBar').style.width = `${progress}%`;
+      }
+
+      renderBounties();
+      renderWishlist();
+      renderLoot();
+    }
+
+    function renderBounties() {
+      const container = document.getElementById('choreList');
+      container.innerHTML = appState.bounties.map(b => {
+        const isDone = b.status === 'completed';
+        const isReview = b.status === 'review';
+        return `
+          <div class="bg-slate-900 border-2 ${isDone ? 'border-blue-900/40 bg-slate-900/50' : isReview ? 'border-blue-400' : 'border-slate-800'} rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-black px-2 py-0.5 rounded-md ${isDone ? 'bg-blue-950 text-blue-400' : isReview ? 'bg-amber-950 text-amber-400' : 'bg-slate-800 text-slate-300'}">
+                  ${isDone ? 'COMPLETED' : isReview ? 'UNDER REVIEW' : 'OPEN'}
+                </span>
+                <span class="text-xl font-black font-comic ${isDone ? 'text-slate-500' : 'text-blue-400'}">+$${b.reward}</span>
+              </div>
+              <h4 class="font-bold text-base text-white ${isDone ? 'line-through text-slate-500' : ''}">${b.title}</h4>
+              <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i> ${b.location || 'Home'}</p>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2">
+              ${!isDone && !isReview ? `
+                <button onclick="markDone('${b.id}')" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition">
+                  I Finished This!
+                </button>
+              ` : ''}
+              ${isReview && isParent ? `
+                <button onclick="approveChore('${b.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition">Approve & Pay</button>
+              ` : ''}
+              ${isParent ? `
+                <button onclick="deleteChore('${b.id}')" class="px-3 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-xl text-xs transition"><i class="fa-solid fa-trash-can"></i></button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWishlist() {
+      const container = document.getElementById('wishlistContainer');
+      container.innerHTML = appState.wishlist.map((w, idx) => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-md">
+          <div class="flex items-center gap-3">
+            <span class="text-lg font-black font-comic text-slate-500 w-5">#${idx + 1}</span>
+            <img src="${w.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 bg-slate-950" />
+            <div>
+              <h5 class="font-bold text-sm text-white">${w.title}</h5>
+              <span class="text-xs font-bold text-blue-400">$${w.price}</span>
+            </div>
+          </div>
+          <button onclick="setTarget('${w.id}')" class="px-3 py-1.5 text-xs font-bold rounded-lg ${appState.activeTargetId === w.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}">
+            ${appState.activeTargetId === w.id ? 'Active' : 'Make Target'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderLoot() {
+      const container = document.getElementById('lootContainer');
+      container.innerHTML = appState.loot.map(l => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-md">
+          <div>
+            <h5 class="font-bold te
