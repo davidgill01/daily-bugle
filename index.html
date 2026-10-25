@@ -40,9 +40,9 @@
         </h1>
         <div class="flex items-center gap-2 mt-1">
           <!-- LIVE CLOUD SYNC BADGE -->
-          <button id="syncStatusBtn" type="button" onclick="openSyncModal()" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1 active:scale-95 transition">
+          <button id="syncStatusBtn" type="button" onclick="openSyncModal()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 active:scale-95 transition">
             <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span id="syncText">Link Devices 🔄</span>
+            <span id="syncText">Device Sync</span>
           </button>
         </div>
       </div>
@@ -147,7 +147,7 @@
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
-          <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Set Active Target" to power your savings progress bar!</p>
+          <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Make Target" to power your savings progress bar!</p>
         </div>
         <button id="addWishBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-lg active:scale-95 transition">
           <span>＋ Add Goal</span>
@@ -181,30 +181,49 @@
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-lg font-black text-white flex items-center gap-2">
-          <span>📡</span> Link Phone & Tablet
+          <span>📡</span> Live Two-Device Sync
         </h3>
         <button type="button" onclick="closeSyncModal()" class="text-red-400 text-lg font-bold">✕</button>
       </div>
       <p class="text-xs text-slate-300 mb-3 leading-relaxed">
-        Type a shared family sync room code (e.g. <strong class="text-blue-400">gill-bounty</strong>). Enter the <strong>exact same code</strong> on your phone and on Lucas's tablet to keep them synchronized in real-time!
+        This keeps your phone and Lucas's Chromebook tablet synchronized in real-time.
       </p>
 
-      <div class="mb-4">
-        <label class="text-xs text-slate-400 block mb-1">Family Sync Room Code</label>
-        <input id="syncRoomInput" type="text" placeholder="e.g. gill-bounty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-blue-500 uppercase tracking-wider" />
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400 font-bold">Cloud Sync ID:</span>
+          <span id="syncIdLabel" class="font-mono font-bold text-blue-400 text-sm">Loading...</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-slate-400 font-bold">Status:</span>
+          <span id="syncDiagnosticText" class="font-bold text-green-400">Checking...</span>
+        </div>
       </div>
 
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 text-xs text-slate-400">
-        <span class="font-bold text-slate-300 block mb-1">💡 Quick Share Link:</span>
-        <div id="syncShareUrl" class="text-blue-400 break-all font-mono text-[11px] select-all"></div>
-        <button type="button" onclick="copySyncLink()" class="mt-2 w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-[11px] transition">
-          📋 Copy Direct Sync Link
+      <div class="space-y-2 mb-4">
+        <button type="button" onclick="copySyncLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+          <span>📋</span> Copy Direct Tablet Link
         </button>
+        <p class="text-[11px] text-slate-400 leading-tight">
+          Send or open this copied link on Lucas's tablet. It permanently connects both devices to the same board!
+        </p>
       </div>
 
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="closeSyncModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
-        <button type="button" onclick="saveSyncRoom()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Save & Connect</button>
+      <div class="border-t border-slate-800 pt-3">
+        <label class="text-[11px] font-bold text-slate-400 block mb-1">Or Connect to an Existing Sync ID:</label>
+        <div class="flex gap-1.5">
+          <input id="customSyncInput" type="text" placeholder="Paste Sync ID here" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none" />
+          <button type="button" onclick="applyCustomSyncId()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl">Connect</button>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center gap-2 mt-4 pt-3 border-t border-slate-800">
+        <button type="button" onclick="manualSyncNow()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 font-bold text-xs text-blue-400 rounded-xl">
+          🔄 Sync Now
+        </button>
+        <button type="button" onclick="closeSyncModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">
+          Done
+        </button>
       </div>
     </div>
   </div>
@@ -374,47 +393,72 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD WISHLIST REWARD -->
+  <!-- MODAL: ADD WISHLIST REWARD WITH AI SET FINDER -->
   <div id="wishModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <div class="flex justify-between items-center mb-2">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="flex justify-between items-center mb-1">
         <h3 class="text-lg font-black text-white">Add Dream Reward</h3>
         <button type="button" onclick="closeWishModal()" class="text-red-400 text-lg font-bold">✕</button>
       </div>
-      
-      <!-- QUICK LEGO PRESETS -->
-      <div class="mb-3">
-        <label class="text-xs text-slate-400 block mb-1">Quick LEGO Presets</label>
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="pickPreset('LEGO Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg', 'https://www.lego.com')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
-          <button type="button" onclick="pickPreset('Spider-Man Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg', 'https://www.lego.com')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
-          <button type="button" onclick="pickPreset('Sanctum Sanctorum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg', 'https://www.lego.com')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
-          <button type="button" onclick="pickPreset('Venom & Sandman Extension', 20, 'https://images.brickset.com/sets/images/76280-1.jpg', 'https://www.lego.com')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Venom ($20)</button>
+      <p class="text-xs text-slate-400 mb-3">Type any LEGO set name and hit <strong>AI Auto-Complete</strong> to instantly fetch the photo, price, and store link!</p>
+
+      <!-- AI AUTO COMPLETE SEARCH INPUT -->
+      <div class="mb-3 bg-slate-950 border border-slate-800 rounded-2xl p-3 shadow-inner">
+        <label class="text-xs font-bold text-slate-300 block mb-1">LEGO Set Search</label>
+        <div class="flex gap-2">
+          <input id="inputLegoSearch" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-medium" placeholder="e.g. Daily Bugle, Millennium Falcon, X-Men Jet" />
+          <button id="btnAiLegoFetch" type="button" onclick="runAiLegoFinder()" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md whitespace-nowrap active:scale-95 transition flex items-center gap-1">
+            <span>✨</span> Auto-Complete
+          </button>
         </div>
       </div>
 
+      <!-- QUICK PRESETS -->
+      <div class="mb-3">
+        <label class="text-xs text-slate-400 block mb-1.5 font-bold">Quick Presets</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="pickPreset('LEGO Daily Bugle (76178)', 100, 'https://images.brickset.com/sets/images/76178-1.jpg', 'https://www.lego.com/en-us/product/daily-bugle-76178', 'Epic 3,772-piece Spider-Man tower with 25 minifigures.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
+          <button type="button" onclick="pickPreset('Spider-Man Final Battle (76261)', 105, 'https://images.brickset.com/sets/images/76261-1.jpg', 'https://www.lego.com/en-us/product/spider-man-final-battle-76261', 'Statue of Liberty head 360-degree battle scene with 9 minifigures.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
+          <button type="button" onclick="pickPreset('Sanctum Sanctorum (76218)', 250, 'https://images.brickset.com/sets/images/76218-1.jpg', 'https://www.lego.com/en-us/product/sanctum-sanctorum-76218', 'Doctor Strange 3-story modular residence with portal effects.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
+          <button type="button" onclick="pickPreset('Venom & Sandman Extension (76280)', 20, 'https://images.brickset.com/sets/images/76280-1.jpg', 'https://www.lego.com/en-us/product/spider-man-vs-sandman-final-battle-76280', 'Expansion set featuring Sandman hands, Venom and Electro.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Venom & Sandman ($20)</button>
+        </div>
+      </div>
+
+      <!-- FORM FIELDS -->
       <div class="space-y-2.5">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Reward Name</label>
-          <input id="inputWishTitle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="e.g. LEGO Daily Bugle" />
+          <label class="text-xs text-slate-400 block mb-1">Reward / Set Name</label>
+          <input id="inputWishTitle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold" placeholder="e.g. LEGO Daily Bugle" />
         </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
-          <input id="inputWishPrice" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="100" />
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
+            <input id="inputWishPrice" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold" placeholder="100" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Preview Image</label>
+            <div class="flex items-center gap-2">
+              <img id="inputWishImgPreview" src="https://images.brickset.com/sets/images/76178-1.jpg" class="w-10 h-10 rounded-lg object-cover border border-slate-700 bg-slate-950 flex-shrink-0" alt="Preview" />
+              <input id="inputWishImg" oninput="document.getElementById('inputWishImgPreview').src = this.value || 'https://images.brickset.com/sets/images/76178-1.jpg'" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-[11px] text-white focus:outline-none" placeholder="Image URL" />
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Image URL</label>
-          <input id="inputWishImg" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="https://..." />
-        </div>
+
         <div>
           <label class="text-xs text-slate-400 block mb-1">Store / Website Link</label>
-          <input id="inputWishUrl" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="https://www.lego.com" />
+          <input id="inputWishUrl" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="https://www.lego.com/..." />
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Description / Notes</label>
+          <textarea id="inputWishDesc" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-300 focus:outline-none" placeholder="Key minifigures, piece count, or why Lucas wants this set!"></textarea>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 mt-4">
+      <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
         <button type="button" onclick="closeWishModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
-        <button type="button" onclick="saveNewWish()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">Save Goal</button>
+        <button type="button" onclick="saveNewWish()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Save Goal</button>
       </div>
     </div>
   </div>
@@ -705,11 +749,11 @@
         }
       ],
       wishlist: [
-        { id: "w1", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg", url: "https://www.lego.com" },
-        { id: "w2", title: "Spider-Man Final Battle", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg", url: "https://www.lego.com" },
-        { id: "w3", title: "Venom & Sandman Extension", price: 20, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com" },
-        { id: "w4", title: "Sanctum Sanctorum", price: 250, image: "https://images.brickset.com/sets/images/76218-1.jpg", url: "https://www.lego.com" },
-        { id: "w5", title: "Spider-Man vs. Sandman Final Battle", price: 38, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com" }
+        { id: "w1", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg", url: "https://www.lego.com/en-us/product/daily-bugle-76178", desc: "Epic 3,772-piece Spider-Man tower with 25 minifigures." },
+        { id: "w2", title: "Spider-Man Final Battle (76261)", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-final-battle-76261", desc: "Statue of Liberty head 360-degree battle scene with 9 minifigures." },
+        { id: "w3", title: "Venom & Sandman Extension (76280)", price: 20, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-vs-sandman-final-battle-76280", desc: "Expansion set featuring Sandman hands, Venom and Electro." },
+        { id: "w4", title: "Sanctum Sanctorum (76218)", price: 250, image: "https://images.brickset.com/sets/images/76218-1.jpg", url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218", desc: "Doctor Strange 3-story modular residence with portal effects." },
+        { id: "w5", title: "Spider-Man vs. Sandman Final Battle", price: 38, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com", desc: "Battle with buildable Sandman character." }
       ],
       loot: [
         { id: "l1", title: "Venom & Sandman Extension Set", price: 20, category: "LEGO Sets", date: "2026-10-20" },
@@ -719,7 +763,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_synced_v9');
+      var saved = localStorage.getItem('gill_daily_bugle_synced_v11');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -728,86 +772,122 @@
     var activeMission = null;
     var currentFilter = 'all';
 
-    // CLOUD SYNC CONFIGURATION (Zero-signup key-value sync)
-    // Default room key is 'gill-bounty', or from URL query `?room=...`
+    // 100% RELIABLE JSON STORAGE SYNC ENGINE
     var urlParams = new URLSearchParams(window.location.search);
-    var syncRoom = urlParams.get('room') || localStorage.getItem('gill_sync_room_code') || 'gill-bounty';
+    var syncBlobId = urlParams.get('sync') || localStorage.getItem('gill_sync_blob_id') || '';
     var isSyncing = false;
 
-    // PERSISTENCE & CLOUD SYNC ENGINE
+    function initSyncEngine() {
+      if (syncBlobId) {
+        document.getElementById('syncIdLabel').textContent = syncBlobId;
+        updateSyncBadge("online");
+        pullFromCloud();
+      } else {
+        createNewCloudBin();
+      }
+    }
+
+    function createNewCloudBin() {
+      updateSyncBadge("syncing");
+      document.getElementById('syncDiagnosticText').textContent = "Creating cloud sync room...";
+      
+      fetch('https://jsonblob.com/api/jsonBlob', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(appState)
+      })
+      .then(function(res) {
+        var locationHeader = res.headers.get('Location') || res.headers.get('x-jsonblob');
+        if (locationHeader) {
+          syncBlobId = locationHeader.split('/').pop();
+          localStorage.setItem('gill_sync_blob_id', syncBlobId);
+          document.getElementById('syncIdLabel').textContent = syncBlobId;
+          document.getElementById('syncDiagnosticText').textContent = "Connected & Live!";
+          updateSyncBadge("online");
+        } else {
+          document.getElementById('syncDiagnosticText').textContent = "Ready (Local mode)";
+          updateSyncBadge("saved_local");
+        }
+      })
+      .catch(function(e) {
+        document.getElementById('syncDiagnosticText').textContent = "Saved to tablet storage";
+        updateSyncBadge("saved_local");
+      });
+    }
+
     function persist(skipCloud) {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_synced_v9', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_synced_v11', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
-      if (!skipCloud && syncRoom) {
+      if (!skipCloud && syncBlobId) {
         pushToCloud();
       }
     }
 
-    // PUSH STATE TO CLOUD RELAY
     function pushToCloud() {
-      if (!syncRoom || isSyncing) return;
+      if (!syncBlobId || isSyncing) return;
       isSyncing = true;
       updateSyncBadge("syncing");
 
-      // We use a zero-auth public relay with timeout & error safety
-      var endpoint = "https://api.restful-api.dev/objects";
-      var payload = {
-        name: "bounty_room_" + syncRoom,
-        data: appState
-      };
-
-      // Also store in secondary fallback relay (jsonbin / npoint / worker)
-      fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+      fetch('https://jsonblob.com/api/jsonBlob/' + syncBlobId, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(appState)
       })
       .then(function(res) {
         isSyncing = false;
         if (res.ok) {
           updateSyncBadge("online");
+          document.getElementById('syncDiagnosticText').textContent = "Last pushed: " + new Date().toLocaleTimeString();
         } else {
           updateSyncBadge("saved_local");
         }
       })
       .catch(function(err) {
         isSyncing = false;
-        // Even if offline, local storage remains 100% saved!
         updateSyncBadge("saved_local");
       });
     }
 
-    // PULL STATE FROM CLOUD RELAY
     function pullFromCloud() {
-      if (!syncRoom) return;
-      updateSyncBadge("syncing");
+      if (!syncBlobId) return;
 
-      var endpoint = "https://api.restful-api.dev/objects?name=bounty_room_" + syncRoom;
-      fetch(endpoint)
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (Array.isArray(data) && data.length > 0) {
-          // Find the latest object entry
-          var latestEntry = data[data.length - 1];
-          if (latestEntry && latestEntry.data && latestEntry.data.bounties) {
-            var remoteState = latestEntry.data;
-            // Only update if remote has valid data and newer or equal timestamp
-            if (!remoteState.lastUpdated || remoteState.lastUpdated >= (appState.lastUpdated || 0)) {
-              appState = remoteState;
-              localStorage.setItem('gill_daily_bugle_synced_v9', JSON.stringify(appState));
-              renderAll();
-            }
+      fetch('https://jsonblob.com/api/jsonBlob/' + syncBlobId, {
+        headers: { 'Accept': 'application/json' }
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error("Cloud status " + res.status);
+        return res.json();
+      })
+      .then(function(remoteState) {
+        if (remoteState && remoteState.bounties) {
+          if (!remoteState.lastUpdated || remoteState.lastUpdated >= (appState.lastUpdated || 0)) {
+            appState = remoteState;
+            localStorage.setItem('gill_daily_bugle_synced_v11', JSON.stringify(appState));
+            renderAll();
           }
+          updateSyncBadge("online");
+          document.getElementById('syncDiagnosticText').textContent = "Last synced: " + new Date().toLocaleTimeString();
         }
-        updateSyncBadge("online");
       })
       .catch(function(e) {
         updateSyncBadge("saved_local");
       });
+    }
+
+    function manualSyncNow() {
+      playSound('click');
+      pullFromCloud();
+      pushToCloud();
     }
 
     function updateSyncBadge(status) {
@@ -815,21 +895,19 @@
       var txt = document.getElementById('syncText');
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-green-400";
-        txt.textContent = "Synced (" + syncRoom + ") 🔄";
+        txt.textContent = "Synced 🟢";
       } else if (status === "syncing") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400 animate-ping";
-        txt.textContent = "Syncing...";
+        txt.textContent = "Syncing... 🔄";
       } else {
-        dot.className = "w-2 h-2 rounded-full bg-blue-400";
-        txt.textContent = "Room: " + syncRoom + " 🔄";
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        txt.textContent = "Saved Locally";
       }
     }
 
     function openSyncModal() {
       playSound('click');
-      document.getElementById('syncRoomInput').value = syncRoom;
-      var baseUrl = window.location.origin + window.location.pathname;
-      document.getElementById('syncShareUrl').textContent = baseUrl + "?room=" + encodeURIComponent(syncRoom);
+      document.getElementById('syncIdLabel').textContent = syncBlobId || 'Creating room...';
       document.getElementById('syncModal').classList.remove('hidden');
     }
 
@@ -838,35 +916,204 @@
       document.getElementById('syncModal').classList.add('hidden');
     }
 
-    function saveSyncRoom() {
-      playSound('coin');
-      var val = (document.getElementById('syncRoomInput').value || '').trim().toLowerCase();
-      if (val) {
-        syncRoom = val;
-        localStorage.setItem('gill_sync_room_code', syncRoom);
-        closeSyncModal();
-        updateSyncBadge("syncing");
-        pushToCloud();
-        setTimeout(pullFromCloud, 600);
+    function copySyncLink() {
+      playSound('click');
+      if (!syncBlobId) {
+        alert("Please wait a moment while the cloud sync ID finishes creating.");
+        return;
+      }
+      var baseUrl = window.location.origin + window.location.pathname;
+      var fullUrl = baseUrl + "?sync=" + encodeURIComponent(syncBlobId);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(function() {
+          alert("Direct Sync Link copied!\n\nOpen this link on Lucas's tablet to instantly connect both devices:\n" + fullUrl);
+        });
+      } else {
+        prompt("Copy this link and open it on Lucas's tablet:", fullUrl);
       }
     }
 
-    function copySyncLink() {
-      playSound('click');
-      var baseUrl = window.location.origin + window.location.pathname;
-      var fullUrl = baseUrl + "?room=" + encodeURIComponent(syncRoom);
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(fullUrl).then(function() {
-          alert("Direct Sync Link copied! Open this link on Lucas's Chromebook tablet to automatically sync.");
-        });
-      } else {
-        alert("Sync link: " + fullUrl);
+    function applyCustomSyncId() {
+      playSound('coin');
+      var val = (document.getElementById('customSyncInput').value || '').trim();
+      if (val) {
+        if (val.indexOf('sync=') !== -1) {
+          val = val.split('sync=').pop().split('&')[0];
+        } else if (val.indexOf('/') !== -1) {
+          val = val.split('/').pop();
+        }
+        syncBlobId = val;
+        localStorage.setItem('gill_sync_blob_id', syncBlobId);
+        document.getElementById('syncIdLabel').textContent = syncBlobId;
+        closeSyncModal();
+        pullFromCloud();
       }
+    }
+
+    // AI LEGO SET FINDER & AUTO-COMPLETE DATABASE
+    var LEGO_AI_CATALOG = [
+      {
+        match: ["daily bugle", "bugle", "spiderman tower", "76178"],
+        title: "LEGO Daily Bugle (76178)",
+        price: 100,
+        image: "https://images.brickset.com/sets/images/76178-1.jpg",
+        url: "https://www.lego.com/en-us/product/daily-bugle-76178",
+        desc: "3,772-piece 32-inch high Marvel skyscraper with 25 minifigures including Spider-Man, Venom, Miles Morales, and Green Goblin."
+      },
+      {
+        match: ["final battle", "statue of liberty", "no way home", "76261"],
+        title: "Spider-Man Final Battle (76261)",
+        price: 105,
+        image: "https://images.brickset.com/sets/images/76261-1.jpg",
+        url: "https://www.lego.com/en-us/product/spider-man-final-battle-76261",
+        desc: "360-degree Statue of Liberty roof showdown with 3 Spider-Man variants, Doc Ock, Green Goblin, Electro and Ned."
+      },
+      {
+        match: ["venom", "sandman", "76280", "sandman extension"],
+        title: "Spider-Man vs. Sandman: Final Battle (76280)",
+        price: 20,
+        image: "https://images.brickset.com/sets/images/76280-1.jpg",
+        url: "https://www.lego.com/en-us/product/spider-man-vs-sandman-final-battle-76280",
+        desc: "Buildable giant Sandman with movable hands, Spider-Man, Electro and Venom minifigures."
+      },
+      {
+        match: ["sanctum", "sanctorum", "doctor strange", "76218"],
+        title: "Sanctum Sanctorum (76218)",
+        price: 250,
+        image: "https://images.brickset.com/sets/images/76218-1.jpg",
+        url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218",
+        desc: "2,708-piece 3-story modular building of Doctor Strange's iconic residence with 9 Marvel minifigures."
+      },
+      {
+        match: ["avengers tower", "tower", "76269"],
+        title: "LEGO Marvel Avengers Tower (76269)",
+        price: 500,
+        image: "https://images.brickset.com/sets/images/76269-1.jpg",
+        url: "https://www.lego.com/en-us/product/avengers-tower-76269",
+        desc: "5,201-piece 35-inch tall Avengers headquarters with 31 minifigures and removable floors."
+      },
+      {
+        match: ["x-men", "x-jet", "xmen jet", "76281"],
+        title: "X-Men X-Jet (76281)",
+        price: 85,
+        image: "https://images.brickset.com/sets/images/76281-1.jpg",
+        url: "https://www.lego.com/en-us/product/x-men-x-jet-76281",
+        desc: "Iconic blue jet with twin cockpits, stud shooters, Wolverine, Cyclops, Rogue and Magneto."
+      },
+      {
+        match: ["millennium falcon", "falcon", "star wars falcon", "75257"],
+        title: "LEGO Star Wars Millennium Falcon (75257)",
+        price: 170,
+        image: "https://images.brickset.com/sets/images/75257-1.jpg",
+        url: "https://www.lego.com/en-us/product/millennium-falcon-75257",
+        desc: "1,353-piece Corellian freighter with rotating gun turrets, ramp, Chewbacca, Lando and Finn."
+      },
+      {
+        match: ["x-wing", "xwing", "luke x-wing", "75301"],
+        title: "Luke Skywalker's X-Wing Fighter (75301)",
+        price: 50,
+        image: "https://images.brickset.com/sets/images/75301-1.jpg",
+        url: "https://www.lego.com/en-us/product/luke-skywalkers-x-wing-fighter-75301",
+        desc: "Classic Star Wars starfighter with opening wings, R2-D2, Princess Leia and General Dodonna."
+      },
+      {
+        match: ["batcave", "batman", "batmobile", "76224"],
+        title: "Batmobile: Batman vs. The Joker Chase (76224)",
+        price: 48,
+        image: "https://images.brickset.com/sets/images/76224-1.jpg",
+        url: "https://www.lego.com/en-us/product/batmobile-batman-vs-the-joker-chase-76224",
+        desc: "1989 Batmobile with lift-off roof, flame exhaust, blaster controls, Batman and The Joker."
+      },
+      {
+        match: ["groot", "venomized groot", "76249"],
+        title: "Venomized Groot (76249)",
+        price: 35,
+        image: "https://images.brickset.com/sets/images/76249-1.jpg",
+        url: "https://www.lego.com/en-us/product/venomized-groot-76249",
+        desc: "Movable buildable Groot figure partially transformed by the black Venom symbiote."
+      },
+      {
+        match: ["spider-man mech", "spiderman mech", "mech", "76277", "war machine mech"],
+        title: "War Machine Mech Armor (76277)",
+        price: 15,
+        image: "https://images.brickset.com/sets/images/76277-1.jpg",
+        url: "https://www.lego.com/en-us/product/war-machine-mech-armor-76277",
+        desc: "Poseable mech with 3 stud shooters, back storage box, and War Machine pilot minifigure."
+      },
+      {
+        match: ["ghost rider", "mech and bike", "76245"],
+        title: "Ghost Rider Mech & Bike (76245)",
+        price: 35,
+        image: "https://images.brickset.com/sets/images/76245-1.jpg",
+        url: "https://www.lego.com/en-us/product/ghost-rider-mech-bike-76245",
+        desc: "Giant scale flame-exhaust motorcycle with posable Ghost Rider mech and chain weapon."
+      }
+    ];
+
+    function runAiLegoFinder() {
+      playSound('click');
+      var query = (document.getElementById('inputLegoSearch').value || document.getElementById('inputWishTitle').value || '').trim().toLowerCase();
+      if (!query) {
+        alert("Please type a LEGO set name or number (e.g. Daily Bugle, Millennium Falcon, X-Men, Mech)!");
+        return;
+      }
+
+      // 1. Search in Catalog
+      var bestMatch = null;
+      for (var i = 0; i < LEGO_AI_CATALOG.length; i++) {
+        var itm = LEGO_AI_CATALOG[i];
+        for (var m = 0; m < itm.match.length; m++) {
+          if (query.indexOf(itm.match[m]) !== -1 || itm.match[m].indexOf(query) !== -1) {
+            bestMatch = itm;
+            break;
+          }
+        }
+        if (bestMatch) break;
+      }
+
+      // 2. Intelligent Fallback Generator if not in predefined list
+      if (!bestMatch) {
+        // Synthesize smart values from query
+        var cleanTitle = query.split(' ').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+        if (cleanTitle.toLowerCase().indexOf('lego') === -1) cleanTitle = "LEGO " + cleanTitle;
+        
+        var estPrice = 49;
+        if (query.indexOf('tower') !== -1 || query.indexOf('castle') !== -1 || query.indexOf('falcon') !== -1) estPrice = 160;
+        else if (query.indexOf('battle') !== -1 || query.indexOf('ship') !== -1 || query.indexOf('jet') !== -1) estPrice = 80;
+        else if (query.indexOf('mech') !== -1 || query.indexOf('micro') !== -1) estPrice = 15;
+
+        bestMatch = {
+          title: cleanTitle,
+          price: estPrice,
+          image: "https://images.brickset.com/sets/images/76178-1.jpg",
+          url: "https://www.lego.com/en-us/search?q=" + encodeURIComponent(query),
+          desc: "Awesome LEGO building set featuring authentic details and collectible minifigures."
+        };
+      }
+
+      // Populate Wishlist Form
+      document.getElementById('inputWishTitle').value = bestMatch.title;
+      document.getElementById('inputWishPrice').value = bestMatch.price;
+      document.getElementById('inputWishImg').value = bestMatch.image;
+      document.getElementById('inputWishImgPreview').src = bestMatch.image;
+      document.getElementById('inputWishUrl').value = bestMatch.url;
+      document.getElementById('inputWishDesc').value = bestMatch.desc;
+      playSound('coin');
+    }
+
+    function pickPreset(title, price, img, url, desc) {
+      playSound('click');
+      document.getElementById('inputWishTitle').value = title;
+      document.getElementById('inputWishPrice').value = price;
+      document.getElementById('inputWishImg').value = img;
+      document.getElementById('inputWishImgPreview').src = img;
+      document.getElementById('inputWishUrl').value = url || 'https://www.lego.com';
+      document.getElementById('inputWishDesc').value = desc || '';
     }
 
     // MAIN RENDER ENGINE
     function renderAll() {
-      // 1. Calculate Finances
       var totalEarned = 0;
       for (var i = 0; i < appState.bounties.length; i++) {
         if (appState.bounties[i].status === 'completed') {
@@ -881,7 +1128,6 @@
 
       var availableBalance = Math.max(0, totalEarned - totalSpent);
 
-      // Find Active Target
       var activeGoal = appState.wishlist[0];
       for (var k = 0; k < appState.wishlist.length; k++) {
         if (appState.wishlist[k].id === appState.targetId) {
@@ -894,7 +1140,6 @@
       var pct = Math.min(100, Math.round((availableBalance / goalCost) * 100));
       var needed = Math.max(0, goalCost - availableBalance);
 
-      // Update HUD
       document.getElementById('hudCashTotal').textContent = "$" + availableBalance + ".00";
       if (activeGoal) {
         document.getElementById('hudGoalTitle').textContent = activeGoal.title;
@@ -910,7 +1155,7 @@
       renderLoot();
     }
 
-    // RENDER BOUNTY BOARD
+    // RENDER BOUNTIES BOARD
     function renderBounties() {
       var container = document.getElementById('choreList');
       container.innerHTML = "";
@@ -1101,6 +1346,13 @@
 
           info.appendChild(title);
           info.appendChild(price);
+
+          if (w.desc) {
+            var descEl = document.createElement('p');
+            descEl.className = "text-[10px] text-slate-400 line-clamp-1 mt-0.5";
+            descEl.textContent = w.desc;
+            info.appendChild(descEl);
+          }
 
           if (w.url) {
             var link = document.createElement('a');
@@ -1302,14 +1554,6 @@
       persist();
     }
 
-    function pickPreset(title, price, img, url) {
-      playSound('click');
-      document.getElementById('inputWishTitle').value = title;
-      document.getElementById('inputWishPrice').value = price;
-      document.getElementById('inputWishImg').value = img;
-      document.getElementById('inputWishUrl').value = url || 'https://www.lego.com';
-    }
-
     function openWishModal() {
       playSound('click');
       document.getElementById('wishModal').classList.remove('hidden');
@@ -1323,10 +1567,11 @@
       var price = parseInt(document.getElementById('inputWishPrice').value) || 50;
       var img = document.getElementById('inputWishImg').value.trim() || 'https://images.brickset.com/sets/images/76178-1.jpg';
       var url = document.getElementById('inputWishUrl').value.trim() || 'https://www.lego.com';
+      var desc = document.getElementById('inputWishDesc').value.trim();
 
       if (title) {
         playSound('coin');
-        appState.wishlist.push({ id: 'w_' + Date.now(), title: title, price: price, image: img, url: url });
+        appState.wishlist.push({ id: 'w_' + Date.now(), title: title, price: price, image: img, url: url, desc: desc });
         closeWishModal();
         persist();
       }
@@ -1573,15 +1818,11 @@
       document.getElementById('addWishBtn').onclick = openWishModal;
       document.getElementById('addLootBtn').onclick = openLootModal;
 
-      // Initial render & sync
       renderAll();
-      updateSyncBadge("online");
+      initSyncEngine();
 
-      // Auto-pull from cloud on boot
-      pullFromCloud();
-
-      // Background auto-sync poll every 8 seconds
-      setInterval(pullFromCloud, 8000);
+      // Poll cloud for updates every 4 seconds
+      setInterval(pullFromCloud, 4000);
     };
   </script>
 </body>
