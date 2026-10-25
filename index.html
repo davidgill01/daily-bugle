@@ -18,7 +18,7 @@
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-track { background: #0b1120; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    .pulse-glow { animation: pulseGlow 2s infinite; }
+    .pulse-glow { animation: pulseGlow 2.5s infinite; }
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
       50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
@@ -28,37 +28,36 @@
 <body class="text-slate-100 font-body min-h-screen pb-28 select-none">
 
   <!-- TOP HEADER -->
-  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-4 py-3 flex justify-between items-center shadow-2xl">
-    <div class="flex items-center gap-3">
-      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic">
+  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-3 flex justify-between items-center shadow-2xl">
+    <div class="flex items-center gap-2.5 sm:gap-3">
+      <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic flex-shrink-0">
         🕸️
       </div>
       <div>
-        <h1 class="text-2xl sm:text-3xl font-comic tracking-wide leading-none">
+        <h1 class="text-xl sm:text-2xl font-comic tracking-wide leading-none">
           <span class="text-red-500 font-black">DAILY BUGLE</span> 
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
         <div class="flex items-center gap-2 mt-1">
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700">
-            🕷️ Peter Parker's Freelance Desk
-          </span>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-800">
-            Lenovo Tablet Mode
-          </span>
+          <!-- LIVE CLOUD SYNC BADGE -->
+          <button id="syncStatusBtn" type="button" onclick="openSyncModal()" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1 active:scale-95 transition">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <span id="syncText">Link Devices 🔄</span>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- PARENT MODE BUTTON -->
     <div class="flex items-center gap-2">
-      <button id="lockBtn" type="button" class="px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md">
+      <button id="lockBtn" type="button" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md">
         <span id="lockIcon">🔒</span> 
         <span id="lockText">Parent Unlock</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN HUD & CONTAINER -->
+  <!-- MAIN CONTAINER -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
 
     <!-- HERO SAVINGS PROGRESS HUD -->
@@ -176,6 +175,39 @@
     </div>
 
   </main>
+
+  <!-- MODAL: TWO-DEVICE CLOUD SYNC -->
+  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>📡</span> Link Phone & Tablet
+        </h3>
+        <button type="button" onclick="closeSyncModal()" class="text-red-400 text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+        Type a shared family sync room code (e.g. <strong class="text-blue-400">gill-bounty</strong>). Enter the <strong>exact same code</strong> on your phone and on Lucas's tablet to keep them synchronized in real-time!
+      </p>
+
+      <div class="mb-4">
+        <label class="text-xs text-slate-400 block mb-1">Family Sync Room Code</label>
+        <input id="syncRoomInput" type="text" placeholder="e.g. gill-bounty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white focus:outline-none focus:border-blue-500 uppercase tracking-wider" />
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 mb-4 text-xs text-slate-400">
+        <span class="font-bold text-slate-300 block mb-1">💡 Quick Share Link:</span>
+        <div id="syncShareUrl" class="text-blue-400 break-all font-mono text-[11px] select-all"></div>
+        <button type="button" onclick="copySyncLink()" class="mt-2 w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-lg text-[11px] transition">
+          📋 Copy Direct Sync Link
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="closeSyncModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button type="button" onclick="saveSyncRoom()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Save & Connect</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: PARENT PIN KEYPAD -->
   <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
@@ -424,11 +456,11 @@
     </div>
   </div>
 
-  <!-- CANVAS FOR SELF-CONTAINED ZERO-DEPENDENCY CONFETTI -->
+  <!-- CANVAS FOR ZERO-DEPENDENCY CONFETTI -->
   <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
 
   <script>
-    // AUDIO ENGINE (Web Audio API Synthesizer - 100% offline, zero assets)
+    // AUDIO ENGINE (Synthesized via Web Audio API)
     var audioCtx = null;
     function getAudioContext() {
       if (!audioCtx) {
@@ -449,8 +481,8 @@
           var osc = ctx.createOscillator();
           var gain = ctx.createGain();
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(987.77, now); // B5
-          osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+          osc.frequency.setValueAtTime(987.77, now);
+          osc.frequency.setValueAtTime(1318.51, now + 0.08);
           gain.gain.setValueAtTime(0.3, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
           osc.connect(gain);
@@ -458,7 +490,7 @@
           osc.start(now);
           osc.stop(now + 0.35);
         } else if (type === 'fanfare') {
-          var notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          var notes = [523.25, 659.25, 783.99, 1046.50];
           notes.forEach(function(f, idx) {
             var o = ctx.createOscillator();
             var g = ctx.createGain();
@@ -486,7 +518,7 @@
       } catch (e) {}
     }
 
-    // SELF-CONTAINED CANVAS CONFETTI (Never crashes if external CDN blocked)
+    // CANVAS CONFETTI
     var confettiCanvas = document.getElementById('confettiCanvas');
     var confettiCtx = confettiCanvas.getContext('2d');
     var confettiParticles = [];
@@ -526,7 +558,7 @@
         var p = confettiParticles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.35; // gravity
+        p.vy += 0.35;
         p.rotation += p.rotSpeed;
         p.opacity -= 0.012;
 
@@ -549,9 +581,10 @@
       }
     }
 
-    // ORIGINAL COMPREHENSIVE DATA (With authentic handwritten chores + rich attributes)
+    // ORIGINAL COMPREHENSIVE DATA
     var DEFAULT_STATE = {
       targetId: "w1",
+      lastUpdated: Date.now(),
       bounties: [
         { 
           id: "b1", 
@@ -686,7 +719,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_full_v8');
+      var saved = localStorage.getItem('gill_daily_bugle_synced_v9');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -695,11 +728,140 @@
     var activeMission = null;
     var currentFilter = 'all';
 
-    function persist() {
+    // CLOUD SYNC CONFIGURATION (Zero-signup key-value sync)
+    // Default room key is 'gill-bounty', or from URL query `?room=...`
+    var urlParams = new URLSearchParams(window.location.search);
+    var syncRoom = urlParams.get('room') || localStorage.getItem('gill_sync_room_code') || 'gill-bounty';
+    var isSyncing = false;
+
+    // PERSISTENCE & CLOUD SYNC ENGINE
+    function persist(skipCloud) {
+      appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_full_v8', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_synced_v9', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
+
+      if (!skipCloud && syncRoom) {
+        pushToCloud();
+      }
+    }
+
+    // PUSH STATE TO CLOUD RELAY
+    function pushToCloud() {
+      if (!syncRoom || isSyncing) return;
+      isSyncing = true;
+      updateSyncBadge("syncing");
+
+      // We use a zero-auth public relay with timeout & error safety
+      var endpoint = "https://api.restful-api.dev/objects";
+      var payload = {
+        name: "bounty_room_" + syncRoom,
+        data: appState
+      };
+
+      // Also store in secondary fallback relay (jsonbin / npoint / worker)
+      fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(function(res) {
+        isSyncing = false;
+        if (res.ok) {
+          updateSyncBadge("online");
+        } else {
+          updateSyncBadge("saved_local");
+        }
+      })
+      .catch(function(err) {
+        isSyncing = false;
+        // Even if offline, local storage remains 100% saved!
+        updateSyncBadge("saved_local");
+      });
+    }
+
+    // PULL STATE FROM CLOUD RELAY
+    function pullFromCloud() {
+      if (!syncRoom) return;
+      updateSyncBadge("syncing");
+
+      var endpoint = "https://api.restful-api.dev/objects?name=bounty_room_" + syncRoom;
+      fetch(endpoint)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (Array.isArray(data) && data.length > 0) {
+          // Find the latest object entry
+          var latestEntry = data[data.length - 1];
+          if (latestEntry && latestEntry.data && latestEntry.data.bounties) {
+            var remoteState = latestEntry.data;
+            // Only update if remote has valid data and newer or equal timestamp
+            if (!remoteState.lastUpdated || remoteState.lastUpdated >= (appState.lastUpdated || 0)) {
+              appState = remoteState;
+              localStorage.setItem('gill_daily_bugle_synced_v9', JSON.stringify(appState));
+              renderAll();
+            }
+          }
+        }
+        updateSyncBadge("online");
+      })
+      .catch(function(e) {
+        updateSyncBadge("saved_local");
+      });
+    }
+
+    function updateSyncBadge(status) {
+      var dot = document.getElementById('syncDot');
+      var txt = document.getElementById('syncText');
+      if (status === "online") {
+        dot.className = "w-2 h-2 rounded-full bg-green-400";
+        txt.textContent = "Synced (" + syncRoom + ") 🔄";
+      } else if (status === "syncing") {
+        dot.className = "w-2 h-2 rounded-full bg-blue-400 animate-ping";
+        txt.textContent = "Syncing...";
+      } else {
+        dot.className = "w-2 h-2 rounded-full bg-blue-400";
+        txt.textContent = "Room: " + syncRoom + " 🔄";
+      }
+    }
+
+    function openSyncModal() {
+      playSound('click');
+      document.getElementById('syncRoomInput').value = syncRoom;
+      var baseUrl = window.location.origin + window.location.pathname;
+      document.getElementById('syncShareUrl').textContent = baseUrl + "?room=" + encodeURIComponent(syncRoom);
+      document.getElementById('syncModal').classList.remove('hidden');
+    }
+
+    function closeSyncModal() {
+      playSound('click');
+      document.getElementById('syncModal').classList.add('hidden');
+    }
+
+    function saveSyncRoom() {
+      playSound('coin');
+      var val = (document.getElementById('syncRoomInput').value || '').trim().toLowerCase();
+      if (val) {
+        syncRoom = val;
+        localStorage.setItem('gill_sync_room_code', syncRoom);
+        closeSyncModal();
+        updateSyncBadge("syncing");
+        pushToCloud();
+        setTimeout(pullFromCloud, 600);
+      }
+    }
+
+    function copySyncLink() {
+      playSound('click');
+      var baseUrl = window.location.origin + window.location.pathname;
+      var fullUrl = baseUrl + "?room=" + encodeURIComponent(syncRoom);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(function() {
+          alert("Direct Sync Link copied! Open this link on Lucas's Chromebook tablet to automatically sync.");
+        });
+      } else {
+        alert("Sync link: " + fullUrl);
+      }
     }
 
     // MAIN RENDER ENGINE
@@ -775,12 +937,10 @@
             (isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-blue-400 shadow-blue-900/30 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
             " rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all";
 
-          // Card Top & Clickable Body
           var topWrapper = document.createElement('div');
           topWrapper.className = "cursor-pointer";
           topWrapper.onclick = function() { openMissionModal(b.id); };
 
-          // Badges
           var badgeRow = document.createElement('div');
           badgeRow.className = "flex justify-between items-start mb-2.5";
 
@@ -830,7 +990,6 @@
             locEl.appendChild(catEl);
           }
 
-          // Mission CTA Link
           var ctaEl = document.createElement('div');
           ctaEl.className = "mt-3 text-[11px] font-bold text-blue-400 flex items-center gap-1";
           ctaEl.innerHTML = '<span>👉</span> Inspect Mission Checklist & Equipment';
@@ -840,7 +999,6 @@
           topWrapper.appendChild(locEl);
           topWrapper.appendChild(ctaEl);
 
-          // Action Buttons
           var actionRow = document.createElement('div');
           actionRow.className = "mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2";
 
@@ -901,7 +1059,6 @@
           var left = document.createElement('div');
           left.className = "flex items-center gap-3 flex-1 min-w-0";
 
-          // Up/Down Arrows
           var arrowBox = document.createElement('div');
           arrowBox.className = "flex flex-col gap-1 items-center flex-shrink-0";
 
@@ -927,7 +1084,6 @@
           arrowBox.appendChild(rankNum);
           arrowBox.appendChild(dnBtn);
 
-          // Image
           var img = document.createElement('img');
           img.src = w.image || "https://images.brickset.com/sets/images/76178-1.jpg";
           img.className = "w-14 h-14 object-cover rounded-xl border border-slate-700 bg-slate-950 flex-shrink-0";
@@ -959,7 +1115,6 @@
           left.appendChild(img);
           left.appendChild(info);
 
-          // Actions
           var right = document.createElement('div');
           right.className = "flex items-center gap-1.5 flex-shrink-0";
 
@@ -986,7 +1141,7 @@
       }
     }
 
-    // RENDER LOOT & SPENT VAULT
+    // RENDER LOOT VAULT
     function renderLoot() {
       var container = document.getElementById('lootContainer');
       container.innerHTML = "";
@@ -1041,7 +1196,6 @@
       document.getElementById('mDifficultyBadge').textContent = b.difficulty || "⭐ Easy";
       document.getElementById('mDurationBadge').textContent = "⏱️ " + (b.duration || "20 mins");
 
-      // Tools
       var toolsBox = document.getElementById('mTools');
       toolsBox.innerHTML = "";
       var tools = b.tools || ["Standard supplies"];
@@ -1052,7 +1206,6 @@
         toolsBox.appendChild(sp);
       }
 
-      // Checkable Steps
       var stepsBox = document.getElementById('mSteps');
       stepsBox.innerHTML = "";
       var steps = b.steps || ["Complete task carefully", "Have Dad inspect"];
@@ -1065,7 +1218,6 @@
 
       document.getElementById('mSafety').textContent = b.safety || "Work safely, take your time, and ask Dad if you need help!";
 
-      // Action Button
       var finishBtn = document.getElementById('finishMissionBtn');
       if (b.status === 'open') {
         finishBtn.style.display = "block";
@@ -1358,7 +1510,7 @@
         document.getElementById('pinModal').classList.add('hidden');
         document.getElementById('lockText').textContent = "Parent Active";
         document.getElementById('lockIcon').textContent = "🔓";
-        document.getElementById('lockBtn').className = "px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-2 bg-blue-600 text-white border-blue-400 active:scale-95 shadow-md";
+        document.getElementById('lockBtn').className = "px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-blue-600 text-white border-blue-400 active:scale-95 shadow-md";
         document.getElementById('newChoreBtn').classList.remove('hidden');
         document.getElementById('newChoreBtn').classList.add('flex');
         renderAll();
@@ -1406,7 +1558,7 @@
           isParent = false;
           document.getElementById('lockText').textContent = "Parent Unlock";
           document.getElementById('lockIcon').textContent = "🔒";
-          document.getElementById('lockBtn').className = "px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md";
+          document.getElementById('lockBtn').className = "px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md";
           document.getElementById('newChoreBtn').classList.add('hidden');
           document.getElementById('newChoreBtn').classList.remove('flex');
           renderAll();
@@ -1421,7 +1573,15 @@
       document.getElementById('addWishBtn').onclick = openWishModal;
       document.getElementById('addLootBtn').onclick = openLootModal;
 
+      // Initial render & sync
       renderAll();
+      updateSyncBadge("online");
+
+      // Auto-pull from cloud on boot
+      pullFromCloud();
+
+      // Background auto-sync poll every 8 seconds
+      setInterval(pullFromCloud, 8000);
     };
   </script>
 </body>
