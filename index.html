@@ -19,7 +19,7 @@
     .btn-blue { background: #2563eb; color: white; }
     .btn-red { background: #dc2626; color: white; }
     .btn-dark { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
-    .btn-sm { font-size: 11px; padding: 5px 10px; border-radius: 8px; }
+    .btn-sm { font-size: 11px; padding: 6px 10px; border-radius: 8px; }
 
     main { max-width: 680px; margin: 0 auto; padding: 14px 14px 0 14px; }
 
@@ -30,7 +30,7 @@
     .bar-fill { height: 100%; background: linear-gradient(90deg, #dc2626, #2563eb); border-radius: 8px; transition: width 0.3s; width: 0%; }
     
     .tabs { display: flex; gap: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 14px; }
-    .tab-btn { flex: 1; padding: 9px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; background: #1e293b; color: #94a3b8; }
+    .tab-btn { flex: 1; padding: 10px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; background: #1e293b; color: #94a3b8; }
     .tab-btn.active { background: #2563eb; color: white; }
 
     .card { background: #0f172a; border: 2px solid #1e293b; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
@@ -59,10 +59,10 @@
       <div class="logo-box">DB</div>
       <div>
         <div><span class="title-red">DAILY BUGLE</span> <span class="title-blue">BOUNTY BOARD</span></div>
-        <div style="margin-top:2px;"><span class="badge">● Ready v5.0</span></div>
+        <div style="margin-top:2px;"><span class="badge">● Ready v6.0</span></div>
       </div>
     </div>
-    <button id="lockBtn" class="btn btn-dark">🔒 Parent Unlock</button>
+    <button id="lockBtn" class="btn btn-dark" type="button">🔒 Parent Unlock</button>
   </header>
 
   <main>
@@ -88,7 +88,7 @@
     <div id="viewBounties">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-size:15px; font-weight:bold;">Mission Bounties</span>
-        <button id="newChoreBtn" class="btn btn-blue btn-sm" style="display:none;">＋ Post Bounty</button>
+        <button id="newChoreBtn" class="btn btn-blue btn-sm" type="button" style="display:none;">＋ Post Bounty</button>
       </div>
       <div id="choreList"></div>
     </div>
@@ -96,7 +96,7 @@
     <div id="viewWishlist" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-size:15px; font-weight:bold;">Top 10 Rewards</span>
-        <button id="addWishBtn" class="btn btn-blue btn-sm">＋ Add Goal</button>
+        <button id="addWishBtn" class="btn btn-blue btn-sm" type="button">＋ Add Goal</button>
       </div>
       <div id="wishlistContainer"></div>
     </div>
@@ -104,7 +104,7 @@
     <div id="viewLoot" style="display:none;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-size:15px; font-weight:bold;">Purchased Loot</span>
-        <button id="addLootBtn" class="btn btn-blue btn-sm">＋ Log Purchase</button>
+        <button id="addLootBtn" class="btn btn-blue btn-sm" type="button">＋ Log Purchase</button>
       </div>
       <div id="lootContainer"></div>
     </div>
@@ -118,20 +118,20 @@
       <input id="pinDisplay" type="password" maxlength="4" readonly style="width:120px; text-align:center; font-size:24px; font-weight:900; background:#020617; border:2px solid #334155; border-radius:10px; color:white; padding:6px; margin:0 auto 14px auto; display:block;" />
       
       <div class="keypad-grid">
-        <button class="key-btn" data-key="1">1</button>
-        <button class="key-btn" data-key="2">2</button>
-        <button class="key-btn" data-key="3">3</button>
-        <button class="key-btn" data-key="4">4</button>
-        <button class="key-btn" data-key="5">5</button>
-        <button class="key-btn" data-key="6">6</button>
-        <button class="key-btn" data-key="7">7</button>
-        <button class="key-btn" data-key="8">8</button>
-        <button class="key-btn" data-key="9">9</button>
-        <button id="keyClear" class="key-btn" style="color:#ef4444; font-size:13px;">Clear</button>
-        <button class="key-btn" data-key="0">0</button>
-        <button id="keyOk" class="key-btn" style="background:#2563eb; color:white; font-size:13px;">OK</button>
+        <button class="key-btn" type="button" onclick="kPress('1')">1</button>
+        <button class="key-btn" type="button" onclick="kPress('2')">2</button>
+        <button class="key-btn" type="button" onclick="kPress('3')">3</button>
+        <button class="key-btn" type="button" onclick="kPress('4')">4</button>
+        <button class="key-btn" type="button" onclick="kPress('5')">5</button>
+        <button class="key-btn" type="button" onclick="kPress('6')">6</button>
+        <button class="key-btn" type="button" onclick="kPress('7')">7</button>
+        <button class="key-btn" type="button" onclick="kPress('8')">8</button>
+        <button class="key-btn" type="button" onclick="kPress('9')">9</button>
+        <button class="key-btn" type="button" onclick="kClear()" style="color:#ef4444; font-size:13px;">Clear</button>
+        <button class="key-btn" type="button" onclick="kPress('0')">0</button>
+        <button class="key-btn" type="button" onclick="kSubmit()" style="background:#2563eb; color:white; font-size:13px;">OK</button>
       </div>
-      <button id="pinCancelBtn" style="background:none; border:none; color:#94a3b8; font-size:12px; text-decoration:underline; cursor:pointer;">Cancel</button>
+      <button type="button" onclick="closePin()" style="background:none; border:none; color:#94a3b8; font-size:12px; text-decoration:underline; cursor:pointer;">Cancel</button>
     </div>
   </div>
 
@@ -160,8 +160,8 @@
       </div>
 
       <div style="display:flex; gap:8px;">
-        <button id="closeMissionBtn" class="btn btn-red" style="flex:1;">Back</button>
-        <button id="finishMissionBtn" class="btn btn-blue" style="flex:2;">I Finished This!</button>
+        <button type="button" onclick="closeMission()" class="btn btn-red" style="flex:1;">Back</button>
+        <button id="finishMissionBtn" type="button" onclick="confirmMissionFinish()" class="btn btn-blue" style="flex:2;">I Finished This!</button>
       </div>
     </div>
   </div>
@@ -171,7 +171,7 @@
       <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">Post New Bounty</div>
       <div style="display:flex; gap:6px; margin-bottom:10px;">
         <input id="inputChoreTitle" class="input-field" style="margin-bottom:0;" placeholder="e.g. Millie dog wash" />
-        <button id="btnAiPlan" class="btn btn-blue" style="white-space:nowrap; font-size:12px;">✨ AI Plan</button>
+        <button id="btnAiPlan" type="button" onclick="runAiPlan()" class="btn btn-blue" style="white-space:nowrap; font-size:12px;">✨ AI Plan</button>
       </div>
 
       <div style="display:flex; gap:8px;">
@@ -184,8 +184,8 @@
       <input id="inputChoreSafety" class="input-field" placeholder="Safety warning" />
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button id="cancelChoreBtn" class="btn btn-red">Cancel</button>
-        <button id="saveChoreBtn" class="btn btn-blue">Save Bounty</button>
+        <button type="button" onclick="closeChoreModal()" class="btn btn-red">Cancel</button>
+        <button type="button" onclick="saveNewChore()" class="btn btn-blue">Save Bounty</button>
       </div>
     </div>
   </div>
@@ -194,9 +194,9 @@
     <div class="modal-box">
       <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">Add Dream Goal</div>
       <div style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
-        <button class="preset-btn btn btn-dark btn-sm" data-name="Daily Bugle" data-price="100" data-img="https://images.brickset.com/sets/images/76178-1.jpg">Daily Bugle ($100)</button>
-        <button class="preset-btn btn btn-dark btn-sm" data-name="Final Battle" data-price="105" data-img="https://images.brickset.com/sets/images/76261-1.jpg">Final Battle ($105)</button>
-        <button class="preset-btn btn btn-dark btn-sm" data-name="Sanctum" data-price="250" data-img="https://images.brickset.com/sets/images/76218-1.jpg">Sanctum ($250)</button>
+        <button type="button" onclick="pickPreset('Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg')" class="btn btn-dark btn-sm">Daily Bugle ($100)</button>
+        <button type="button" onclick="pickPreset('Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg')" class="btn btn-dark btn-sm">Final Battle ($105)</button>
+        <button type="button" onclick="pickPreset('Sanctum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg')" class="btn btn-dark btn-sm">Sanctum ($250)</button>
       </div>
 
       <input id="inputWishTitle" class="input-field" placeholder="Item Name" />
@@ -204,8 +204,8 @@
       <input id="inputWishImg" class="input-field" placeholder="Image URL" />
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button id="cancelWishBtn" class="btn btn-red">Cancel</button>
-        <button id="saveWishBtn" class="btn btn-blue">Save Goal</button>
+        <button type="button" onclick="closeWishModal()" class="btn btn-red">Cancel</button>
+        <button type="button" onclick="saveNewWish()" class="btn btn-blue">Save Goal</button>
       </div>
     </div>
   </div>
@@ -216,8 +216,8 @@
       <input id="inputLootTitle" class="input-field" placeholder="Item bought" />
       <input id="inputLootPrice" type="number" class="input-field" placeholder="Price ($)" />
       <div style="display:flex; justify-content:flex-end; gap:8px;">
-        <button id="cancelLootBtn" class="btn btn-red">Cancel</button>
-        <button id="saveLootBtn" class="btn btn-blue">Deduct Cash</button>
+        <button type="button" onclick="closeLootModal()" class="btn btn-red">Cancel</button>
+        <button type="button" onclick="saveNewLoot()" class="btn btn-blue">Deduct Cash</button>
       </div>
     </div>
   </div>
@@ -245,16 +245,17 @@
       ]
     };
 
-    var stored = localStorage.getItem('gill_bounty_v5');
+    var stored = localStorage.getItem('gill_bounty_v6');
     if (stored) {
       try { DATA = JSON.parse(stored); } catch(e){}
     }
 
     var isParent = false;
+    var pinVal = "";
     var activeMissionId = null;
 
     function save() {
-      localStorage.setItem('gill_bounty_v5', JSON.stringify(DATA));
+      try { localStorage.setItem('gill_bounty_v6', JSON.stringify(DATA)); } catch(e){}
       render();
     }
 
@@ -277,51 +278,58 @@
       var goalCost = target ? target.price : 100;
       var pct = Math.min(100, Math.round((bal / goalCost) * 100));
 
-      document.getElementById('hudTitle').innerText = target ? target.title : "LEGO Goal";
+      document.getElementById('hudTitle').textContent = target ? target.title : "LEGO Goal";
       if (target && target.image) document.getElementById('hudImg').src = target.image;
       document.getElementById('hudBar').style.width = pct + "%";
-      document.getElementById('hudRatio').innerText = "$" + bal + " / $" + goalCost;
-      document.getElementById('hudPercent').innerText = pct + "%";
+      document.getElementById('hudRatio').textContent = "$" + bal + " / $" + goalCost;
+      document.getElementById('hudPercent').textContent = pct + "%";
 
-      var choreHtml = "";
+      var container = document.getElementById('choreList');
+      container.innerHTML = "";
       for (var c = 0; c < DATA.bounties.length; c++) {
-        var b = DATA.bounties[c];
-        var isDone = b.status === 'completed';
-        var isRev = b.status === 'review';
-        var cls = isDone ? "card card-done" : (isRev ? "card card-review" : "card");
-        var tag = isDone ? '<span class="tag tag-done">✓ COMPLETED</span>' : (isRev ? '<span class="tag tag-review">⏳ UNDER REVIEW</span>' : '<span class="tag tag-open">★ OPEN</span>');
+        (function(b) {
+          var isDone = b.status === 'completed';
+          var isRev = b.status === 'review';
+          
+          var card = document.createElement('div');
+          card.className = isDone ? "card card-done" : (isRev ? "card card-review" : "card");
 
-        choreHtml += '<div class="' + cls + '">';
-        choreHtml += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' + tag + '<span class="price-text">+$' + b.reward + '</span></div>';
-        choreHtml += '<div style="font-size:15px; font-weight:bold; ' + (isDone ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + b.title + '</div>';
-        choreHtml += '<div style="font-size:11px; color:#94a3b8; margin:4px 0 8px 0;">📍 ' + (b.location || 'Home') + '</div>';
-        
-        choreHtml += '<div style="display:flex; gap:6px; margin-top:8px;">';
-        choreHtml += '<button class="btn btn-dark btn-sm" onclick="openMission(\'' + b.id + '\')" style="flex:1;">View Mission Steps</button>';
-        
-        if (!isDone && !isRev) {
-          choreHtml += '<button class="btn btn-blue btn-sm" onclick="markDone(\'' + b.id + '\')" style="flex:1;">I Finished This!</button>';
-        }
-        if (isRev && isParent) {
-          choreHtml += '<button class="btn btn-blue btn-sm" onclick="approveDone(\'' + b.id + '\')" style="flex:1;">Approve & Pay</button>';
-        }
-        if (isParent) {
-          choreHtml += '<button class="btn btn-red btn-sm" onclick="deleteChore(\'' + b.id + '\')">✕</button>';
-        }
-        choreHtml += '</div></div>';
-      }
-      document.getElementById('choreList').innerHTML = choreHtml;
+          var topRow = document.createElement('div');
+          topRow.style.cssText = "display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;";
+          
+          var tag = document.createElement('span');
+          tag.className = isDone ? "tag tag-done" : (isRev ? "tag tag-review" : "tag tag-open");
+          tag.textContent = isDone ? "✓ COMPLETED" : (isRev ? "⏳ UNDER REVIEW" : "★ OPEN");
+          
+          var price = document.createElement('span');
+          price.className = "price-text";
+          price.textContent = "+$" + b.reward;
+          topRow.appendChild(tag);
+          topRow.appendChild(price);
 
-      var wishHtml = "";
-      for (var w = 0; w < DATA.wishlist.length; w++) {
-        var itm = DATA.wishlist[w];
-        var isTarget = itm.id === DATA.targetId;
-        wishHtml += '<div class="card" style="display:flex; justify-content:space-between; align-items:center;">';
-        wishHtml += '<div style="display:flex; align-items:center; gap:10px;">';
-        wishHtml += '<div style="display:flex; flex-direction:column; gap:2px;">';
-        wishHtml += '<button class="btn btn-dark btn-sm" onclick="moveWish(' + w + ',-1)" style="padding:2px 6px;">▲</button>';
-        wishHtml += '<span style="font-size:11px; text-align:center; color:#94a3b8; font-weight:bold;">#' + (w + 1) + '</span>';
-        wishHtml += '<button class="btn btn-dark btn-sm" onclick="moveWish(' + w + ',1)" style="padding:2px 6px;">▼</button>';
-        wishHtml += '</div>';
-        wishHtml += '<img src="' + itm.image + '" style="width:50px; height:50px; border-radius:8px; object-fit:cover;" />';
-        wishHtml += '<div><div style="font-si
+          var title = document.createElement('div');
+          title.style.cssText = "font-size:15px; font-weight:bold;" + (isDone ? "text-decoration:line-through; color:#94a3b8;" : "");
+          title.textContent = b.title;
+
+          var loc = document.createElement('div');
+          loc.style.cssText = "font-size:11px; color:#94a3b8; margin:4px 0 8px 0;";
+          loc.textContent = "📍 " + (b.location || "Home");
+
+          var btnRow = document.createElement('div');
+          btnRow.style.cssText = "display:flex; gap:6px; margin-top:8px;";
+
+          var viewBtn = document.createElement('button');
+          viewBtn.className = "btn btn-dark btn-sm";
+          viewBtn.style.flex = "1";
+          viewBtn.type = "button";
+          viewBtn.textContent = "Mission Steps";
+          viewBtn.onclick = function() { openMission(b.id); };
+          btnRow.appendChild(viewBtn);
+
+          if (!isDone && !isRev) {
+            var doneBtn = document.createElement('button');
+            doneBtn.className = "btn btn-blue btn-sm";
+            doneBtn.style.flex = "1";
+            doneBtn.type = "button";
+            doneBtn.textContent = "Finished!";
+            doneBtn.onclick = function() { markDone(b.id); }
