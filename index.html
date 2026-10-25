@@ -4,131 +4,324 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Daily Bugle Bounty Board</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;800;900&display=swap');
-    .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
-    .font-body { font-family: 'Inter', sans-serif; }
-    body {
-      background-color: #0b1120;
-      background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
-      background-size: 24px 24px;
-      touch-action: manipulation;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0b1120; color: #f8fafc; padding-bottom: 90px; user-select: none; -webkit-user-select: none; }
+    
+    header { background: #0f172a; border-bottom: 4px solid #dc2626; padding: 12px 16px; position: sticky; top: 0; z-index: 30; display: flex; justify-content: space-between; align-items: center; }
+    .logo-box { background: #dc2626; color: white; font-weight: 900; font-size: 18px; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid #f87171; }
+    .title-red { color: #ef4444; font-weight: 900; font-size: 18px; letter-spacing: 0.5px; }
+    .title-blue { color: #3b82f6; font-weight: 900; font-size: 18px; letter-spacing: 0.5px; }
+    .badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; background: #1e293b; color: #4ade80; border: 1px solid #334155; }
+    
+    .btn { cursor: pointer; border: none; outline: none; border-radius: 12px; font-weight: bold; font-size: 13px; padding: 8px 14px; transition: 0.1s; }
+    .btn:active { transform: scale(0.96); }
+    .btn-blue { background: #2563eb; color: white; }
+    .btn-red { background: #dc2626; color: white; }
+    .btn-dark { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .btn-sm { font-size: 11px; padding: 5px 10px; border-radius: 8px; }
+
+    main { max-width: 680px; margin: 0 auto; padding: 14px 14px 0 14px; }
+
+    .hero-card { background: #0f172a; border: 2px solid #2563eb; border-radius: 16px; padding: 14px; display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+    .hero-img { width: 85px; height: 85px; border-radius: 12px; object-fit: cover; border: 2px solid #ef4444; background: #020617; flex-shrink: 0; }
+    .hero-info { flex: 1; }
+    .bar-bg { background: #020617; border-radius: 10px; height: 16px; border: 1px solid #334155; overflow: hidden; margin-top: 8px; position: relative; }
+    .bar-fill { height: 100%; background: linear-gradient(90deg, #dc2626, #2563eb); border-radius: 8px; transition: width 0.3s; width: 0%; }
+    
+    .tabs { display: flex; gap: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; margin-bottom: 14px; }
+    .tab-btn { flex: 1; padding: 9px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; background: #1e293b; color: #94a3b8; }
+    .tab-btn.active { background: #2563eb; color: white; }
+
+    .card { background: #0f172a; border: 2px solid #1e293b; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .card-done { border-color: #1e293b; opacity: 0.65; }
+    .card-review { border-color: #3b82f6; background: #0f172a; }
+    .tag { font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 6px; }
+    .tag-open { background: #1e3a5f; color: #60a5fa; }
+    .tag-review { background: #451a03; color: #fbbf24; }
+    .tag-done { background: #1e293b; color: #94a3b8; text-decoration: line-through; }
+    .price-text { font-size: 18px; font-weight: 900; color: #60a5fa; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal-box { background: #0f172a; border: 2px solid #2563eb; border-radius: 18px; width: 100%; max-width: 440px; padding: 18px; max-height: 90vh; overflow-y: auto; }
+    .input-field { width: 100%; background: #020617; border: 1px solid #334155; border-radius: 10px; color: white; padding: 10px; font-size: 14px; margin-bottom: 12px; outline: none; }
+    .input-field:focus { border-color: #2563eb; }
+
+    .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .key-btn { background: #1e293b; color: white; font-size: 18px; font-weight: bold; border-radius: 10px; padding: 14px; text-align: center; border: none; cursor: pointer; }
+    .key-btn:active { background: #334155; }
   </style>
 </head>
-<body class="text-slate-100 font-body min-h-screen pb-24 select-none">
+<body>
 
-  <!-- HEADER -->
-  <header class="bg-slate-900 border-b-4 border-red-600 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-xl">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic">
-        DB
-      </div>
+  <header>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="logo-box">DB</div>
       <div>
-        <h1 class="text-2xl font-comic tracking-wide leading-none">
-          <span class="text-red-500 font-black">DAILY BUGLE</span> 
-          <span class="text-blue-500 font-black">BOUNTY BOARD</span>
-        </h1>
-        <div class="flex items-center gap-2 mt-1">
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-green-400 border border-slate-700 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-green-400"></span> Ready v4.0
-          </span>
-        </div>
+        <div><span class="title-red">DAILY BUGLE</span> <span class="title-blue">BOUNTY BOARD</span></div>
+        <div style="margin-top:2px;"><span class="badge">● Ready v5.0</span></div>
       </div>
     </div>
-
-    <!-- PARENT PIN BUTTON -->
-    <div class="flex items-center gap-2">
-      <button id="modeToggleBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700">
-        <span id="lockIcon">🔒</span> 
-        <span id="lockText">Parent Unlock</span>
-      </button>
-    </div>
+    <button id="lockBtn" class="btn btn-dark">🔒 Parent Unlock</button>
   </header>
 
-  <!-- MAIN HUD -->
-  <main class="max-w-4xl mx-auto px-4 pt-4">
-
-    <!-- REWARD HUD -->
-    <section class="bg-slate-900 border-2 border-blue-600 rounded-2xl p-4 mb-5 shadow-2xl relative">
-      <div class="flex flex-col sm:flex-row items-center gap-4">
-        <div class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0">
-          <img id="hudGoalImg" src="https://images.brickset.com/sets/images/76178-1.jpg" class="w-full h-full object-cover" alt="Goal">
-          <span class="absolute bottom-0 inset-x-0 bg-red-600 text-[10px] font-black text-center text-white py-0.5">TARGET</span>
-        </div>
-        <div class="flex-1 w-full text-center sm:text-left">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="text-xs font-bold text-red-400 uppercase tracking-wider">Saving Up For</span>
-              <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight">LEGO Daily Bugle</h2>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-slate-400 block">Bank Balance</span>
-              <span id="hudCashTotal" class="text-2xl font-black text-blue-400 font-comic tracking-wide">$0.00</span>
-            </div>
-          </div>
-
-          <div class="mt-3">
-            <div class="w-full bg-slate-950 rounded-full h-5 border border-slate-700 p-0.5 relative overflow-hidden">
-              <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
-            </div>
-            <div class="flex justify-between text-xs font-bold mt-1.5 text-slate-400">
-              <span id="hudProgressRatio">$0 of $100</span>
-              <span id="hudProgressPercent" class="text-blue-400 font-extrabold">0% Complete</span>
-            </div>
-          </div>
+  <main>
+    <div class="hero-card">
+      <img id="hudImg" class="hero-img" src="https://images.brickset.com/sets/images/76178-1.jpg" alt="Goal" />
+      <div class="hero-info">
+        <div style="font-size:11px; font-weight:bold; color:#f87171; text-transform:uppercase;">Goal Target</div>
+        <div id="hudTitle" style="font-size:18px; font-weight:900; line-height:1.2;">LEGO Daily Bugle</div>
+        <div class="bar-bg"><div id="hudBar" class="bar-fill"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; margin-top:5px; color:#94a3b8;">
+          <span id="hudRatio">$0 / $100</span>
+          <span id="hudPercent" style="color:#60a5fa;">0%</span>
         </div>
       </div>
-    </section>
-
-    <!-- TABS -->
-    <div class="flex gap-2 border-b border-slate-800 pb-2 mb-4">
-      <button id="tab-bounties" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white">
-        📋 Bounties
-      </button>
-      <button id="tab-wishlist" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white">
-        ⭐ Top 10 Wishlist
-      </button>
-      <button id="tab-loot" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white">
-        📦 Loot Vault
-      </button>
     </div>
 
-    <!-- VIEW 1: BOUNTIES -->
-    <div id="view-bounties">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h3 class="text-lg font-black text-slate-200">Available Bounties</h3>
-          <p class="text-xs text-slate-400">Tap a chore card to see tools and instructions!</p>
-        </div>
-        <button id="addChoreBtn" type="button" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-1.5 shadow-lg">
-          ＋ Post Bounty
-        </button>
+    <div class="tabs">
+      <div id="tabBounties" class="tab-btn active">📋 Chores</div>
+      <div id="tabWishlist" class="tab-btn">⭐ Top 10 Wishlist</div>
+      <div id="tabLoot" class="tab-btn">📦 Loot Vault</div>
+    </div>
+
+    <div id="viewBounties">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:15px; font-weight:bold;">Mission Bounties</span>
+        <button id="newChoreBtn" class="btn btn-blue btn-sm" style="display:none;">＋ Post Bounty</button>
       </div>
-      <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
+      <div id="choreList"></div>
     </div>
 
-    <!-- VIEW 2: WISHLIST -->
-    <div id="view-wishlist" class="hidden">
-      <div class="flex justify-between items-center mb-4">
-        <div>
-          <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
-          <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Make Target" to save for it!</p>
-        </div>
-        <button id="addWishBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg">
-          ＋ Add Goal
-        </button>
+    <div id="viewWishlist" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:15px; font-weight:bold;">Top 10 Rewards</span>
+        <button id="addWishBtn" class="btn btn-blue btn-sm">＋ Add Goal</button>
       </div>
-      <div id="wishlistContainer" class="space-y-2.5"></div>
+      <div id="wishlistContainer"></div>
     </div>
 
-    <!-- VIEW 3: LOOT -->
-    <div id="view-loot" class="hidden">
-      <div class="flex justify-between items-center mb-4">
+    <div id="viewLoot" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-size:15px; font-weight:bold;">Purchased Loot</span>
+        <button id="addLootBtn" class="btn btn-blue btn-sm">＋ Log Purchase</button>
+      </div>
+      <div id="lootContainer"></div>
+    </div>
+  </main>
+
+  <div id="pinModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:300px; text-align:center;">
+      <div style="font-size:24px; margin-bottom:6px;">🛡️</div>
+      <div style="font-size:16px; font-weight:bold; margin-bottom:4px;">Parent Mode</div>
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:12px;">Enter PIN (Default: 1234)</div>
+      <input id="pinDisplay" type="password" maxlength="4" readonly style="width:120px; text-align:center; font-size:24px; font-weight:900; background:#020617; border:2px solid #334155; border-radius:10px; color:white; padding:6px; margin:0 auto 14px auto; display:block;" />
+      
+      <div class="keypad-grid">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button id="keyClear" class="key-btn" style="color:#ef4444; font-size:13px;">Clear</button>
+        <button class="key-btn" data-key="0">0</button>
+        <button id="keyOk" class="key-btn" style="background:#2563eb; color:white; font-size:13px;">OK</button>
+      </div>
+      <button id="pinCancelBtn" style="background:none; border:none; color:#94a3b8; font-size:12px; text-decoration:underline; cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+
+  <div id="missionModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
         <div>
-          <h3 class="text-lg font-black text-slate-200">Purchased Loot Vault</h3>
-          <p class="text-xs text-slate-400">Items bought with chore earnings.</p>
+          <span id="mLoc" style="font-size:10px; font-weight:bold; background:#1e3a5f; color:#60a5fa; padding:2px 6px; border-radius:6px;"></span>
+          <div id="mTitle" style="font-size:18px; font-weight:900; margin-top:4px;"></div>
         </div>
-        <button id="logPurchaseBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500
-          
+        <div id="mReward" style="font-size:20px; font-weight:900; color:#60a5fa;"></div>
+      </div>
+
+      <div style="background:#020617; border:1px solid #1e293b; border-radius:12px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:11px; font-weight:bold; color:#94a3b8; margin-bottom:6px;">🧰 TOOLS & SUPPLIES</div>
+        <div id="mTools" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px; font-weight:bold; color:#94a3b8; margin-bottom:6px;">📋 STEPS</div>
+        <div id="mSteps" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <div style="background:rgba(220,38,38,0.15); border:1px solid rgba(220,38,38,0.4); border-radius:10px; padding:8px 10px; font-size:11px; color:#fca5a5; margin-bottom:14px;">
+        ⚠️ <span id="mSafety"></span>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button id="closeMissionBtn" class="btn btn-red" style="flex:1;">Back</button>
+        <button id="finishMissionBtn" class="btn btn-blue" style="flex:2;">I Finished This!</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="choreModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">Post New Bounty</div>
+      <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <input id="inputChoreTitle" class="input-field" style="margin-bottom:0;" placeholder="e.g. Millie dog wash" />
+        <button id="btnAiPlan" class="btn btn-blue" style="white-space:nowrap; font-size:12px;">✨ AI Plan</button>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <input id="inputChoreReward" type="number" class="input-field" placeholder="Reward $" />
+        <input id="inputChoreLoc" class="input-field" placeholder="Location" />
+      </div>
+
+      <input id="inputChoreTools" class="input-field" placeholder="Tools (comma separated)" />
+      <textarea id="inputChoreSteps" class="input-field" rows="3" placeholder="Steps (one per line)"></textarea>
+      <input id="inputChoreSafety" class="input-field" placeholder="Safety warning" />
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="cancelChoreBtn" class="btn btn-red">Cancel</button>
+        <button id="saveChoreBtn" class="btn btn-blue">Save Bounty</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="wishModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">Add Dream Goal</div>
+      <div style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
+        <button class="preset-btn btn btn-dark btn-sm" data-name="Daily Bugle" data-price="100" data-img="https://images.brickset.com/sets/images/76178-1.jpg">Daily Bugle ($100)</button>
+        <button class="preset-btn btn btn-dark btn-sm" data-name="Final Battle" data-price="105" data-img="https://images.brickset.com/sets/images/76261-1.jpg">Final Battle ($105)</button>
+        <button class="preset-btn btn btn-dark btn-sm" data-name="Sanctum" data-price="250" data-img="https://images.brickset.com/sets/images/76218-1.jpg">Sanctum ($250)</button>
+      </div>
+
+      <input id="inputWishTitle" class="input-field" placeholder="Item Name" />
+      <input id="inputWishPrice" type="number" class="input-field" placeholder="Cost ($)" />
+      <input id="inputWishImg" class="input-field" placeholder="Image URL" />
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="cancelWishBtn" class="btn btn-red">Cancel</button>
+        <button id="saveWishBtn" class="btn btn-blue">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lootModal" class="modal-overlay">
+    <div class="modal-box">
+      <div style="font-size:16px; font-weight:bold; margin-bottom:10px;">Log Purchase</div>
+      <input id="inputLootTitle" class="input-field" placeholder="Item bought" />
+      <input id="inputLootPrice" type="number" class="input-field" placeholder="Price ($)" />
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="cancelLootBtn" class="btn btn-red">Cancel</button>
+        <button id="saveLootBtn" class="btn btn-blue">Deduct Cash</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var DATA = {
+      targetId: "w1",
+      bounties: [
+        { id: "b1", title: "Wash out Sandpit", reward: 5, status: "completed", location: "Backyard", tools: ["Hose", "Rake", "Bin"], steps: ["Rake leaves", "Hose rim clean", "Pack toys"], safety: "Turn off tap tightly." },
+        { id: "b2", title: "Fix the Tap Washer", reward: 5, status: "completed", location: "Outside Tap", tools: ["Wrench", "Washer", "Rag"], steps: ["Turn off main valve", "Swap rubber washer", "Tighten securely"], safety: "Never force brass threads." },
+        { id: "b3", title: "BBQ Clean", reward: 5, status: "completed", location: "Patio Grill", tools: ["Grill brush", "Warm sponge", "Towels"], steps: ["Ensure grill cold", "Scrape grates", "Wipe grease tray"], safety: "Gas must be OFF." },
+        { id: "b4", title: "Plant the Big Tree", reward: 10, status: "open", location: "Backyard", tools: ["Shovel", "Hose", "Mulch"], steps: ["Dig hole wide", "Stand tree straight", "Pack soil & water"], safety: "Lift shovel with your knees!" },
+        { id: "b5", title: "Clean Up Side Near BBQ", reward: 10, status: "completed", location: "Side Yard", tools: ["Broom", "Dustpan", "Bag"], steps: ["Clear loose items", "Sweep path", "Bag leaves"], safety: "Check corners for spiders." },
+        { id: "b6", title: "Gutters Project Assistant", reward: 100, status: "open", location: "Roof Edge / Yard", tools: ["Bucket", "Gloves", "Hose"], steps: ["Hold perimeter", "Catch debris bucket", "Hose drain guard"], safety: "Never climb ladder without adult." },
+        { id: "b7", title: "Secret Room Cleanup", reward: 30, status: "open", location: "Secret Room", tools: ["Storage bins", "Rag", "Vacuum"], steps: ["Sort loose LEGO", "Clear floor", "Vacuum corners"], safety: "Pick up small pieces before vacuuming." }
+      ],
+      wishlist: [
+        { id: "w1", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg" },
+        { id: "w2", title: "Spider-Man Final Battle", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg" },
+        { id: "w3", title: "Venom & Sandman Extension", price: 20, image: "https://images.brickset.com/sets/images/76280-1.jpg" }
+      ],
+      loot: [
+        { id: "l1", title: "Venom & Sandman Set", price: 20, date: "2026-10-20" },
+        { id: "l2", title: "Spider-Man Minifigures Pack", price: 42, date: "2026-10-24" }
+      ]
+    };
+
+    var stored = localStorage.getItem('gill_bounty_v5');
+    if (stored) {
+      try { DATA = JSON.parse(stored); } catch(e){}
+    }
+
+    var isParent = false;
+    var activeMissionId = null;
+
+    function save() {
+      localStorage.setItem('gill_bounty_v5', JSON.stringify(DATA));
+      render();
+    }
+
+    function render() {
+      var earned = 0;
+      for (var i = 0; i < DATA.bounties.length; i++) {
+        if (DATA.bounties[i].status === 'completed') earned += DATA.bounties[i].reward;
+      }
+      var spent = 0;
+      for (var j = 0; j < DATA.loot.length; j++) {
+        spent += DATA.loot[j].price;
+      }
+      var bal = Math.max(0, earned - spent);
+
+      var target = DATA.wishlist[0];
+      for (var k = 0; k < DATA.wishlist.length; k++) {
+        if (DATA.wishlist[k].id === DATA.targetId) target = DATA.wishlist[k];
+      }
+
+      var goalCost = target ? target.price : 100;
+      var pct = Math.min(100, Math.round((bal / goalCost) * 100));
+
+      document.getElementById('hudTitle').innerText = target ? target.title : "LEGO Goal";
+      if (target && target.image) document.getElementById('hudImg').src = target.image;
+      document.getElementById('hudBar').style.width = pct + "%";
+      document.getElementById('hudRatio').innerText = "$" + bal + " / $" + goalCost;
+      document.getElementById('hudPercent').innerText = pct + "%";
+
+      var choreHtml = "";
+      for (var c = 0; c < DATA.bounties.length; c++) {
+        var b = DATA.bounties[c];
+        var isDone = b.status === 'completed';
+        var isRev = b.status === 'review';
+        var cls = isDone ? "card card-done" : (isRev ? "card card-review" : "card");
+        var tag = isDone ? '<span class="tag tag-done">✓ COMPLETED</span>' : (isRev ? '<span class="tag tag-review">⏳ UNDER REVIEW</span>' : '<span class="tag tag-open">★ OPEN</span>');
+
+        choreHtml += '<div class="' + cls + '">';
+        choreHtml += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' + tag + '<span class="price-text">+$' + b.reward + '</span></div>';
+        choreHtml += '<div style="font-size:15px; font-weight:bold; ' + (isDone ? 'text-decoration:line-through; color:#94a3b8;' : '') + '">' + b.title + '</div>';
+        choreHtml += '<div style="font-size:11px; color:#94a3b8; margin:4px 0 8px 0;">📍 ' + (b.location || 'Home') + '</div>';
+        
+        choreHtml += '<div style="display:flex; gap:6px; margin-top:8px;">';
+        choreHtml += '<button class="btn btn-dark btn-sm" onclick="openMission(\'' + b.id + '\')" style="flex:1;">View Mission Steps</button>';
+        
+        if (!isDone && !isRev) {
+          choreHtml += '<button class="btn btn-blue btn-sm" onclick="markDone(\'' + b.id + '\')" style="flex:1;">I Finished This!</button>';
+        }
+        if (isRev && isParent) {
+          choreHtml += '<button class="btn btn-blue btn-sm" onclick="approveDone(\'' + b.id + '\')" style="flex:1;">Approve & Pay</button>';
+        }
+        if (isParent) {
+          choreHtml += '<button class="btn btn-red btn-sm" onclick="deleteChore(\'' + b.id + '\')">✕</button>';
+        }
+        choreHtml += '</div></div>';
+      }
+      document.getElementById('choreList').innerHTML = choreHtml;
+
+      var wishHtml = "";
+      for (var w = 0; w < DATA.wishlist.length; w++) {
+        var itm = DATA.wishlist[w];
+        var isTarget = itm.id === DATA.targetId;
+        wishHtml += '<div class="card" style="display:flex; justify-content:space-between; align-items:center;">';
+        wishHtml += '<div style="display:flex; align-items:center; gap:10px;">';
+        wishHtml += '<div style="display:flex; flex-direction:column; gap:2px;">';
+        wishHtml += '<button class="btn btn-dark btn-sm" onclick="moveWish(' + w + ',-1)" style="padding:2px 6px;">▲</button>';
+        wishHtml += '<span style="font-size:11px; text-align:center; color:#94a3b8; font-weight:bold;">#' + (w + 1) + '</span>';
+        wishHtml += '<button class="btn btn-dark btn-sm" onclick="moveWish(' + w + ',1)" style="padding:2px 6px;">▼</button>';
+        wishHtml += '</div>';
+        wishHtml += '<img src="' + itm.image + '" style="width:50px; height:50px; border-radius:8px; object-fit:cover;" />';
+        wishHtml += '<div><div style="font-si
