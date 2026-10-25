@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Daily Bugle Bounty Board</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
@@ -24,8 +23,8 @@
   <!-- HEADER -->
   <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-4 py-3 flex justify-between items-center shadow-xl">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg border border-red-400">
-        <i class="fa-solid fa-spider"></i>
+      <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic">
+        DB
       </div>
       <div>
         <h1 class="text-2xl font-comic tracking-wide leading-none">
@@ -33,7 +32,7 @@
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
         <div class="flex items-center gap-2 mt-1">
-          <button id="syncTriggerBtn" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5 active:scale-95 transition">
+          <button id="syncTriggerBtn" type="button" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5 active:scale-95 transition">
             <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span> 
             <span id="syncText">Tap to Link Devices</span>
           </button>
@@ -43,17 +42,17 @@
 
     <!-- PARENT PIN BUTTON -->
     <div class="flex items-center gap-2">
-      <button id="modeToggleBtn" class="px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95">
-        <i id="lockIcon" class="fa-solid fa-lock text-xs"></i> 
+      <button id="modeToggleBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95">
+        <span id="lockIcon">🔒</span> 
         <span id="lockText">Parent Unlock</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN APP CONTAINER -->
+  <!-- MAIN HUD & APPS -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
 
-    <!-- REWARD HERO HUD -->
+    <!-- REWARD HUD -->
     <section class="bg-slate-900 border-2 border-blue-600 rounded-2xl p-4 mb-5 shadow-2xl relative">
       <div class="flex flex-col sm:flex-row items-center gap-4">
         <div class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0">
@@ -89,54 +88,54 @@
 
     <!-- TABS -->
     <div class="flex gap-2 border-b border-slate-800 pb-2 mb-4">
-      <button onclick="switchTab('bounties')" id="tab-bounties" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2">
-        <i class="fa-solid fa-list-check"></i> <span>Bounties</span>
+      <button id="tab-bounties" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2">
+        <span>📋 Bounties</span>
       </button>
-      <button onclick="switchTab('wishlist')" id="tab-wishlist" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-star text-blue-400"></i> <span>Top 10 Wishlist</span>
+      <button id="tab-wishlist" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+        <span>⭐ Top 10 Wishlist</span>
       </button>
-      <button onclick="switchTab('loot')" id="tab-loot" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-boxes-stacked text-red-400"></i> <span>Loot Vault</span>
+      <button id="tab-loot" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
+        <span>📦 Loot Vault</span>
       </button>
     </div>
 
-    <!-- VIEW 1: BOUNTIES -->
+    <!-- VIEW: BOUNTIES -->
     <div id="view-bounties">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Available Bounties</h3>
-          <p class="text-xs text-slate-400">Tap a chore card to see steps and tools!</p>
+          <p class="text-xs text-slate-400">Tap a chore card to see tools and instructions!</p>
         </div>
-        <button id="addChoreBtn" onclick="openNewChoreModal()" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-2 shadow-lg transition">
-          <i class="fa-solid fa-plus"></i> Post Bounty
+        <button id="addChoreBtn" type="button" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-1.5 shadow-lg">
+          <span>＋ Post Bounty</span>
         </button>
       </div>
       <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </div>
 
-    <!-- VIEW 2: WISHLIST -->
+    <!-- VIEW: WISHLIST -->
     <div id="view-wishlist" class="hidden">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
-          <p class="text-xs text-slate-400">Rank with the arrows. Tap "Make Target" to save for it!</p>
+          <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Make Target" to save for it!</p>
         </div>
-        <button onclick="openAddWishModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg transition">
-          <i class="fa-solid fa-plus"></i> Add Goal
+        <button id="addWishBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-lg">
+          <span>＋ Add Goal</span>
         </button>
       </div>
       <div id="wishlistContainer" class="space-y-2.5"></div>
     </div>
 
-    <!-- VIEW 3: LOOT & SPENT -->
+    <!-- VIEW: LOOT -->
     <div id="view-loot" class="hidden">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Purchased Loot Vault</h3>
           <p class="text-xs text-slate-400">Items bought with chore earnings.</p>
         </div>
-        <button onclick="openLogPurchaseModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg transition">
-          <i class="fa-solid fa-receipt"></i> Log Purchase
+        <button id="logPurchaseBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-lg">
+          <span>＋ Log Purchase</span>
         </button>
       </div>
       <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
@@ -144,7 +143,7 @@
 
   </main>
 
-  <!-- MISSION BRIEFING MODAL FOR LUCAS -->
+  <!-- MISSION BRIEFING MODAL -->
   <div id="missionModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-start mb-3">
@@ -155,40 +154,33 @@
         <span id="modalMissionReward" class="text-2xl font-black font-comic text-blue-400"></span>
       </div>
 
-      <!-- TOOLS NEEDED -->
       <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-toolbox text-blue-400"></i> Equipment & Supplies
-        </h4>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🧰 Equipment & Supplies</h4>
         <div id="modalToolsList" class="flex flex-wrap gap-1.5"></div>
       </div>
 
-      <!-- STEP CHECKLIST -->
       <div class="mb-4">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <i class="fa-solid fa-list-ol text-blue-400"></i> Step-by-Step Mission
-        </h4>
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">📋 Step-by-Step Mission</h4>
         <div id="modalStepsList" class="space-y-2"></div>
       </div>
 
-      <!-- SAFETY TIP -->
-      <div id="modalSafetyBox" class="bg-red-950/40 border border-red-800/60 rounded-xl p-3 mb-5 text-xs text-red-300 flex items-start gap-2">
-        <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
+      <div class="bg-red-950/40 border border-red-800/60 rounded-xl p-3 mb-5 text-xs text-red-300 flex items-start gap-2">
+        <span class="text-red-400 text-sm">⚠️</span>
         <span id="modalSafetyText"></span>
       </div>
 
       <div class="flex justify-between items-center gap-2">
-        <button onclick="closeMissionModal()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Back</button>
-        <button id="modalActionBtn" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg transition">Complete Mission</button>
+        <button id="closeMissionBtn" type="button" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Back</button>
+        <button id="modalActionBtn" type="button" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Complete Mission</button>
       </div>
     </div>
   </div>
 
-  <!-- ON-SCREEN PIN MODAL -->
+  <!-- ON-SCREEN PIN KEYPAD -->
   <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
-      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl">
-        <i class="fa-solid fa-shield-halved"></i>
+      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl font-bold">
+        🛡️
       </div>
       <h3 class="text-lg font-black text-white mb-1">Parent Access</h3>
       <p class="text-xs text-slate-400 mb-4">Enter PIN (Default: 1234)</p>
@@ -198,21 +190,21 @@
       </div>
 
       <div class="grid grid-cols-3 gap-2 mb-4">
-        <button onclick="keypadPress('1')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">1</button>
-        <button onclick="keypadPress('2')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">2</button>
-        <button onclick="keypadPress('3')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">3</button>
-        <button onclick="keypadPress('4')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">4</button>
-        <button onclick="keypadPress('5')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">5</button>
-        <button onclick="keypadPress('6')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">6</button>
-        <button onclick="keypadPress('7')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">7</button>
-        <button onclick="keypadPress('8')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">8</button>
-        <button onclick="keypadPress('9')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">9</button>
-        <button onclick="keypadClear()" class="py-3 bg-red-600/20 text-sm font-bold rounded-xl text-red-400 active:bg-red-600">Clear</button>
-        <button onclick="keypadPress('0')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">0</button>
-        <button onclick="keypadSubmit()" class="py-3 bg-blue-600 text-sm font-bold rounded-xl text-white active:bg-blue-500">OK</button>
+        <button type="button" onclick="window.kPress('1')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">1</button>
+        <button type="button" onclick="window.kPress('2')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">2</button>
+        <button type="button" onclick="window.kPress('3')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">3</button>
+        <button type="button" onclick="window.kPress('4')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">4</button>
+        <button type="button" onclick="window.kPress('5')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">5</button>
+        <button type="button" onclick="window.kPress('6')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">6</button>
+        <button type="button" onclick="window.kPress('7')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">7</button>
+        <button type="button" onclick="window.kPress('8')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">8</button>
+        <button type="button" onclick="window.kPress('9')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">9</button>
+        <button type="button" onclick="window.kClear()" class="py-3 bg-red-600/20 text-sm font-bold rounded-xl text-red-400 active:bg-red-600">Clear</button>
+        <button type="button" onclick="window.kPress('0')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">0</button>
+        <button type="button" onclick="window.kSubmit()" class="py-3 bg-blue-600 text-sm font-bold rounded-xl text-white active:bg-blue-500">OK</button>
       </div>
 
-      <button onclick="closePinModal()" class="text-xs text-slate-400 hover:text-white underline">Cancel</button>
+      <button id="cancelPinBtn" type="button" class="text-xs text-slate-400 hover:text-white underline">Cancel</button>
     </div>
   </div>
 
@@ -225,9 +217,9 @@
         <div>
           <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
           <div class="flex gap-2">
-            <input id="newChoreTitle" type="text" placeholder="e.g. Millie dog wash, build a shelf" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
-            <button onclick="autoGenerateMission()" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md flex items-center gap-1.5 whitespace-nowrap">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> AI Plan
+            <input id="newChoreTitle" type="text" placeholder="e.g. Millie dog wash, build shelf" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+            <button id="aiPlanBtn" type="button" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md whitespace-nowrap">
+              ✨ AI Plan
             </button>
           </div>
         </div>
@@ -255,13 +247,13 @@
 
         <div>
           <label class="text-xs text-slate-400 block mb-1">Safety Tip</label>
-          <input id="newChoreSafety" type="text" placeholder="Avoid eyes and ears; keep dog on leash" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+          <input id="newChoreSafety" type="text" placeholder="Keep water warm, never hot" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
         </div>
       </div>
 
       <div class="flex gap-2 justify-end mt-4">
-        <button onclick="closeNewChoreModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button onclick="saveNewChore()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl">Post Bounty</button>
+        <button id="cancelChoreBtn" type="button" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl">Cancel</button>
+        <button id="saveChoreBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl">Post Bounty</button>
       </div>
     </div>
   </div>
@@ -271,13 +263,12 @@
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
       <h3 class="text-lg font-black text-white mb-3">Add Dream Reward</h3>
       
-      <!-- LEGO PRESETS -->
       <div class="mb-3">
         <label class="text-xs text-slate-400 block mb-1.5">Quick LEGO Presets</label>
         <div class="flex flex-wrap gap-1.5">
-          <button onclick="applyWishPreset('Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
-          <button onclick="applyWishPreset('Spider-Man Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
-          <button onclick="applyWishPreset('Sanctum Sanctorum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
+          <button type="button" onclick="window.applyPreset('Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
+          <button type="button" onclick="window.applyPreset('Spider-Man Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
+          <button type="button" onclick="window.applyPreset('Sanctum Sanctorum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
         </div>
       </div>
 
@@ -297,8 +288,8 @@
       </div>
 
       <div class="flex gap-2 justify-end mt-4">
-        <button onclick="closeAddWishModal()" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button onclick="saveWishItem()" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save Goal</button>
+        <button id="cancelWishBtn" type="button" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
+        <button id="saveWishBtn" type="button" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save Goal</button>
       </div>
     </div>
   </div>
@@ -318,8 +309,8 @@
         </div>
       </div>
       <div class="flex gap-2 justify-end mt-4">
-        <button onclick="closeLogPurchaseModal()" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button onclick="savePurchase()" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save & Deduct</button>
+        <button id="cancelPurchaseBtn" type="button" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
+        <button id="savePurchaseBtn" type="button" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save & Deduct</button>
       </div>
     </div>
   </div>
@@ -328,4 +319,12 @@
   <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
       <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg f
+        <h3 class="text-lg font-black text-white flex items-center gap-2">
+          <span>📡 Link Devices</span>
+        </h3>
+        <button id="closeSyncXBtn" type="button" class="text-red-400 text-lg font-bold">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+        Type a shared family code (e.g. <strong class="text-blue-400">gill-bounty</strong>) on your phone and tablet to keep them synchronized:
+      </p>
+      <input id="syncRoomInput" type="text" placeholder="e.g. gill-bounty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm fon
