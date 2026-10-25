@@ -186,26 +186,26 @@
         <button type="button" onclick="closeSyncModal()" class="text-red-400 text-lg font-bold">✕</button>
       </div>
       <p class="text-xs text-slate-300 mb-3 leading-relaxed">
-        This keeps your phone and Lucas's Chromebook tablet synchronized in real-time.
+        This mirrors your phone and Lucas's Chromebook tablet in real-time.
       </p>
 
       <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2">
         <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400 font-bold">Cloud Sync ID:</span>
-          <span id="syncIdLabel" class="font-mono font-bold text-blue-400 text-sm">Loading...</span>
+          <span class="text-slate-400 font-bold">Active Cloud Room:</span>
+          <span id="syncIdLabel" class="font-mono font-bold text-blue-400 text-xs">Connecting...</span>
         </div>
         <div class="flex justify-between items-center text-xs">
           <span class="text-slate-400 font-bold">Status:</span>
-          <span id="syncDiagnosticText" class="font-bold text-green-400">Checking...</span>
+          <span id="syncDiagnosticText" class="font-bold text-green-400">Connecting...</span>
         </div>
       </div>
 
       <div class="space-y-2 mb-4">
-        <button type="button" onclick="copySyncLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition">
+        <button type="button" onclick="copySyncLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition">
           <span>📋</span> Copy Direct Tablet Link
         </button>
         <p class="text-[11px] text-slate-400 leading-tight">
-          Send or open this copied link on Lucas's tablet. It permanently connects both devices to the same board!
+          Tap above to copy. Open this link once on Lucas's tablet to instantly connect both screens!
         </p>
       </div>
 
@@ -763,7 +763,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_synced_v11');
+      var saved = localStorage.getItem('gill_daily_bugle_final_v12');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -772,40 +772,42 @@
     var activeMission = null;
     var currentFilter = 'all';
 
-    // 100% RELIABLE JSON STORAGE SYNC ENGINE
+    // GUARANTEED JSON-BODY SYNC ENGINE (Immune to header stripping)
     var urlParams = new URLSearchParams(window.location.search);
-    var syncBlobId = urlParams.get('sync') || localStorage.getItem('gill_sync_blob_id') || '';
+    var syncObjectId = urlParams.get('sync') || localStorage.getItem('gill_active_sync_id') || '';
+    // Discard any invalid legacy text like 'gill-bounty' that is not a real cloud object ID
+    if (syncObjectId === 'gill-bounty' || syncObjectId.length < 15) {
+      syncObjectId = '';
+    }
     var isSyncing = false;
 
     function initSyncEngine() {
-      if (syncBlobId) {
-        document.getElementById('syncIdLabel').textContent = syncBlobId;
+      if (syncObjectId) {
+        document.getElementById('syncIdLabel').textContent = syncObjectId;
+        localStorage.setItem('gill_active_sync_id', syncObjectId);
         updateSyncBadge("online");
         pullFromCloud();
       } else {
-        createNewCloudBin();
+        createNewCloudObject();
       }
     }
 
-    function createNewCloudBin() {
+    function createNewCloudObject() {
       updateSyncBadge("syncing");
-      document.getElementById('syncDiagnosticText').textContent = "Creating cloud sync room...";
-      
-      fetch('https://jsonblob.com/api/jsonBlob', {
+      document.getElementById('syncDiagnosticText').textContent = "Registering live cloud room...";
+
+      fetch('https://api.restful-api.dev/objects', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(appState)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'gill_bounty_live', data: appState })
       })
-      .then(function(res) {
-        var locationHeader = res.headers.get('Location') || res.headers.get('x-jsonblob');
-        if (locationHeader) {
-          syncBlobId = locationHeader.split('/').pop();
-          localStorage.setItem('gill_sync_blob_id', syncBlobId);
-          document.getElementById('syncIdLabel').textContent = syncBlobId;
-          document.getElementById('syncDiagnosticText').textContent = "Connected & Live!";
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.id) {
+          syncObjectId = data.id;
+          localStorage.setItem('gill_active_sync_id', syncObjectId);
+          document.getElementById('syncIdLabel').textContent = syncObjectId;
+          document.getElementById('syncDiagnosticText').textContent = "Live & Connected!";
           updateSyncBadge("online");
         } else {
           document.getElementById('syncDiagnosticText').textContent = "Ready (Local mode)";
@@ -821,27 +823,24 @@
     function persist(skipCloud) {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_synced_v11', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_final_v12', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
-      if (!skipCloud && syncBlobId) {
+      if (!skipCloud && syncObjectId) {
         pushToCloud();
       }
     }
 
     function pushToCloud() {
-      if (!syncBlobId || isSyncing) return;
+      if (!syncObjectId || isSyncing) return;
       isSyncing = true;
       updateSyncBadge("syncing");
 
-      fetch('https://jsonblob.com/api/jsonBlob/' + syncBlobId, {
+      fetch('https://api.restful-api.dev/objects/' + syncObjectId, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(appState)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'gill_bounty_live', data: appState })
       })
       .then(function(res) {
         isSyncing = false;
@@ -859,20 +858,19 @@
     }
 
     function pullFromCloud() {
-      if (!syncBlobId) return;
+      if (!syncObjectId) return;
 
-      fetch('https://jsonblob.com/api/jsonBlob/' + syncBlobId, {
-        headers: { 'Accept': 'application/json' }
-      })
+      fetch('https://api.restful-api.dev/objects/' + syncObjectId)
       .then(function(res) {
-        if (!res.ok) throw new Error("Cloud status " + res.status);
+        if (!res.ok) throw new Error("Sync status " + res.status);
         return res.json();
       })
-      .then(function(remoteState) {
-        if (remoteState && remoteState.bounties) {
+      .then(function(json) {
+        if (json && json.data && json.data.bounties) {
+          var remoteState = json.data;
           if (!remoteState.lastUpdated || remoteState.lastUpdated >= (appState.lastUpdated || 0)) {
             appState = remoteState;
-            localStorage.setItem('gill_daily_bugle_synced_v11', JSON.stringify(appState));
+            localStorage.setItem('gill_daily_bugle_final_v12', JSON.stringify(appState));
             renderAll();
           }
           updateSyncBadge("online");
@@ -907,7 +905,7 @@
 
     function openSyncModal() {
       playSound('click');
-      document.getElementById('syncIdLabel').textContent = syncBlobId || 'Creating room...';
+      document.getElementById('syncIdLabel').textContent = syncObjectId || 'Connecting...';
       document.getElementById('syncModal').classList.remove('hidden');
     }
 
@@ -918,19 +916,19 @@
 
     function copySyncLink() {
       playSound('click');
-      if (!syncBlobId) {
-        alert("Please wait a moment while the cloud sync ID finishes creating.");
+      if (!syncObjectId) {
+        alert("Please wait a moment while the cloud sync ID finishes connecting.");
         return;
       }
       var baseUrl = window.location.origin + window.location.pathname;
-      var fullUrl = baseUrl + "?sync=" + encodeURIComponent(syncBlobId);
+      var fullUrl = baseUrl + "?sync=" + encodeURIComponent(syncObjectId);
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(fullUrl).then(function() {
-          alert("Direct Sync Link copied!\n\nOpen this link on Lucas's tablet to instantly connect both devices:\n" + fullUrl);
+          alert("Direct Sync Link copied!\n\nOpen this link on your other device to connect:\n" + fullUrl);
         });
       } else {
-        prompt("Copy this link and open it on Lucas's tablet:", fullUrl);
+        prompt("Copy this link and open it on your other device:", fullUrl);
       }
     }
 
@@ -943,9 +941,9 @@
         } else if (val.indexOf('/') !== -1) {
           val = val.split('/').pop();
         }
-        syncBlobId = val;
-        localStorage.setItem('gill_sync_blob_id', syncBlobId);
-        document.getElementById('syncIdLabel').textContent = syncBlobId;
+        syncObjectId = val;
+        localStorage.setItem('gill_active_sync_id', syncObjectId);
+        document.getElementById('syncIdLabel').textContent = syncObjectId;
         closeSyncModal();
         pullFromCloud();
       }
@@ -1059,7 +1057,6 @@
         return;
       }
 
-      // 1. Search in Catalog
       var bestMatch = null;
       for (var i = 0; i < LEGO_AI_CATALOG.length; i++) {
         var itm = LEGO_AI_CATALOG[i];
@@ -1072,9 +1069,7 @@
         if (bestMatch) break;
       }
 
-      // 2. Intelligent Fallback Generator if not in predefined list
       if (!bestMatch) {
-        // Synthesize smart values from query
         var cleanTitle = query.split(' ').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
         if (cleanTitle.toLowerCase().indexOf('lego') === -1) cleanTitle = "LEGO " + cleanTitle;
         
@@ -1092,7 +1087,6 @@
         };
       }
 
-      // Populate Wishlist Form
       document.getElementById('inputWishTitle').value = bestMatch.title;
       document.getElementById('inputWishPrice').value = bestMatch.price;
       document.getElementById('inputWishImg').value = bestMatch.image;
