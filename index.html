@@ -50,10 +50,10 @@
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
+  <!-- MAIN APP CONTAINER -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
 
-    <!-- REWARD HUD -->
+    <!-- REWARD HERO HUD -->
     <section class="bg-slate-900 border-2 border-blue-600 rounded-2xl p-4 mb-5 shadow-2xl relative">
       <div class="flex flex-col sm:flex-row items-center gap-4">
         <div class="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0">
@@ -67,7 +67,7 @@
               <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight">LEGO Daily Bugle</h2>
             </div>
             <div class="text-right">
-              <span class="text-xs font-bold text-slate-400 block">Current Balance</span>
+              <span class="text-xs font-bold text-slate-400 block">Bank Balance</span>
               <span id="hudCashTotal" class="text-2xl font-black text-blue-400 font-comic tracking-wide">$0.00</span>
             </div>
           </div>
@@ -93,17 +93,20 @@
         <i class="fa-solid fa-list-check"></i> <span>Bounties</span>
       </button>
       <button onclick="switchTab('wishlist')" id="tab-wishlist" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-        <i class="fa-solid fa-star text-blue-400"></i> <span>Wishlist</span>
+        <i class="fa-solid fa-star text-blue-400"></i> <span>Top 10 Wishlist</span>
       </button>
       <button onclick="switchTab('loot')" id="tab-loot" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
         <i class="fa-solid fa-boxes-stacked text-red-400"></i> <span>Loot Vault</span>
       </button>
     </div>
 
-    <!-- VIEW: BOUNTIES -->
+    <!-- VIEW 1: BOUNTIES -->
     <div id="view-bounties">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-200">Chores & Bounties</h3>
+        <div>
+          <h3 class="text-lg font-black text-slate-200">Available Bounties</h3>
+          <p class="text-xs text-slate-400">Tap a chore card to see steps and tools!</p>
+        </div>
         <button id="addChoreBtn" onclick="openNewChoreModal()" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-2 shadow-lg transition">
           <i class="fa-solid fa-plus"></i> Post Bounty
         </button>
@@ -111,18 +114,27 @@
       <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </div>
 
-    <!-- VIEW: WISHLIST -->
+    <!-- VIEW 2: WISHLIST -->
     <div id="view-wishlist" class="hidden">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-200">Savings Wishlist</h3>
+        <div>
+          <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
+          <p class="text-xs text-slate-400">Rank with the arrows. Tap "Make Target" to save for it!</p>
+        </div>
+        <button onclick="openAddWishModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg transition">
+          <i class="fa-solid fa-plus"></i> Add Goal
+        </button>
       </div>
       <div id="wishlistContainer" class="space-y-2.5"></div>
     </div>
 
-    <!-- VIEW: LOOT -->
+    <!-- VIEW 3: LOOT & SPENT -->
     <div id="view-loot" class="hidden">
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-black text-slate-200">Purchased Items</h3>
+        <div>
+          <h3 class="text-lg font-black text-slate-200">Purchased Loot Vault</h3>
+          <p class="text-xs text-slate-400">Items bought with chore earnings.</p>
+        </div>
         <button onclick="openLogPurchaseModal()" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg transition">
           <i class="fa-solid fa-receipt"></i> Log Purchase
         </button>
@@ -132,95 +144,176 @@
 
   </main>
 
-  <!-- ON-SCREEN PIN MODAL (REPLACES BROWSER PROMPT) -->
+  <!-- MISSION BRIEFING MODAL FOR LUCAS -->
+  <div id="missionModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <span id="modalLocationBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-900 text-blue-300"></span>
+          <h3 id="modalMissionTitle" class="text-xl font-black text-white mt-1"></h3>
+        </div>
+        <span id="modalMissionReward" class="text-2xl font-black font-comic text-blue-400"></span>
+      </div>
+
+      <!-- TOOLS NEEDED -->
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-toolbox text-blue-400"></i> Equipment & Supplies
+        </h4>
+        <div id="modalToolsList" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- STEP CHECKLIST -->
+      <div class="mb-4">
+        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-list-ol text-blue-400"></i> Step-by-Step Mission
+        </h4>
+        <div id="modalStepsList" class="space-y-2"></div>
+      </div>
+
+      <!-- SAFETY TIP -->
+      <div id="modalSafetyBox" class="bg-red-950/40 border border-red-800/60 rounded-xl p-3 mb-5 text-xs text-red-300 flex items-start gap-2">
+        <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
+        <span id="modalSafetyText"></span>
+      </div>
+
+      <div class="flex justify-between items-center gap-2">
+        <button onclick="closeMissionModal()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Back</button>
+        <button id="modalActionBtn" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg transition">Complete Mission</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ON-SCREEN PIN MODAL -->
   <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
       <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl">
         <i class="fa-solid fa-shield-halved"></i>
       </div>
       <h3 class="text-lg font-black text-white mb-1">Parent Access</h3>
-      <p class="text-xs text-slate-400 mb-4">Enter 4-digit PIN (Default: 1234)</p>
+      <p class="text-xs text-slate-400 mb-4">Enter PIN (Default: 1234)</p>
       
-      <div class="flex justify-center gap-3 mb-6">
+      <div class="flex justify-center gap-3 mb-5">
         <input id="pinInput" type="password" maxlength="4" placeholder="••••" readonly class="w-36 text-center tracking-widest text-2xl font-black bg-slate-950 border-2 border-slate-700 rounded-xl py-2 text-white focus:outline-none" />
       </div>
 
-      <!-- KEYPAD -->
-      <div class="grid grid-cols-3 gap-2.5 mb-4">
-        <button onclick="keypadPress('1')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">1</button>
-        <button onclick="keypadPress('2')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">2</button>
-        <button onclick="keypadPress('3')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">3</button>
-        <button onclick="keypadPress('4')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">4</button>
-        <button onclick="keypadPress('5')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">5</button>
-        <button onclick="keypadPress('6')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">6</button>
-        <button onclick="keypadPress('7')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">7</button>
-        <button onclick="keypadPress('8')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">8</button>
-        <button onclick="keypadPress('9')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">9</button>
-        <button onclick="keypadClear()" class="py-3 bg-red-600/20 active:bg-red-600 text-sm font-bold rounded-xl text-red-400">Clear</button>
-        <button onclick="keypadPress('0')" class="py-3 bg-slate-800 active:bg-slate-700 text-lg font-bold rounded-xl text-white">0</button>
-        <button onclick="keypadSubmit()" class="py-3 bg-blue-600 active:bg-blue-500 text-sm font-bold rounded-xl text-white">OK</button>
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <button onclick="keypadPress('1')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">1</button>
+        <button onclick="keypadPress('2')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">2</button>
+        <button onclick="keypadPress('3')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">3</button>
+        <button onclick="keypadPress('4')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">4</button>
+        <button onclick="keypadPress('5')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">5</button>
+        <button onclick="keypadPress('6')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">6</button>
+        <button onclick="keypadPress('7')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">7</button>
+        <button onclick="keypadPress('8')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">8</button>
+        <button onclick="keypadPress('9')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">9</button>
+        <button onclick="keypadClear()" class="py-3 bg-red-600/20 text-sm font-bold rounded-xl text-red-400 active:bg-red-600">Clear</button>
+        <button onclick="keypadPress('0')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">0</button>
+        <button onclick="keypadSubmit()" class="py-3 bg-blue-600 text-sm font-bold rounded-xl text-white active:bg-blue-500">OK</button>
       </div>
 
       <button onclick="closePinModal()" class="text-xs text-slate-400 hover:text-white underline">Cancel</button>
     </div>
   </div>
 
-  <!-- SYNC MODAL -->
-  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-black text-white flex items-center gap-2">
-          <i class="fa-solid fa-tower-broadcast text-blue-400"></i> Link Devices
-        </h3>
-        <button onclick="closeSyncModal()" class="text-red-400 text-lg"><i class="fa-solid fa-xmark"></i></button>
+  <!-- POST NEW BOUNTY WITH AI GENERATOR -->
+  <div id="choreModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+      <h3 class="text-lg font-black text-white mb-2">Post New Bounty</h3>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
+          <div class="flex gap-2">
+            <input id="newChoreTitle" type="text" placeholder="e.g. Millie dog wash, build a shelf" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
+            <button onclick="autoGenerateMission()" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> AI Plan
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Reward ($)</label>
+            <input id="newChoreReward" type="number" placeholder="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Location</label>
+            <input id="newChoreLocation" type="text" placeholder="Backyard" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Tools / Supplies (Comma separated)</label>
+          <input id="newChoreTools" type="text" placeholder="e.g. Dog shampoo, 2 dry towels, brush" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Steps (One per line)</label>
+          <textarea id="newChoreSteps" rows="3" placeholder="Brush coat&#10;Lather with warm water&#10;Dry thoroughly" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Safety Tip</label>
+          <input id="newChoreSafety" type="text" placeholder="Avoid eyes and ears; keep dog on leash" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+        </div>
       </div>
-      <p class="text-xs text-slate-300 mb-3">
-        Enter a shared family word (e.g. <strong class="text-blue-400">lucas-bounty</strong>) on both your phone and Lucas's tablet to keep them synchronized:
-      </p>
-      <input id="syncRoomInput" type="text" placeholder="e.g. lucas-bounty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white mb-4 focus:outline-none focus:border-blue-500" />
-      <div class="flex gap-2 justify-end">
-        <button onclick="closeSyncModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button onclick="saveSyncRoom()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl">Link Device</button>
+
+      <div class="flex gap-2 justify-end mt-4">
+        <button onclick="closeNewChoreModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl">Cancel</button>
+        <button onclick="saveNewChore()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl">Post Bounty</button>
       </div>
     </div>
   </div>
 
-  <!-- ADD BOUNTY MODAL -->
-  <div id="choreModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-      <h3 class="text-lg font-black text-white mb-3">New Bounty</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
-          <input id="newChoreTitle" type="text" placeholder="e.g. Wash out Sandpit" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Reward ($)</label>
-          <input id="newChoreReward" type="number" placeholder="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Location</label>
-          <input id="newChoreLocation" type="text" placeholder="Backyard" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
+  <!-- ADD WISHLIST ITEM MODAL -->
+  <div id="wishModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <h3 class="text-lg font-black text-white mb-3">Add Dream Reward</h3>
+      
+      <!-- LEGO PRESETS -->
+      <div class="mb-3">
+        <label class="text-xs text-slate-400 block mb-1.5">Quick LEGO Presets</label>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="applyWishPreset('Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
+          <button onclick="applyWishPreset('Spider-Man Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
+          <button onclick="applyWishPreset('Sanctum Sanctorum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
         </div>
       </div>
+
+      <div class="space-y-2.5">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Reward Name</label>
+          <input id="wishTitle" type="text" placeholder="e.g. LEGO Daily Bugle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
+          <input id="wishPrice" type="number" placeholder="100" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Image URL</label>
+          <input id="wishImage" type="text" placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
+        </div>
+      </div>
+
       <div class="flex gap-2 justify-end mt-4">
-        <button onclick="closeNewChoreModal()" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button onclick="saveNewChore()" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save</button>
+        <button onclick="closeAddWishModal()" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
+        <button onclick="saveWishItem()" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save Goal</button>
       </div>
     </div>
   </div>
 
   <!-- LOG PURCHASE MODAL -->
   <div id="purchaseModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-2xl p-5 shadow-2xl">
-      <h3 class="text-lg font-black text-white mb-3">Log Purchase</h3>
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <h3 class="text-lg font-black text-white mb-3">Log a Purchase</h3>
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Item Name</label>
-          <input id="purchaseTitle" type="text" placeholder="e.g. Venom LEGO Set" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
+          <label class="text-xs text-slate-400 block mb-1">What did he buy?</label>
+          <input id="purchaseTitle" type="text" placeholder="e.g. Spider-Man Minifigures" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Amount ($)</label>
+          <label class="text-xs text-slate-400 block mb-1">Cost ($)</label>
           <input id="purchasePrice" type="number" placeholder="20" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
         </div>
       </div>
@@ -231,314 +324,8 @@
     </div>
   </div>
 
-  <script>
-    const INITIAL_DATA = {
-      activeTargetId: "w1",
-      bounties: [
-        { id: "b1", title: "Wash out Sandpit", reward: 5, status: "completed", location: "Backyard" },
-        { id: "b2", title: "Fix the Tap Washer", reward: 5, status: "completed", location: "Outside Tap" },
-        { id: "b3", title: "BBQ Clean", reward: 5, status: "completed", location: "Patio Grill" },
-        { id: "b4", title: "Plant the Big Tree", reward: 10, status: "open", location: "Backyard" },
-        { id: "b5", title: "Clean Up Side Near BBQ", reward: 10, status: "completed", location: "Side Yard" },
-        { id: "b6", title: "Gutters Project Assistant", reward: 100, status: "open", location: "Roof Edge / Yard" },
-        { id: "b7", title: "Secret Room Cleanup", reward: 30, status: "open", location: "Secret Room" }
-      ],
-      wishlist: [
-        { id: "w1", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg" },
-        { id: "w2", title: "Spider-Man Final Battle", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg" },
-        { id: "w3", title: "Venom & Sandman Extension", price: 20, image: "https://images.brickset.com/sets/images/76280-1.jpg" }
-      ],
-      loot: [
-        { id: "l1", title: "Venom & Sandman Set", price: 20, date: "2026-10-20" },
-        { id: "l2", title: "Spider-Man Minifigures Pack", price: 42, date: "2026-10-24" }
-      ]
-    };
-
-    let appState = JSON.parse(localStorage.getItem('gill_bounty_state')) || INITIAL_DATA;
-    let isParent = false;
-    let syncRoom = localStorage.getItem('gill_sync_room') || '';
-
-    // ATTACH EVENT LISTENERS SAFELY ON LOAD
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('modeToggleBtn').addEventListener('click', handleLockClick);
-      document.getElementById('syncTriggerBtn').addEventListener('click', openSyncModal);
-
-      if (syncRoom) {
-        setSyncBadgeText(true);
-        pullRemote();
-        setInterval(pullRemote, 5000);
-      }
-      renderAll();
-    });
-
-    function handleLockClick() {
-      if (!isParent) {
-        document.getElementById('pinInput').value = '';
-        document.getElementById('pinModal').classList.remove('hidden');
-      } else {
-        isParent = false;
-        updateParentUI();
-      }
-    }
-
-    function keypadPress(digit) {
-      const pin = document.getElementById('pinInput');
-      if (pin.value.length < 4) pin.value += digit;
-    }
-    function keypadClear() {
-      document.getElementById('pinInput').value = '';
-    }
-    function keypadSubmit() {
-      const val = document.getElementById('pinInput').value;
-      if (val === '1234') {
-        isParent = true;
-        closePinModal();
-        updateParentUI();
-      } else {
-        alert("Incorrect PIN");
-        keypadClear();
-      }
-    }
-    function closePinModal() {
-      document.getElementById('pinModal').classList.add('hidden');
-    }
-
-    function updateParentUI() {
-      const btn = document.getElementById('modeToggleBtn');
-      const icon = document.getElementById('lockIcon');
-      const text = document.getElementById('lockText');
-      const addBtn = document.getElementById('addChoreBtn');
-
-      if (isParent) {
-        btn.className = 'px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-blue-600 text-white border-blue-400';
-        icon.className = 'fa-solid fa-lock-open text-xs';
-        text.textContent = 'Parent Active';
-        addBtn.classList.remove('hidden');
-        addBtn.classList.add('flex');
-      } else {
-        btn.className = 'px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700';
-        icon.className = 'fa-solid fa-lock text-xs';
-        text.textContent = 'Parent Unlock';
-        addBtn.classList.add('hidden');
-      }
-      renderAll();
-    }
-
-    function openSyncModal() {
-      document.getElementById('syncRoomInput').value = syncRoom;
-      document.getElementById('syncModal').classList.remove('hidden');
-    }
-    function closeSyncModal() {
-      document.getElementById('syncModal').classList.add('hidden');
-    }
-    function saveSyncRoom() {
-      const val = document.getElementById('syncRoomInput').value.trim().toLowerCase();
-      if (val) {
-        syncRoom = val;
-        localStorage.setItem('gill_sync_room', syncRoom);
-        setSyncBadgeText(true);
-        closeSyncModal();
-        pushState();
-        pullRemote();
-      }
-    }
-
-    function setSyncBadgeText(active) {
-      const dot = document.getElementById('syncDot');
-      const text = document.getElementById('syncText');
-      if (active) {
-        dot.className = 'w-2 h-2 rounded-full bg-blue-400 animate-pulse';
-        text.textContent = `Linked: ${syncRoom}`;
-      } else {
-        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
-        text.textContent = 'Tap to Link Devices';
-      }
-    }
-
-    async function pullRemote() {
-      if (!syncRoom) return;
-      try {
-        const res = await fetch(`https://api.restful-api.dev/objects?name=gill_${syncRoom}`);
-        if (res.ok) {
-          const arr = await res.json();
-          if (arr && arr.length > 0 && arr[0].data && arr[0].data.bounties) {
-            appState = arr[0].data;
-            localStorage.setItem('gill_bounty_state', JSON.stringify(appState));
-            renderAll();
-          }
-        }
-      } catch (err) {
-        // Fallback silently if offline
-      }
-    }
-
-    async function pushState() {
-      localStorage.setItem('gill_bounty_state', JSON.stringify(appState));
-      renderAll();
-      if (!syncRoom) return;
-      try {
-        await fetch(`https://api.restful-api.dev/objects`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: `gill_${syncRoom}`, data: appState })
-        });
-      } catch (err) {
-        // Persists locally if offline
-      }
-    }
-
-    function renderAll() {
-      const earned = appState.bounties.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.reward, 0);
-      const spent = appState.loot.reduce((sum, l) => sum + l.price, 0);
-      const balance = Math.max(0, earned - spent);
-
-      const target = appState.wishlist.find(w => w.id === appState.activeTargetId) || appState.wishlist[0];
-      const goalCost = target ? target.price : 100;
-      const progress = Math.min(100, Math.round((balance / goalCost) * 100));
-
-      document.getElementById('hudCashTotal').textContent = `$${balance}.00`;
-      if (target) {
-        document.getElementById('hudGoalTitle').textContent = target.title;
-        document.getElementById('hudGoalImg').src = target.image;
-        document.getElementById('hudProgressRatio').textContent = `$${balance} of $${goalCost}`;
-        document.getElementById('hudProgressPercent').textContent = `${progress}% Complete`;
-        document.getElementById('hudProgressBar').style.width = `${progress}%`;
-      }
-
-      renderBounties();
-      renderWishlist();
-      renderLoot();
-    }
-
-    function renderBounties() {
-      const container = document.getElementById('choreList');
-      container.innerHTML = appState.bounties.map(b => {
-        const isDone = b.status === 'completed';
-        const isReview = b.status === 'review';
-        return `
-          <div class="bg-slate-900 border-2 ${isDone ? 'border-slate-800 bg-slate-900/50' : isReview ? 'border-blue-400' : 'border-slate-800'} rounded-2xl p-4 flex flex-col justify-between shadow-lg">
-            <div>
-              <div class="flex justify-between items-start mb-2">
-                <span class="text-xs font-black px-2 py-0.5 rounded-md ${isDone ? 'bg-slate-800 text-slate-400' : isReview ? 'bg-amber-950 text-amber-400' : 'bg-blue-950 text-blue-400'}">
-                  ${isDone ? 'COMPLETED' : isReview ? 'UNDER REVIEW' : 'OPEN'}
-                </span>
-                <span class="text-xl font-black font-comic ${isDone ? 'text-slate-500' : 'text-blue-400'}">+$${b.reward}</span>
-              </div>
-              <h4 class="font-bold text-base text-white ${isDone ? 'line-through text-slate-500' : ''}">${b.title}</h4>
-              <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i> ${b.location || 'Home'}</p>
-            </div>
-
-            <div class="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2">
-              ${!isDone && !isReview ? `
-                <button onclick="markDone('${b.id}')" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition">
-                  I Finished This!
-                </button>
-              ` : ''}
-              ${isReview && isParent ? `
-                <button onclick="approveChore('${b.id}')" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition">Approve & Pay</button>
-              ` : ''}
-              ${isParent ? `
-                <button onclick="deleteChore('${b.id}')" class="px-3 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-xl text-xs transition"><i class="fa-solid fa-trash-can"></i></button>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderWishlist() {
-      const container = document.getElementById('wishlistContainer');
-      container.innerHTML = appState.wishlist.map((w, idx) => `
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-md">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-black font-comic text-slate-500 w-5">#${idx + 1}</span>
-            <img src="${w.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 bg-slate-950" />
-            <div>
-              <h5 class="font-bold text-sm text-white">${w.title}</h5>
-              <span class="text-xs font-bold text-blue-400">$${w.price}</span>
-            </div>
-          </div>
-          <button onclick="setTarget('${w.id}')" class="px-3 py-1.5 text-xs font-bold rounded-lg ${appState.activeTargetId === w.id ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}">
-            ${appState.activeTargetId === w.id ? 'Active' : 'Make Target'}
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function renderLoot() {
-      const container = document.getElementById('lootContainer');
-      container.innerHTML = appState.loot.map(l => `
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex justify-between items-center shadow-md">
-          <div>
-            <h5 class="font-bold text-sm text-white">${l.title}</h5>
-            <span class="text-xs text-slate-400">${l.date}</span>
-          </div>
-          <span class="text-sm font-black text-red-400 font-comic">-$${l.price}</span>
-        </div>
-      `).join('');
-    }
-
-    function markDone(id) {
-      const b = appState.bounties.find(x => x.id === id);
-      if (b) {
-        b.status = 'review';
-        confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
-        pushState();
-      }
-    }
-
-    function approveChore(id) {
-      const b = appState.bounties.find(x => x.id === id);
-      if (b) {
-        b.status = 'completed';
-        confetti({ particleCount: 80, spread: 90, origin: { y: 0.5 } });
-        pushState();
-      }
-    }
-
-    function deleteChore(id) {
-      appState.bounties = appState.bounties.filter(x => x.id !== id);
-      pushState();
-    }
-
-    function setTarget(id) {
-      appState.activeTargetId = id;
-      pushState();
-    }
-
-    function switchTab(tab) {
-      ['bounties', 'wishlist', 'loot'].forEach(t => {
-        document.getElementById(`view-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).className = 'px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2';
-      });
-      document.getElementById(`view-${tab}`).classList.remove('hidden');
-      document.getElementById(`tab-${tab}`).className = 'px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2';
-    }
-
-    function openNewChoreModal() { document.getElementById('choreModal').classList.remove('hidden'); }
-    function closeNewChoreModal() { document.getElementById('choreModal').classList.add('hidden'); }
-    function saveNewChore() {
-      const title = document.getElementById('newChoreTitle').value.trim();
-      const reward = parseInt(document.getElementById('newChoreReward').value) || 5;
-      const location = document.getElementById('newChoreLocation').value.trim() || 'Home';
-      if (title) {
-        appState.bounties.unshift({ id: 'b_' + Date.now(), title, reward, status: 'open', location });
-        closeNewChoreModal();
-        pushState();
-      }
-    }
-
-    function openLogPurchaseModal() { document.getElementById('purchaseModal').classList.remove('hidden'); }
-    function closeLogPurchaseModal() { document.getElementById('purchaseModal').classList.add('hidden'); }
-    function savePurchase() {
-      const title = document.getElementById('purchaseTitle').value.trim();
-      const price = parseInt(document.getElementById('purchasePrice').value) || 0;
-      if (title && price > 0) {
-        appState.loot.unshift({ id: 'l_' + Date.now(), title, price, date: new Date().toISOString().split('T')[0] });
-        closeLogPurchaseModal();
-        pushState();
-      }
-    }
-  </script>
-</body>
-</html>
+  <!-- SYNC MODAL -->
+  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="text-lg f
