@@ -5,23 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Daily Bugle Bounty Board</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700;800;900&display=swap');
     .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
     .font-body { font-family: 'Inter', sans-serif; }
-    .brick-pattern {
+    body {
       background-color: #0b1120;
       background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
       background-size: 24px 24px;
+      touch-action: manipulation;
     }
   </style>
 </head>
-<body class="brick-pattern text-slate-100 font-body min-h-screen pb-24 select-none">
+<body class="text-slate-100 font-body min-h-screen pb-24 select-none">
 
   <!-- HEADER -->
-  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-4 py-3 flex justify-between items-center shadow-xl">
+  <header class="bg-slate-900 border-b-4 border-red-600 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-xl">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic">
         DB
@@ -32,24 +31,23 @@
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
         <div class="flex items-center gap-2 mt-1">
-          <button id="syncTriggerBtn" type="button" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5 active:scale-95 transition">
-            <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span> 
-            <span id="syncText">Tap to Link Devices</span>
-          </button>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-green-400 border border-slate-700 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span> Ready v4.0
+          </span>
         </div>
       </div>
     </div>
 
     <!-- PARENT PIN BUTTON -->
     <div class="flex items-center gap-2">
-      <button id="modeToggleBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95">
+      <button id="modeToggleBtn" type="button" class="px-3.5 py-1.5 rounded-xl font-bold text-xs sm:text-sm border transition flex items-center gap-2 bg-slate-800 text-slate-300 border-slate-700">
         <span id="lockIcon">🔒</span> 
         <span id="lockText">Parent Unlock</span>
       </button>
     </div>
   </header>
 
-  <!-- MAIN HUD & APPS -->
+  <!-- MAIN HUD -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
 
     <!-- REWARD HUD -->
@@ -73,9 +71,7 @@
 
           <div class="mt-3">
             <div class="w-full bg-slate-950 rounded-full h-5 border border-slate-700 p-0.5 relative overflow-hidden">
-              <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-500 relative" style="width: 0%;">
-                <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
-              </div>
+              <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-300" style="width: 0%;"></div>
             </div>
             <div class="flex justify-between text-xs font-bold mt-1.5 text-slate-400">
               <span id="hudProgressRatio">$0 of $100</span>
@@ -88,18 +84,18 @@
 
     <!-- TABS -->
     <div class="flex gap-2 border-b border-slate-800 pb-2 mb-4">
-      <button id="tab-bounties" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2">
-        <span>📋 Bounties</span>
+      <button id="tab-bounties" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-blue-600 text-white">
+        📋 Bounties
       </button>
-      <button id="tab-wishlist" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-        <span>⭐ Top 10 Wishlist</span>
+      <button id="tab-wishlist" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white">
+        ⭐ Top 10 Wishlist
       </button>
-      <button id="tab-loot" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2">
-        <span>📦 Loot Vault</span>
+      <button id="tab-loot" type="button" class="px-4 py-2 rounded-xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white">
+        📦 Loot Vault
       </button>
     </div>
 
-    <!-- VIEW: BOUNTIES -->
+    <!-- VIEW 1: BOUNTIES -->
     <div id="view-bounties">
       <div class="flex justify-between items-center mb-4">
         <div>
@@ -107,224 +103,32 @@
           <p class="text-xs text-slate-400">Tap a chore card to see tools and instructions!</p>
         </div>
         <button id="addChoreBtn" type="button" class="hidden px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl items-center gap-1.5 shadow-lg">
-          <span>＋ Post Bounty</span>
+          ＋ Post Bounty
         </button>
       </div>
       <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </div>
 
-    <!-- VIEW: WISHLIST -->
+    <!-- VIEW 2: WISHLIST -->
     <div id="view-wishlist" class="hidden">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
           <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Make Target" to save for it!</p>
         </div>
-        <button id="addWishBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-lg">
-          <span>＋ Add Goal</span>
+        <button id="addWishBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg">
+          ＋ Add Goal
         </button>
       </div>
       <div id="wishlistContainer" class="space-y-2.5"></div>
     </div>
 
-    <!-- VIEW: LOOT -->
+    <!-- VIEW 3: LOOT -->
     <div id="view-loot" class="hidden">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h3 class="text-lg font-black text-slate-200">Purchased Loot Vault</h3>
           <p class="text-xs text-slate-400">Items bought with chore earnings.</p>
         </div>
-        <button id="logPurchaseBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl flex items-center gap-1.5 shadow-lg">
-          <span>＋ Log Purchase</span>
-        </button>
-      </div>
-      <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-    </div>
-
-  </main>
-
-  <!-- MISSION BRIEFING MODAL -->
-  <div id="missionModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-start mb-3">
-        <div>
-          <span id="modalLocationBadge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-900 text-blue-300"></span>
-          <h3 id="modalMissionTitle" class="text-xl font-black text-white mt-1"></h3>
-        </div>
-        <span id="modalMissionReward" class="text-2xl font-black font-comic text-blue-400"></span>
-      </div>
-
-      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">🧰 Equipment & Supplies</h4>
-        <div id="modalToolsList" class="flex flex-wrap gap-1.5"></div>
-      </div>
-
-      <div class="mb-4">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">📋 Step-by-Step Mission</h4>
-        <div id="modalStepsList" class="space-y-2"></div>
-      </div>
-
-      <div class="bg-red-950/40 border border-red-800/60 rounded-xl p-3 mb-5 text-xs text-red-300 flex items-start gap-2">
-        <span class="text-red-400 text-sm">⚠️</span>
-        <span id="modalSafetyText"></span>
-      </div>
-
-      <div class="flex justify-between items-center gap-2">
-        <button id="closeMissionBtn" type="button" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Back</button>
-        <button id="modalActionBtn" type="button" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Complete Mission</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ON-SCREEN PIN KEYPAD -->
-  <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
-      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-xl font-bold">
-        🛡️
-      </div>
-      <h3 class="text-lg font-black text-white mb-1">Parent Access</h3>
-      <p class="text-xs text-slate-400 mb-4">Enter PIN (Default: 1234)</p>
-      
-      <div class="flex justify-center gap-3 mb-5">
-        <input id="pinInput" type="password" maxlength="4" placeholder="••••" readonly class="w-36 text-center tracking-widest text-2xl font-black bg-slate-950 border-2 border-slate-700 rounded-xl py-2 text-white focus:outline-none" />
-      </div>
-
-      <div class="grid grid-cols-3 gap-2 mb-4">
-        <button type="button" onclick="window.kPress('1')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">1</button>
-        <button type="button" onclick="window.kPress('2')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">2</button>
-        <button type="button" onclick="window.kPress('3')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">3</button>
-        <button type="button" onclick="window.kPress('4')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">4</button>
-        <button type="button" onclick="window.kPress('5')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">5</button>
-        <button type="button" onclick="window.kPress('6')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">6</button>
-        <button type="button" onclick="window.kPress('7')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">7</button>
-        <button type="button" onclick="window.kPress('8')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">8</button>
-        <button type="button" onclick="window.kPress('9')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">9</button>
-        <button type="button" onclick="window.kClear()" class="py-3 bg-red-600/20 text-sm font-bold rounded-xl text-red-400 active:bg-red-600">Clear</button>
-        <button type="button" onclick="window.kPress('0')" class="py-3 bg-slate-800 text-lg font-bold rounded-xl text-white active:bg-slate-700">0</button>
-        <button type="button" onclick="window.kSubmit()" class="py-3 bg-blue-600 text-sm font-bold rounded-xl text-white active:bg-blue-500">OK</button>
-      </div>
-
-      <button id="cancelPinBtn" type="button" class="text-xs text-slate-400 hover:text-white underline">Cancel</button>
-    </div>
-  </div>
-
-  <!-- POST NEW BOUNTY WITH AI GENERATOR -->
-  <div id="choreModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto">
-      <h3 class="text-lg font-black text-white mb-2">Post New Bounty</h3>
-      
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
-          <div class="flex gap-2">
-            <input id="newChoreTitle" type="text" placeholder="e.g. Millie dog wash, build shelf" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" />
-            <button id="aiPlanBtn" type="button" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md whitespace-nowrap">
-              ✨ AI Plan
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs text-slate-400 block mb-1">Reward ($)</label>
-            <input id="newChoreReward" type="number" placeholder="5" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-          </div>
-          <div>
-            <label class="text-xs text-slate-400 block mb-1">Location</label>
-            <input id="newChoreLocation" type="text" placeholder="Backyard" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Tools / Supplies (Comma separated)</label>
-          <input id="newChoreTools" type="text" placeholder="e.g. Dog shampoo, 2 dry towels, brush" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Steps (One per line)</label>
-          <textarea id="newChoreSteps" rows="3" placeholder="Brush coat&#10;Lather with warm water&#10;Dry thoroughly" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none"></textarea>
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Safety Tip</label>
-          <input id="newChoreSafety" type="text" placeholder="Keep water warm, never hot" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
-        </div>
-      </div>
-
-      <div class="flex gap-2 justify-end mt-4">
-        <button id="cancelChoreBtn" type="button" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button id="saveChoreBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl">Post Bounty</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ADD WISHLIST ITEM MODAL -->
-  <div id="wishModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <h3 class="text-lg font-black text-white mb-3">Add Dream Reward</h3>
-      
-      <div class="mb-3">
-        <label class="text-xs text-slate-400 block mb-1.5">Quick LEGO Presets</label>
-        <div class="flex flex-wrap gap-1.5">
-          <button type="button" onclick="window.applyPreset('Daily Bugle', 100, 'https://images.brickset.com/sets/images/76178-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
-          <button type="button" onclick="window.applyPreset('Spider-Man Final Battle', 105, 'https://images.brickset.com/sets/images/76261-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
-          <button type="button" onclick="window.applyPreset('Sanctum Sanctorum', 250, 'https://images.brickset.com/sets/images/76218-1.jpg')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Sanctum ($250)</button>
-        </div>
-      </div>
-
-      <div class="space-y-2.5">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Reward Name</label>
-          <input id="wishTitle" type="text" placeholder="e.g. LEGO Daily Bugle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
-          <input id="wishPrice" type="number" placeholder="100" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Image URL</label>
-          <input id="wishImage" type="text" placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" />
-        </div>
-      </div>
-
-      <div class="flex gap-2 justify-end mt-4">
-        <button id="cancelWishBtn" type="button" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button id="saveWishBtn" type="button" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save Goal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- LOG PURCHASE MODAL -->
-  <div id="purchaseModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <h3 class="text-lg font-black text-white mb-3">Log a Purchase</h3>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">What did he buy?</label>
-          <input id="purchaseTitle" type="text" placeholder="e.g. Spider-Man Minifigures" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Cost ($)</label>
-          <input id="purchasePrice" type="number" placeholder="20" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none" />
-        </div>
-      </div>
-      <div class="flex gap-2 justify-end mt-4">
-        <button id="cancelPurchaseBtn" type="button" class="px-4 py-2 bg-red-600 text-white font-bold text-xs rounded-xl">Cancel</button>
-        <button id="savePurchaseBtn" type="button" class="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl">Save & Deduct</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- SYNC MODAL -->
-  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <div class="flex justify-between items-center mb-3">
-        <h3 class="text-lg font-black text-white flex items-center gap-2">
-          <span>📡 Link Devices</span>
-        </h3>
-        <button id="closeSyncXBtn" type="button" class="text-red-400 text-lg font-bold">✕</button>
-      </div>
-      <p class="text-xs text-slate-300 mb-3 leading-relaxed">
-        Type a shared family code (e.g. <strong class="text-blue-400">gill-bounty</strong>) on your phone and tablet to keep them synchronized:
-      </p>
-      <input id="syncRoomInput" type="text" placeholder="e.g. gill-bounty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm fon
+        <button id="logPurchaseBtn" type="button" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500
+          
