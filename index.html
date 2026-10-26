@@ -39,11 +39,11 @@
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
         <div class="flex items-center gap-2 mt-1">
-          <!-- LIVE CLOUD SYNC BADGE -->
-          <button id="syncStatusBtn" type="button" onclick="openSyncModal()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 active:scale-95 transition">
+          <!-- LIVE FIREBASE CLOUD SYNC BADGE -->
+          <div id="syncStatusBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 transition">
             <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span id="syncText">Device Sync</span>
-          </button>
+            <span id="syncText">Connecting Cloud...</span>
+          </div>
         </div>
       </div>
     </div>
@@ -175,58 +175,6 @@
     </div>
 
   </main>
-
-  <!-- MODAL: TWO-DEVICE CLOUD SYNC -->
-  <div id="syncModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-lg font-black text-white flex items-center gap-2">
-          <span>📡</span> Live Two-Device Sync
-        </h3>
-        <button type="button" onclick="closeSyncModal()" class="text-red-400 text-lg font-bold">✕</button>
-      </div>
-      <p class="text-xs text-slate-300 mb-3 leading-relaxed">
-        This mirrors your phone and Lucas's Chromebook tablet in real-time.
-      </p>
-
-      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4 space-y-2">
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400 font-bold">Active Cloud Room:</span>
-          <span id="syncIdLabel" class="font-mono font-bold text-blue-400 text-xs">Connecting...</span>
-        </div>
-        <div class="flex justify-between items-center text-xs">
-          <span class="text-slate-400 font-bold">Status:</span>
-          <span id="syncDiagnosticText" class="font-bold text-green-400">Connecting...</span>
-        </div>
-      </div>
-
-      <div class="space-y-2 mb-4">
-        <button type="button" onclick="copySyncLink()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition">
-          <span>📋</span> Copy Direct Tablet Link
-        </button>
-        <p class="text-[11px] text-slate-400 leading-tight">
-          Tap above to copy. Open this link once on Lucas's tablet to instantly connect both screens!
-        </p>
-      </div>
-
-      <div class="border-t border-slate-800 pt-3">
-        <label class="text-[11px] font-bold text-slate-400 block mb-1">Or Connect to an Existing Sync ID:</label>
-        <div class="flex gap-1.5">
-          <input id="customSyncInput" type="text" placeholder="Paste Sync ID here" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none" />
-          <button type="button" onclick="applyCustomSyncId()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl">Connect</button>
-        </div>
-      </div>
-
-      <div class="flex justify-between items-center gap-2 mt-4 pt-3 border-t border-slate-800">
-        <button type="button" onclick="manualSyncNow()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 font-bold text-xs text-blue-400 rounded-xl">
-          🔄 Sync Now
-        </button>
-        <button type="button" onclick="closeSyncModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL: PARENT PIN KEYPAD -->
   <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
@@ -503,7 +451,12 @@
   <!-- CANVAS FOR ZERO-DEPENDENCY CONFETTI -->
   <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
 
-  <script>
+  <!-- FIREBASE SCRIPTS (Official Modular SDK via CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     // AUDIO ENGINE (Synthesized via Web Audio API)
     var audioCtx = null;
     function getAudioContext() {
@@ -762,190 +715,101 @@
     };
 
     var appState = DEFAULT_STATE;
-    try {
-      var saved = localStorage.getItem('gill_daily_bugle_final_v12');
-      if (saved) appState = JSON.parse(saved);
-    } catch(e) {}
-
     var isParent = false;
     var pinVal = "";
     var activeMission = null;
     var currentFilter = 'all';
 
-    // GUARANTEED JSON-BODY SYNC ENGINE (Immune to header stripping)
-    var urlParams = new URLSearchParams(window.location.search);
-    var syncObjectId = urlParams.get('sync') || localStorage.getItem('gill_active_sync_id') || '';
-    // Discard any invalid legacy text like 'gill-bounty' that is not a real cloud object ID
-    if (syncObjectId === 'gill-bounty' || syncObjectId.length < 15) {
-      syncObjectId = '';
-    }
-    var isSyncing = false;
+    // FIREBASE CLOUD INITIALIZATION
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'daily-bugle-bounty-v1';
+    let db = null;
+    let auth = null;
+    let currentUser = null;
 
-    function initSyncEngine() {
-      if (syncObjectId) {
-        document.getElementById('syncIdLabel').textContent = syncObjectId;
-        localStorage.setItem('gill_active_sync_id', syncObjectId);
-        updateSyncBadge("online");
-        pullFromCloud();
-      } else {
-        createNewCloudObject();
+    if (typeof __firebase_config !== 'undefined') {
+      try {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        const initAuthAndSync = async () => {
+          try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+            currentUser = auth.currentUser;
+            updateSyncBadge("online");
+            startRealtimeListener();
+          } catch (authErr) {
+            console.error("Auth error:", authErr);
+            updateSyncBadge("saved_local");
+          }
+        };
+
+        initAuthAndSync();
+      } catch (err) {
+        console.error("Firebase init failed:", err);
+        updateSyncBadge("saved_local");
       }
+    } else {
+      updateSyncBadge("saved_local");
     }
 
-    function createNewCloudObject() {
-      updateSyncBadge("syncing");
-      document.getElementById('syncDiagnosticText').textContent = "Registering live cloud room...";
-
-      fetch('https://api.restful-api.dev/objects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'gill_bounty_live', data: appState })
-      })
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data && data.id) {
-          syncObjectId = data.id;
-          localStorage.setItem('gill_active_sync_id', syncObjectId);
-          document.getElementById('syncIdLabel').textContent = syncObjectId;
-          document.getElementById('syncDiagnosticText').textContent = "Live & Connected!";
-          updateSyncBadge("online");
+    function startRealtimeListener() {
+      if (!db || !currentUser) return;
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bounty_board', 'shared_state');
+      
+      onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const remoteData = docSnap.data();
+          if (remoteData && remoteData.bounties) {
+            // Apply remote updates smoothly
+            appState = remoteData;
+            renderAll();
+            updateSyncBadge("online");
+          }
         } else {
-          document.getElementById('syncDiagnosticText').textContent = "Ready (Local mode)";
-          updateSyncBadge("saved_local");
+          // Initialize document in Firestore if not existing
+          setDoc(docRef, appState).catch(() => {});
         }
-      })
-      .catch(function(e) {
-        document.getElementById('syncDiagnosticText').textContent = "Saved to tablet storage";
+      }, (error) => {
+        console.error("Sync listener error:", error);
         updateSyncBadge("saved_local");
       });
     }
 
-    function persist(skipCloud) {
+    async function persist() {
       appState.lastUpdated = Date.now();
-      try {
-        localStorage.setItem('gill_daily_bugle_final_v12', JSON.stringify(appState));
-      } catch(e) {}
       renderAll();
 
-      if (!skipCloud && syncObjectId) {
-        pushToCloud();
-      }
-    }
-
-    function pushToCloud() {
-      if (!syncObjectId || isSyncing) return;
-      isSyncing = true;
-      updateSyncBadge("syncing");
-
-      fetch('https://api.restful-api.dev/objects/' + syncObjectId, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'gill_bounty_live', data: appState })
-      })
-      .then(function(res) {
-        isSyncing = false;
-        if (res.ok) {
+      if (db && currentUser) {
+        updateSyncBadge("syncing");
+        try {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bounty_board', 'shared_state');
+          await setDoc(docRef, appState);
           updateSyncBadge("online");
-          document.getElementById('syncDiagnosticText').textContent = "Last pushed: " + new Date().toLocaleTimeString();
-        } else {
+        } catch (e) {
+          console.error("Cloud push failed:", e);
           updateSyncBadge("saved_local");
         }
-      })
-      .catch(function(err) {
-        isSyncing = false;
-        updateSyncBadge("saved_local");
-      });
-    }
-
-    function pullFromCloud() {
-      if (!syncObjectId) return;
-
-      fetch('https://api.restful-api.dev/objects/' + syncObjectId)
-      .then(function(res) {
-        if (!res.ok) throw new Error("Sync status " + res.status);
-        return res.json();
-      })
-      .then(function(json) {
-        if (json && json.data && json.data.bounties) {
-          var remoteState = json.data;
-          if (!remoteState.lastUpdated || remoteState.lastUpdated >= (appState.lastUpdated || 0)) {
-            appState = remoteState;
-            localStorage.setItem('gill_daily_bugle_final_v12', JSON.stringify(appState));
-            renderAll();
-          }
-          updateSyncBadge("online");
-          document.getElementById('syncDiagnosticText').textContent = "Last synced: " + new Date().toLocaleTimeString();
-        }
-      })
-      .catch(function(e) {
-        updateSyncBadge("saved_local");
-      });
-    }
-
-    function manualSyncNow() {
-      playSound('click');
-      pullFromCloud();
-      pushToCloud();
+      }
     }
 
     function updateSyncBadge(status) {
-      var dot = document.getElementById('syncDot');
-      var txt = document.getElementById('syncText');
+      const dot = document.getElementById('syncDot');
+      const txt = document.getElementById('syncText');
       if (status === "online") {
         dot.className = "w-2 h-2 rounded-full bg-green-400";
-        txt.textContent = "Synced 🟢";
+        txt.textContent = "Google Cloud Synced 🟢";
       } else if (status === "syncing") {
         dot.className = "w-2 h-2 rounded-full bg-blue-400 animate-ping";
         txt.textContent = "Syncing... 🔄";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-400";
-        txt.textContent = "Saved Locally";
-      }
-    }
-
-    function openSyncModal() {
-      playSound('click');
-      document.getElementById('syncIdLabel').textContent = syncObjectId || 'Connecting...';
-      document.getElementById('syncModal').classList.remove('hidden');
-    }
-
-    function closeSyncModal() {
-      playSound('click');
-      document.getElementById('syncModal').classList.add('hidden');
-    }
-
-    function copySyncLink() {
-      playSound('click');
-      if (!syncObjectId) {
-        alert("Please wait a moment while the cloud sync ID finishes connecting.");
-        return;
-      }
-      var baseUrl = window.location.origin + window.location.pathname;
-      var fullUrl = baseUrl + "?sync=" + encodeURIComponent(syncObjectId);
-
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(fullUrl).then(function() {
-          alert("Direct Sync Link copied!\n\nOpen this link on your other device to connect:\n" + fullUrl);
-        });
-      } else {
-        prompt("Copy this link and open it on your other device:", fullUrl);
-      }
-    }
-
-    function applyCustomSyncId() {
-      playSound('coin');
-      var val = (document.getElementById('customSyncInput').value || '').trim();
-      if (val) {
-        if (val.indexOf('sync=') !== -1) {
-          val = val.split('sync=').pop().split('&')[0];
-        } else if (val.indexOf('/') !== -1) {
-          val = val.split('/').pop();
-        }
-        syncObjectId = val;
-        localStorage.setItem('gill_active_sync_id', syncObjectId);
-        document.getElementById('syncIdLabel').textContent = syncObjectId;
-        closeSyncModal();
-        pullFromCloud();
+        txt.textContent = "Saved Offline";
       }
     }
 
@@ -1049,7 +913,7 @@
       }
     ];
 
-    function runAiLegoFinder() {
+    window.runAiLegoFinder = function() {
       playSound('click');
       var query = (document.getElementById('inputLegoSearch').value || document.getElementById('inputWishTitle').value || '').trim().toLowerCase();
       if (!query) {
@@ -1094,9 +958,9 @@
       document.getElementById('inputWishUrl').value = bestMatch.url;
       document.getElementById('inputWishDesc').value = bestMatch.desc;
       playSound('coin');
-    }
+    };
 
-    function pickPreset(title, price, img, url, desc) {
+    window.pickPreset = function(title, price, img, url, desc) {
       playSound('click');
       document.getElementById('inputWishTitle').value = title;
       document.getElementById('inputWishPrice').value = price;
@@ -1104,7 +968,7 @@
       document.getElementById('inputWishImgPreview').src = img;
       document.getElementById('inputWishUrl').value = url || 'https://www.lego.com';
       document.getElementById('inputWishDesc').value = desc || '';
-    }
+    };
 
     // MAIN RENDER ENGINE
     function renderAll() {
@@ -1475,17 +1339,17 @@
       document.getElementById('missionModal').classList.remove('hidden');
     }
 
-    function closeMission() {
+    window.closeMission = function() {
       playSound('click');
       document.getElementById('missionModal').classList.add('hidden');
-    }
+    };
 
-    function confirmMissionFinish() {
+    window.confirmMissionFinish = function() {
       if (activeMission) {
         markChoreDone(activeMission.id);
       }
       closeMission();
-    }
+    };
 
     // CHORE ACTIONS
     function markChoreDone(id) {
@@ -1548,15 +1412,17 @@
       persist();
     }
 
-    function openWishModal() {
+    window.openWishModal = function() {
       playSound('click');
       document.getElementById('wishModal').classList.remove('hidden');
-    }
-    function closeWishModal() {
+    };
+
+    window.closeWishModal = function() {
       playSound('click');
       document.getElementById('wishModal').classList.add('hidden');
-    }
-    function saveNewWish() {
+    };
+
+    window.saveNewWish = function() {
       var title = document.getElementById('inputWishTitle').value.trim();
       var price = parseInt(document.getElementById('inputWishPrice').value) || 50;
       var img = document.getElementById('inputWishImg').value.trim() || 'https://images.brickset.com/sets/images/76178-1.jpg';
@@ -1569,18 +1435,20 @@
         closeWishModal();
         persist();
       }
-    }
+    };
 
     // LOOT ACTIONS
-    function openLootModal() {
+    window.openLootModal = function() {
       playSound('click');
       document.getElementById('lootModal').classList.remove('hidden');
-    }
-    function closeLootModal() {
+    };
+
+    window.closeLootModal = function() {
       playSound('click');
       document.getElementById('lootModal').classList.add('hidden');
-    }
-    function saveNewLoot() {
+    };
+
+    window.saveNewLoot = function() {
       var title = document.getElementById('inputLootTitle').value.trim();
       var price = parseInt(document.getElementById('inputLootPrice').value) || 0;
       var cat = document.getElementById('inputLootCat').value;
@@ -1597,10 +1465,10 @@
         closeLootModal();
         persist();
       }
-    }
+    };
 
     // FILTER LOGIC
-    function setFilter(filt) {
+    window.setFilter = function(filt) {
       playSound('click');
       currentFilter = filt;
       var btns = document.querySelectorAll('.filter-btn');
@@ -1613,10 +1481,10 @@
         }
       }
       renderBounties();
-    }
+    };
 
     // AI MISSION BRIEFING PLAN GENERATOR
-    function runAiPlan() {
+    window.runAiPlan = function() {
       playSound('click');
       var t = (document.getElementById('inputChoreTitle').value || '').toLowerCase();
       if (!t) return alert("Please type a chore title first (e.g. Wash the dog, Build a shelf)");
@@ -1687,18 +1555,20 @@
       if (!document.getElementById('inputChoreReward').value) {
         document.getElementById('inputChoreReward').value = rew;
       }
-    }
+    };
 
     // POST CHORE MODAL
-    function openChoreModal() {
+    window.openChoreModal = function() {
       playSound('click');
       document.getElementById('choreModal').classList.remove('hidden');
-    }
-    function closeChoreModal() {
+    };
+
+    window.closeChoreModal = function() {
       playSound('click');
       document.getElementById('choreModal').classList.add('hidden');
-    }
-    function saveNewChore() {
+    };
+
+    window.saveNewChore = function() {
       var title = document.getElementById('inputChoreTitle').value.trim();
       var reward = parseInt(document.getElementById('inputChoreReward').value) || 5;
       var cat = document.getElementById('inputChoreCategory').value;
@@ -1727,22 +1597,24 @@
         closeChoreModal();
         persist();
       }
-    }
+    };
 
     // PIN KEYPAD
-    function kPress(d) {
+    window.kPress = function(d) {
       playSound('click');
       if (pinVal.length < 4) {
         pinVal += d;
         document.getElementById('pinDisplay').value = pinVal;
       }
-    }
-    function kClear() {
+    };
+
+    window.kClear = function() {
       playSound('click');
       pinVal = "";
       document.getElementById('pinDisplay').value = "";
-    }
-    function kSubmit() {
+    };
+
+    window.kSubmit = function() {
       if (pinVal === '1234') {
         playSound('fanfare');
         isParent = true;
@@ -1757,11 +1629,12 @@
         alert("Incorrect PIN");
         kClear();
       }
-    }
-    function closePin() {
+    };
+
+    window.closePin = function() {
       playSound('click');
       document.getElementById('pinModal').classList.add('hidden');
-    }
+    };
 
     // TAB NAVIGATION
     function switchTab(viewId) {
@@ -1787,7 +1660,7 @@
     }
 
     // INITIALIZATION & EVENT BINDINGS
-    window.onload = function() {
+    window.addEventListener('DOMContentLoaded', () => {
       document.getElementById('lockBtn').onclick = function() {
         if (!isParent) {
           pinVal = "";
@@ -1813,11 +1686,7 @@
       document.getElementById('addLootBtn').onclick = openLootModal;
 
       renderAll();
-      initSyncEngine();
-
-      // Poll cloud for updates every 4 seconds
-      setInterval(pullFromCloud, 4000);
-    };
+    });
   </script>
 </body>
 </html>
