@@ -4,7 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Daily Bugle Bounty Board</title>
+  
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase App & Firestore (compat libraries for zero-build static hosting) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800;900&display=swap');
     .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
@@ -39,10 +46,10 @@
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
         <div class="flex items-center gap-2 mt-1">
-          <!-- LIVE FIREBASE CLOUD SYNC BADGE -->
-          <div id="syncStatusBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 transition">
-            <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            <span id="syncText">Connecting Cloud...</span>
+          <!-- LIVE FIREBASE SYNC BADGE -->
+          <div id="syncBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+            <span id="syncText">Connecting to Google Cloud...</span>
           </div>
         </div>
       </div>
@@ -451,134 +458,27 @@
   <!-- CANVAS FOR ZERO-DEPENDENCY CONFETTI -->
   <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50"></canvas>
 
-  <!-- FIREBASE SCRIPTS (Official Modular SDK via CDN) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <script>
+    // -------------------------------------------------------------
+    // 1. FIREBASE CONFIGURATION & FIRESTORE REAL-TIME INITIALIZATION
+    // -------------------------------------------------------------
+    const firebaseConfig = {
+      apiKey: "AIzaSyBQig2hMguSQ3r89O6JY2W9-inEM2KJwGs",
+      authDomain: "daily-bugle-bounty.firebaseapp.com",
+      projectId: "daily-bugle-bounty",
+      storageBucket: "daily-bugle-bounty.firebasestorage.app",
+      messagingSenderId: "388784123496",
+      appId: "1:388784123496:web:e0f06b8517afd6e6b455dd",
+      measurementId: "G-EVBRSFCEV5"
+    };
 
-    // AUDIO ENGINE (Synthesized via Web Audio API)
-    var audioCtx = null;
-    function getAudioContext() {
-      if (!audioCtx) {
-        var AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) audioCtx = new AudioContext();
-      }
-      return audioCtx;
-    }
+    var db = null;
+    var firestoreDocRef = null;
+    var isCloudConnected = false;
 
-    function playSound(type) {
-      try {
-        var ctx = getAudioContext();
-        if (!ctx) return;
-        if (ctx.state === 'suspended') ctx.resume();
-
-        var now = ctx.currentTime;
-        if (type === 'coin') {
-          var osc = ctx.createOscillator();
-          var gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(987.77, now);
-          osc.frequency.setValueAtTime(1318.51, now + 0.08);
-          gain.gain.setValueAtTime(0.3, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(now);
-          osc.stop(now + 0.35);
-        } else if (type === 'fanfare') {
-          var notes = [523.25, 659.25, 783.99, 1046.50];
-          notes.forEach(function(f, idx) {
-            var o = ctx.createOscillator();
-            var g = ctx.createGain();
-            o.type = 'triangle';
-            o.frequency.setValueAtTime(f, now + idx * 0.1);
-            g.gain.setValueAtTime(0.3, now + idx * 0.1);
-            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
-            o.connect(g);
-            g.connect(ctx.destination);
-            o.start(now + idx * 0.1);
-            o.stop(now + idx * 0.1 + 0.35);
-          });
-        } else if (type === 'click') {
-          var osc2 = ctx.createOscillator();
-          var gain2 = ctx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.setValueAtTime(600, now);
-          gain2.gain.setValueAtTime(0.15, now);
-          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-          osc2.connect(gain2);
-          gain2.connect(ctx.destination);
-          osc2.start(now);
-          osc2.stop(now + 0.08);
-        }
-      } catch (e) {}
-    }
-
-    // CANVAS CONFETTI
-    var confettiCanvas = document.getElementById('confettiCanvas');
-    var confettiCtx = confettiCanvas.getContext('2d');
-    var confettiParticles = [];
-    var confettiAnimId = null;
-
-    function resizeConfetti() {
-      confettiCanvas.width = window.innerWidth;
-      confettiCanvas.height = window.innerHeight;
-    }
-    window.addEventListener('resize', resizeConfetti);
-    resizeConfetti();
-
-    function triggerConfetti() {
-      playSound('fanfare');
-      confettiParticles = [];
-      var colors = ['#ef4444', '#3b82f6', '#ffffff', '#60a5fa', '#dc2626'];
-      for (var i = 0; i < 90; i++) {
-        confettiParticles.push({
-          x: confettiCanvas.width / 2,
-          y: confettiCanvas.height * 0.6,
-          vx: (Math.random() - 0.5) * 14,
-          vy: -Math.random() * 14 - 4,
-          size: Math.random() * 8 + 4,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          rotation: Math.random() * 360,
-          rotSpeed: (Math.random() - 0.5) * 10,
-          opacity: 1
-        });
-      }
-      if (!confettiAnimId) runConfetti();
-    }
-
-    function runConfetti() {
-      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-      var alive = false;
-      for (var i = 0; i < confettiParticles.length; i++) {
-        var p = confettiParticles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.35;
-        p.rotation += p.rotSpeed;
-        p.opacity -= 0.012;
-
-        if (p.opacity > 0 && p.y < confettiCanvas.height) {
-          alive = true;
-          confettiCtx.save();
-          confettiCtx.translate(p.x, p.y);
-          confettiCtx.rotate((p.rotation * Math.PI) / 180);
-          confettiCtx.globalAlpha = Math.max(0, p.opacity);
-          confettiCtx.fillStyle = p.color;
-          confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
-          confettiCtx.restore();
-        }
-      }
-      if (alive) {
-        confettiAnimId = requestAnimationFrame(runConfetti);
-      } else {
-        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-        confettiAnimId = null;
-      }
-    }
-
-    // ORIGINAL COMPREHENSIVE DATA
+    // -------------------------------------------------------------
+    // 2. DEFAULT STATE & DATA DEFINITIONS
+    // -------------------------------------------------------------
     var DEFAULT_STATE = {
       targetId: "w1",
       lastUpdated: Date.now(),
@@ -715,105 +615,211 @@
     };
 
     var appState = DEFAULT_STATE;
+    try {
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v1');
+      if (saved) appState = JSON.parse(saved);
+    } catch(e) {}
+
     var isParent = false;
     var pinVal = "";
     var activeMission = null;
     var currentFilter = 'all';
 
-    // FIREBASE CLOUD INITIALIZATION
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'daily-bugle-bounty-v1';
-    let db = null;
-    let auth = null;
-    let currentUser = null;
-
-    if (typeof __firebase_config !== 'undefined') {
+    // -------------------------------------------------------------
+    // 3. FIREBASE REAL-TIME SYNC ENGINE
+    // -------------------------------------------------------------
+    function setupFirebase() {
       try {
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+        firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
 
-        const initAuthAndSync = async () => {
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
+        // Real-Time Live Listener (Native WebSockets)
+        firestoreDocRef.onSnapshot(function(doc) {
+          if (doc.exists) {
+            var cloudData = doc.data();
+            if (cloudData && cloudData.bounties) {
+              if (!cloudData.lastUpdated || cloudData.lastUpdated >= (appState.lastUpdated || 0)) {
+                appState = cloudData;
+                try {
+                  localStorage.setItem('gill_daily_bugle_firebase_v1', JSON.stringify(appState));
+                } catch(e){}
+                renderAll();
+              }
             }
-            currentUser = auth.currentUser;
-            updateSyncBadge("online");
-            startRealtimeListener();
-          } catch (authErr) {
-            console.error("Auth error:", authErr);
-            updateSyncBadge("saved_local");
+          } else {
+            // First time setup on this Firebase project - seed the cloud document
+            firestoreDocRef.set(appState);
           }
-        };
+          isCloudConnected = true;
+          updateSyncBadge(true);
+        }, function(error) {
+          console.error("Firestore onSnapshot error:", error);
+          isCloudConnected = false;
+          updateSyncBadge(false);
+        });
 
-        initAuthAndSync();
       } catch (err) {
-        console.error("Firebase init failed:", err);
-        updateSyncBadge("saved_local");
-      }
-    } else {
-      updateSyncBadge("saved_local");
-    }
-
-    function startRealtimeListener() {
-      if (!db || !currentUser) return;
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bounty_board', 'shared_state');
-      
-      onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const remoteData = docSnap.data();
-          if (remoteData && remoteData.bounties) {
-            // Apply remote updates smoothly
-            appState = remoteData;
-            renderAll();
-            updateSyncBadge("online");
-          }
-        } else {
-          // Initialize document in Firestore if not existing
-          setDoc(docRef, appState).catch(() => {});
-        }
-      }, (error) => {
-        console.error("Sync listener error:", error);
-        updateSyncBadge("saved_local");
-      });
-    }
-
-    async function persist() {
-      appState.lastUpdated = Date.now();
-      renderAll();
-
-      if (db && currentUser) {
-        updateSyncBadge("syncing");
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bounty_board', 'shared_state');
-          await setDoc(docRef, appState);
-          updateSyncBadge("online");
-        } catch (e) {
-          console.error("Cloud push failed:", e);
-          updateSyncBadge("saved_local");
-        }
+        console.error("Firebase init error:", err);
+        isCloudConnected = false;
+        updateSyncBadge(false);
       }
     }
 
-    function updateSyncBadge(status) {
-      const dot = document.getElementById('syncDot');
-      const txt = document.getElementById('syncText');
-      if (status === "online") {
+    function updateSyncBadge(online) {
+      var dot = document.getElementById('syncDot');
+      var txt = document.getElementById('syncText');
+      if (online) {
         dot.className = "w-2 h-2 rounded-full bg-green-400";
-        txt.textContent = "Google Cloud Synced 🟢";
-      } else if (status === "syncing") {
-        dot.className = "w-2 h-2 rounded-full bg-blue-400 animate-ping";
-        txt.textContent = "Syncing... 🔄";
+        txt.textContent = "Google Cloud Live 🟢";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-400";
         txt.textContent = "Saved Offline";
       }
     }
 
-    // AI LEGO SET FINDER & AUTO-COMPLETE DATABASE
+    function persist() {
+      appState.lastUpdated = Date.now();
+      try {
+        localStorage.setItem('gill_daily_bugle_firebase_v1', JSON.stringify(appState));
+      } catch(e) {}
+      renderAll();
+
+      // Write directly to Google Cloud Firestore in real time!
+      if (firestoreDocRef) {
+        firestoreDocRef.set(appState).catch(function(err) {
+          console.warn("Cloud save queued:", err);
+        });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 4. AUDIO & CONFETTI CELEBRATIONS
+    // -------------------------------------------------------------
+    var audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      try {
+        var ctx = getAudioContext();
+        if (!ctx) return;
+        if (ctx.state === 'suspended') ctx.resume();
+
+        var now = ctx.currentTime;
+        if (type === 'coin') {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(987.77, now);
+          osc.frequency.setValueAtTime(1318.51, now + 0.08);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'fanfare') {
+          var notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach(function(f, idx) {
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(f, now + idx * 0.1);
+            g.gain.setValueAtTime(0.3, now + idx * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.start(now + idx * 0.1);
+            o.stop(now + idx * 0.1 + 0.35);
+          });
+        } else if (type === 'click') {
+          var osc2 = ctx.createOscillator();
+          var gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(600, now);
+          gain2.gain.setValueAtTime(0.15, now);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.start(now);
+          osc2.stop(now + 0.08);
+        }
+      } catch (e) {}
+    }
+
+    var confettiCanvas = document.getElementById('confettiCanvas');
+    var confettiCtx = confettiCanvas.getContext('2d');
+    var confettiParticles = [];
+    var confettiAnimId = null;
+
+    function resizeConfetti() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    function triggerConfetti() {
+      playSound('fanfare');
+      confettiParticles = [];
+      var colors = ['#ef4444', '#3b82f6', '#ffffff', '#60a5fa', '#dc2626'];
+      for (var i = 0; i < 90; i++) {
+        confettiParticles.push({
+          x: confettiCanvas.width / 2,
+          y: confettiCanvas.height * 0.6,
+          vx: (Math.random() - 0.5) * 14,
+          vy: -Math.random() * 14 - 4,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 10,
+          opacity: 1
+        });
+      }
+      if (!confettiAnimId) runConfetti();
+    }
+
+    function runConfetti() {
+      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      var alive = false;
+      for (var i = 0; i < confettiParticles.length; i++) {
+        var p = confettiParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.35;
+        p.rotation += p.rotSpeed;
+        p.opacity -= 0.012;
+
+        if (p.opacity > 0 && p.y < confettiCanvas.height) {
+          alive = true;
+          confettiCtx.save();
+          confettiCtx.translate(p.x, p.y);
+          confettiCtx.rotate((p.rotation * Math.PI) / 180);
+          confettiCtx.globalAlpha = Math.max(0, p.opacity);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+          confettiCtx.restore();
+        }
+      }
+      if (alive) {
+        confettiAnimId = requestAnimationFrame(runConfetti);
+      } else {
+        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        confettiAnimId = null;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. AI LEGO CATALOG & AUTO-COMPLETER
+    // -------------------------------------------------------------
     var LEGO_AI_CATALOG = [
       {
         match: ["daily bugle", "bugle", "spiderman tower", "76178"],
@@ -913,7 +919,7 @@
       }
     ];
 
-    window.runAiLegoFinder = function() {
+    function runAiLegoFinder() {
       playSound('click');
       var query = (document.getElementById('inputLegoSearch').value || document.getElementById('inputWishTitle').value || '').trim().toLowerCase();
       if (!query) {
@@ -958,9 +964,9 @@
       document.getElementById('inputWishUrl').value = bestMatch.url;
       document.getElementById('inputWishDesc').value = bestMatch.desc;
       playSound('coin');
-    };
+    }
 
-    window.pickPreset = function(title, price, img, url, desc) {
+    function pickPreset(title, price, img, url, desc) {
       playSound('click');
       document.getElementById('inputWishTitle').value = title;
       document.getElementById('inputWishPrice').value = price;
@@ -968,9 +974,11 @@
       document.getElementById('inputWishImgPreview').src = img;
       document.getElementById('inputWishUrl').value = url || 'https://www.lego.com';
       document.getElementById('inputWishDesc').value = desc || '';
-    };
+    }
 
-    // MAIN RENDER ENGINE
+    // -------------------------------------------------------------
+    // 6. MAIN RENDER ENGINE
+    // -------------------------------------------------------------
     function renderAll() {
       var totalEarned = 0;
       for (var i = 0; i < appState.bounties.length; i++) {
@@ -1289,7 +1297,9 @@
       }
     }
 
-    // MISSION BRIEFING MODAL
+    // -------------------------------------------------------------
+    // 7. MODALS & INTERACTIONS
+    // -------------------------------------------------------------
     function openMissionModal(id) {
       playSound('click');
       var b = null;
@@ -1339,17 +1349,17 @@
       document.getElementById('missionModal').classList.remove('hidden');
     }
 
-    window.closeMission = function() {
+    function closeMission() {
       playSound('click');
       document.getElementById('missionModal').classList.add('hidden');
-    };
+    }
 
-    window.confirmMissionFinish = function() {
+    function confirmMissionFinish() {
       if (activeMission) {
         markChoreDone(activeMission.id);
       }
       closeMission();
-    };
+    }
 
     // CHORE ACTIONS
     function markChoreDone(id) {
@@ -1412,17 +1422,15 @@
       persist();
     }
 
-    window.openWishModal = function() {
+    function openWishModal() {
       playSound('click');
       document.getElementById('wishModal').classList.remove('hidden');
-    };
-
-    window.closeWishModal = function() {
+    }
+    function closeWishModal() {
       playSound('click');
       document.getElementById('wishModal').classList.add('hidden');
-    };
-
-    window.saveNewWish = function() {
+    }
+    function saveNewWish() {
       var title = document.getElementById('inputWishTitle').value.trim();
       var price = parseInt(document.getElementById('inputWishPrice').value) || 50;
       var img = document.getElementById('inputWishImg').value.trim() || 'https://images.brickset.com/sets/images/76178-1.jpg';
@@ -1435,20 +1443,18 @@
         closeWishModal();
         persist();
       }
-    };
+    }
 
     // LOOT ACTIONS
-    window.openLootModal = function() {
+    function openLootModal() {
       playSound('click');
       document.getElementById('lootModal').classList.remove('hidden');
-    };
-
-    window.closeLootModal = function() {
+    }
+    function closeLootModal() {
       playSound('click');
       document.getElementById('lootModal').classList.add('hidden');
-    };
-
-    window.saveNewLoot = function() {
+    }
+    function saveNewLoot() {
       var title = document.getElementById('inputLootTitle').value.trim();
       var price = parseInt(document.getElementById('inputLootPrice').value) || 0;
       var cat = document.getElementById('inputLootCat').value;
@@ -1465,10 +1471,10 @@
         closeLootModal();
         persist();
       }
-    };
+    }
 
     // FILTER LOGIC
-    window.setFilter = function(filt) {
+    function setFilter(filt) {
       playSound('click');
       currentFilter = filt;
       var btns = document.querySelectorAll('.filter-btn');
@@ -1481,16 +1487,18 @@
         }
       }
       renderBounties();
-    };
+    }
 
     // AI MISSION BRIEFING PLAN GENERATOR
-    window.runAiPlan = function() {
+    function runAiPlan() {
       playSound('click');
       var t = (document.getElementById('inputChoreTitle').value || '').toLowerCase();
       if (!t) return alert("Please type a chore title first (e.g. Wash the dog, Build a shelf)");
 
       var tools = "Standard household supplies, gloves, storage bin";
-      var steps = "Clear work area\nFollow instructions step-by-step\nHave Dad inspect upon completion";
+      var steps = "Clear work area
+Follow instructions step-by-step
+Have Dad inspect upon completion";
       var loc = "Inside / Backyard";
       var cat = "Cleaning & Tidy";
       var diff = "⭐ Easy";
@@ -1501,7 +1509,11 @@
       if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
         cat = "Helping Hand";
         tools = "Dog shampoo, 2 large dry towels, gentle slicker brush, dog treats";
-        steps = "Gently brush Millie's coat to remove loose fur\nWet coat with lukewarm water (keep ears dry)\nApply dog shampoo and lather gently\nRinse completely with warm clean water\nTowel dry thoroughly and give a reward treat!";
+        steps = "Gently brush Millie's coat to remove loose fur
+Wet coat with lukewarm water (keep ears dry)
+Apply dog shampoo and lather gently
+Rinse completely with warm clean water
+Towel dry thoroughly and give a reward treat!";
         loc = "Backyard / Laundry Bath";
         diff = "⭐⭐ Medium";
         dur = "25 mins";
@@ -1510,7 +1522,10 @@
       } else if (t.indexOf('shelf') !== -1 || t.indexOf('build') !== -1 || t.indexOf('ikea') !== -1) {
         cat = "DIY & Repairs";
         tools = "Allen key / screwdriver, cardboard floor protector, parts sorting tray";
-        steps = "Lay cardboard flat on floor to avoid scratching\nSort screws and wooden dowels into small bowls\nAssemble frame pieces step by step with Dad\nCheck that all joints fit tightly and square";
+        steps = "Lay cardboard flat on floor to avoid scratching
+Sort screws and wooden dowels into small bowls
+Assemble frame pieces step by step with Dad
+Check that all joints fit tightly and square";
         loc = "Living Room / Bedroom";
         diff = "⭐⭐ Medium";
         dur = "45 mins";
@@ -1519,7 +1534,10 @@
       } else if (t.indexOf('clean') !== -1 || t.indexOf('room') !== -1 || t.indexOf('tidy') !== -1) {
         cat = "Cleaning & Tidy";
         tools = "Storage tubs, microfiber dust cloth, handheld vacuum";
-        steps = "Sort loose LEGO bricks into labeled organizing bins\nPut clothes in hamper\nDust desk and shelf surfaces\nVacuum floor corners thoroughly";
+        steps = "Sort loose LEGO bricks into labeled organizing bins
+Put clothes in hamper
+Dust desk and shelf surfaces
+Vacuum floor corners thoroughly";
         loc = "Bedroom / Secret Room";
         diff = "⭐ Easy";
         dur = "30 mins";
@@ -1528,7 +1546,10 @@
       } else if (t.indexOf('tree') !== -1 || t.indexOf('garden') !== -1 || t.indexOf('plant') !== -1 || t.indexOf('yard') !== -1) {
         cat = "Yard & Garden";
         tools = "Garden shovel, watering hose, organic mulch";
-        steps = "Dig planting hole twice as wide as root ball\nStand plant upright in center\nBackfill soil firmly around base\nWater deeply for 3 minutes";
+        steps = "Dig planting hole twice as wide as root ball
+Stand plant upright in center
+Backfill soil firmly around base
+Water deeply for 3 minutes";
         loc = "Backyard Garden";
         diff = "⭐⭐ Medium";
         dur = "35 mins";
@@ -1537,7 +1558,9 @@
       } else if (t.indexOf('drain') !== -1 || t.indexOf('gutter') !== -1 || t.indexOf('tap') !== -1) {
         cat = "DIY & Repairs";
         tools = "Work gloves, bucket, hose, wrench";
-        steps = "Clear immediate perimeter\nRemove debris blocking water flow\nFlush with clean water to test smooth drainage";
+        steps = "Clear immediate perimeter
+Remove debris blocking water flow
+Flush with clean water to test smooth drainage";
         loc = "Exterior / Yard";
         diff = "⭐⭐ Medium";
         dur = "30 mins";
@@ -1555,20 +1578,18 @@
       if (!document.getElementById('inputChoreReward').value) {
         document.getElementById('inputChoreReward').value = rew;
       }
-    };
+    }
 
     // POST CHORE MODAL
-    window.openChoreModal = function() {
+    function openChoreModal() {
       playSound('click');
       document.getElementById('choreModal').classList.remove('hidden');
-    };
-
-    window.closeChoreModal = function() {
+    }
+    function closeChoreModal() {
       playSound('click');
       document.getElementById('choreModal').classList.add('hidden');
-    };
-
-    window.saveNewChore = function() {
+    }
+    function saveNewChore() {
       var title = document.getElementById('inputChoreTitle').value.trim();
       var reward = parseInt(document.getElementById('inputChoreReward').value) || 5;
       var cat = document.getElementById('inputChoreCategory').value;
@@ -1576,7 +1597,8 @@
       var dur = document.getElementById('inputChoreDuration').value.trim() || '20 mins';
       var diff = document.getElementById('inputChoreDifficulty').value;
       var tools = document.getElementById('inputChoreTools').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-      var steps = document.getElementById('inputChoreSteps').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+      var steps = document.getElementById('inputChoreSteps').value.split('
+').map(function(s){ return s.trim(); }).filter(Boolean);
       var safety = document.getElementById('inputChoreSafety').value.trim();
 
       if (title) {
@@ -1597,24 +1619,22 @@
         closeChoreModal();
         persist();
       }
-    };
+    }
 
     // PIN KEYPAD
-    window.kPress = function(d) {
+    function kPress(d) {
       playSound('click');
       if (pinVal.length < 4) {
         pinVal += d;
         document.getElementById('pinDisplay').value = pinVal;
       }
-    };
-
-    window.kClear = function() {
+    }
+    function kClear() {
       playSound('click');
       pinVal = "";
       document.getElementById('pinDisplay').value = "";
-    };
-
-    window.kSubmit = function() {
+    }
+    function kSubmit() {
       if (pinVal === '1234') {
         playSound('fanfare');
         isParent = true;
@@ -1629,12 +1649,11 @@
         alert("Incorrect PIN");
         kClear();
       }
-    };
-
-    window.closePin = function() {
+    }
+    function closePin() {
       playSound('click');
       document.getElementById('pinModal').classList.add('hidden');
-    };
+    }
 
     // TAB NAVIGATION
     function switchTab(viewId) {
@@ -1660,7 +1679,7 @@
     }
 
     // INITIALIZATION & EVENT BINDINGS
-    window.addEventListener('DOMContentLoaded', () => {
+    window.onload = function() {
       document.getElementById('lockBtn').onclick = function() {
         if (!isParent) {
           pinVal = "";
@@ -1685,8 +1704,12 @@
       document.getElementById('addWishBtn').onclick = openWishModal;
       document.getElementById('addLootBtn').onclick = openLootModal;
 
+      // 1. Initial Local Render
       renderAll();
-    });
+
+      // 2. Start Live Google Cloud Firestore Sync
+      setupFirebase();
+    };
   </script>
 </body>
 </html>
