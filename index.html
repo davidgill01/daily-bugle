@@ -8,7 +8,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase App & Firestore (compat libraries for zero-build static hosting) -->
+  <!-- Firebase App & Firestore -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -47,10 +47,10 @@
         </h1>
         <div class="flex items-center gap-2 mt-1">
           <!-- LIVE FIREBASE SYNC BADGE -->
-          <div id="syncBadge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm">
+          <button id="syncStatusBtn" type="button" onclick="testCloudConnection()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition">
             <span id="syncDot" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
             <span id="syncText">Connecting to Google Cloud...</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>
@@ -475,6 +475,7 @@
     var db = null;
     var firestoreDocRef = null;
     var isCloudConnected = false;
+    var cloudErrorMessage = "";
 
     // -------------------------------------------------------------
     // 2. DEFAULT STATE & DATA DEFINITIONS
@@ -616,7 +617,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_firebase_v1');
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v2');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -626,7 +627,7 @@
     var currentFilter = 'all';
 
     // -------------------------------------------------------------
-    // 3. FIREBASE REAL-TIME SYNC ENGINE
+    // 3. HARDENED FIREBASE FIRESTORE SYNC WITH LONG-POLLING AUTO-DETECT
     // -------------------------------------------------------------
     function setupFirebase() {
       try {
@@ -634,9 +635,41 @@
           firebase.initializeApp(firebaseConfig);
         }
         db = firebase.firestore();
+        
+        // Fix for mobile WebChannel hanging on cellular/cross-origin:
+        try {
+          db.settings({ experimentalAutoDetectLongPolling: true });
+        } catch(e){}
+
         firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
 
-        // Real-Time Live Listener (Native WebSockets)
+        // 1. Immediate Fast Fetch to confirm credentials & rules
+        firestoreDocRef.get().then(function(doc) {
+          if (doc.exists) {
+            var cloudData = doc.data();
+            if (cloudData && cloudData.bounties) {
+              if (!cloudData.lastUpdated || cloudData.lastUpdated >= (appState.lastUpdated || 0)) {
+                appState = cloudData;
+                try {
+                  localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
+                } catch(e){}
+                renderAll();
+              }
+            }
+          } else {
+            firestoreDocRef.set(appState);
+          }
+          isCloudConnected = true;
+          cloudErrorMessage = "";
+          updateSyncBadge(true);
+        }).catch(function(err) {
+          console.error("Firestore get error:", err);
+          isCloudConnected = false;
+          cloudErrorMessage = err.message || err.code || "Cloud connection failed";
+          updateSyncBadge(false);
+        });
+
+        // 2. Real-Time WebSocket Listener
         firestoreDocRef.onSnapshot(function(doc) {
           if (doc.exists) {
             var cloudData = doc.data();
@@ -644,26 +677,26 @@
               if (!cloudData.lastUpdated || cloudData.lastUpdated >= (appState.lastUpdated || 0)) {
                 appState = cloudData;
                 try {
-                  localStorage.setItem('gill_daily_bugle_firebase_v1', JSON.stringify(appState));
+                  localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
                 } catch(e){}
                 renderAll();
               }
             }
-          } else {
-            // First time setup on this Firebase project - seed the cloud document
-            firestoreDocRef.set(appState);
           }
           isCloudConnected = true;
+          cloudErrorMessage = "";
           updateSyncBadge(true);
         }, function(error) {
-          console.error("Firestore onSnapshot error:", error);
+          console.error("Firestore snapshot error:", error);
           isCloudConnected = false;
+          cloudErrorMessage = error.message || error.code || "Permission or network issue";
           updateSyncBadge(false);
         });
 
       } catch (err) {
-        console.error("Firebase init error:", err);
+        console.error("Firebase setup exception:", err);
         isCloudConnected = false;
+        cloudErrorMessage = err.message || "Initialization failed";
         updateSyncBadge(false);
       }
     }
@@ -676,21 +709,32 @@
         txt.textContent = "Google Cloud Live 🟢";
       } else {
         dot.className = "w-2 h-2 rounded-full bg-amber-400";
-        txt.textContent = "Saved Offline";
+        txt.textContent = cloudErrorMessage ? "Sync Alert (Tap to view)" : "Saved Offline";
+      }
+    }
+
+    function testCloudConnection() {
+      playSound('click');
+      if (isCloudConnected) {
+        alert("Status: Google Cloud Firestore is connected and syncing in real-time!\n\nBoth devices are mirroring changes automatically.");
+      } else {
+        alert("Cloud Status: Offline / Not Connected.\n\nReason: " + (cloudErrorMessage || "Waiting for Firestore network handshake. Check that Firestore rules allow read/write in Firebase console."));
+        setupFirebase();
       }
     }
 
     function persist() {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_firebase_v1', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
-      // Write directly to Google Cloud Firestore in real time!
       if (firestoreDocRef) {
         firestoreDocRef.set(appState).catch(function(err) {
-          console.warn("Cloud save queued:", err);
+          console.warn("Cloud write error:", err);
+          cloudErrorMessage = err.message || "Write failed";
+          updateSyncBadge(false);
         });
       }
     }
@@ -1496,9 +1540,7 @@
       if (!t) return alert("Please type a chore title first (e.g. Wash the dog, Build a shelf)");
 
       var tools = "Standard household supplies, gloves, storage bin";
-      var steps = "Clear work area
-Follow instructions step-by-step
-Have Dad inspect upon completion";
+      var steps = "Clear work area\\nFollow instructions step-by-step\\nHave Dad inspect upon completion";
       var loc = "Inside / Backyard";
       var cat = "Cleaning & Tidy";
       var diff = "⭐ Easy";
@@ -1509,11 +1551,7 @@ Have Dad inspect upon completion";
       if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
         cat = "Helping Hand";
         tools = "Dog shampoo, 2 large dry towels, gentle slicker brush, dog treats";
-        steps = "Gently brush Millie's coat to remove loose fur
-Wet coat with lukewarm water (keep ears dry)
-Apply dog shampoo and lather gently
-Rinse completely with warm clean water
-Towel dry thoroughly and give a reward treat!";
+        steps = "Gently brush Millie's coat to remove loose fur\\nWet coat with lukewarm water (keep ears dry)\\nApply dog shampoo and lather gently\\nRinse completely with warm clean water\\nTowel dry thoroughly and give a reward treat!";
         loc = "Backyard / Laundry Bath";
         diff = "⭐⭐ Medium";
         dur = "25 mins";
@@ -1522,10 +1560,7 @@ Towel dry thoroughly and give a reward treat!";
       } else if (t.indexOf('shelf') !== -1 || t.indexOf('build') !== -1 || t.indexOf('ikea') !== -1) {
         cat = "DIY & Repairs";
         tools = "Allen key / screwdriver, cardboard floor protector, parts sorting tray";
-        steps = "Lay cardboard flat on floor to avoid scratching
-Sort screws and wooden dowels into small bowls
-Assemble frame pieces step by step with Dad
-Check that all joints fit tightly and square";
+        steps = "Lay cardboard flat on floor to avoid scratching\\nSort screws and wooden dowels into small bowls\\nAssemble frame pieces step by step with Dad\\nCheck that all joints fit tightly and square";
         loc = "Living Room / Bedroom";
         diff = "⭐⭐ Medium";
         dur = "45 mins";
@@ -1534,10 +1569,7 @@ Check that all joints fit tightly and square";
       } else if (t.indexOf('clean') !== -1 || t.indexOf('room') !== -1 || t.indexOf('tidy') !== -1) {
         cat = "Cleaning & Tidy";
         tools = "Storage tubs, microfiber dust cloth, handheld vacuum";
-        steps = "Sort loose LEGO bricks into labeled organizing bins
-Put clothes in hamper
-Dust desk and shelf surfaces
-Vacuum floor corners thoroughly";
+        steps = "Sort loose LEGO bricks into labeled organizing bins\\nPut clothes in hamper\\nDust desk and shelf surfaces\\nVacuum floor corners thoroughly";
         loc = "Bedroom / Secret Room";
         diff = "⭐ Easy";
         dur = "30 mins";
@@ -1546,10 +1578,7 @@ Vacuum floor corners thoroughly";
       } else if (t.indexOf('tree') !== -1 || t.indexOf('garden') !== -1 || t.indexOf('plant') !== -1 || t.indexOf('yard') !== -1) {
         cat = "Yard & Garden";
         tools = "Garden shovel, watering hose, organic mulch";
-        steps = "Dig planting hole twice as wide as root ball
-Stand plant upright in center
-Backfill soil firmly around base
-Water deeply for 3 minutes";
+        steps = "Dig planting hole twice as wide as root ball\\nStand plant upright in center\\nBackfill soil firmly around base\\nWater deeply for 3 minutes";
         loc = "Backyard Garden";
         diff = "⭐⭐ Medium";
         dur = "35 mins";
@@ -1558,9 +1587,7 @@ Water deeply for 3 minutes";
       } else if (t.indexOf('drain') !== -1 || t.indexOf('gutter') !== -1 || t.indexOf('tap') !== -1) {
         cat = "DIY & Repairs";
         tools = "Work gloves, bucket, hose, wrench";
-        steps = "Clear immediate perimeter
-Remove debris blocking water flow
-Flush with clean water to test smooth drainage";
+        steps = "Clear immediate perimeter\\nRemove debris blocking water flow\\nFlush with clean water to test smooth drainage";
         loc = "Exterior / Yard";
         diff = "⭐⭐ Medium";
         dur = "30 mins";
@@ -1597,8 +1624,7 @@ Flush with clean water to test smooth drainage";
       var dur = document.getElementById('inputChoreDuration').value.trim() || '20 mins';
       var diff = document.getElementById('inputChoreDifficulty').value;
       var tools = document.getElementById('inputChoreTools').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-      var steps = document.getElementById('inputChoreSteps').value.split('
-').map(function(s){ return s.trim(); }).filter(Boolean);
+      var steps = document.getElementById('inputChoreSteps').value.split('\\n').map(function(s){ return s.trim(); }).filter(Boolean);
       var safety = document.getElementById('inputChoreSafety').value.trim();
 
       if (title) {
