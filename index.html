@@ -86,9 +86,12 @@
               <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight mt-0.5">LEGO Daily Bugle (76178)</h2>
             </div>
             
-            <div class="text-center sm:text-right bg-slate-950/80 px-3.5 py-1.5 rounded-2xl border border-slate-800">
-              <span class="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Available Balance</span>
-              <span id="hudCashTotal" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide">$0.00</span>
+            <div class="text-center sm:text-right bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
+              <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Available Balance</span>
+              <span id="hudCashTotal" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide leading-none my-0.5">$0.00</span>
+              <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1">
+                ⏳ <span id="hudPendingAmt">$0</span> under review
+              </div>
             </div>
           </div>
 
@@ -609,15 +612,12 @@
         { id: "w4", title: "Sanctum Sanctorum (76218)", price: 250, image: "https://images.brickset.com/sets/images/76218-1.jpg", url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218", desc: "Doctor Strange 3-story modular residence with portal effects." },
         { id: "w5", title: "Spider-Man vs. Sandman Final Battle", price: 38, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com", desc: "Battle with buildable Sandman character." }
       ],
-      loot: [
-        { id: "l1", title: "Venom & Sandman Extension Set", price: 20, category: "LEGO Sets", date: "2026-10-20" },
-        { id: "l2", title: "Spider-Man Minifigures Pack", price: 42, category: "Minifigures", date: "2026-10-24" }
-      ]
+      loot: []
     };
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_firebase_v3');
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v4');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -649,7 +649,7 @@
             var cloudData = doc.data();
             if (cloudData && Array.isArray(cloudData.bounties)) {
               appState = cloudData;
-              try { localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState)); } catch(e){}
+              try { localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState)); } catch(e){}
               renderAll();
             }
           } else {
@@ -674,7 +674,7 @@
               var cloudData = doc.data();
               if (cloudData && Array.isArray(cloudData.bounties)) {
                 appState = cloudData;
-                try { localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState)); } catch(e){}
+                try { localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState)); } catch(e){}
                 renderAll();
               }
             }
@@ -724,7 +724,7 @@
     function persist() {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
@@ -1023,15 +1023,19 @@
     // -------------------------------------------------------------
     function renderAll() {
       var totalEarned = 0;
+      var totalPending = 0;
       for (var i = 0; i < appState.bounties.length; i++) {
+        var r = Number(appState.bounties[i].reward) || 0;
         if (appState.bounties[i].status === 'completed') {
-          totalEarned += Number(appState.bounties[i].reward);
+          totalEarned += r;
+        } else if (appState.bounties[i].status === 'review') {
+          totalPending += r;
         }
       }
 
       var totalSpent = 0;
-      for (var j = 0; j < appState.loot.length; j++) {
-        totalSpent += Number(appState.loot[j].price);
+      for (var j = 0; j < (appState.loot || []).length; j++) {
+        totalSpent += Number(appState.loot[j].price) || 0;
       }
 
       var availableBalance = Math.max(0, totalEarned - totalSpent);
@@ -1049,6 +1053,15 @@
       var needed = Math.max(0, goalCost - availableBalance);
 
       document.getElementById('hudCashTotal').textContent = "$" + availableBalance + ".00";
+      var pBadge = document.getElementById('hudPendingBadge');
+      if (pBadge) {
+        if (totalPending > 0) {
+          pBadge.classList.remove('hidden');
+          document.getElementById('hudPendingAmt').textContent = "$" + totalPending + ".00";
+        } else {
+          pBadge.classList.add('hidden');
+        }
+      }
       if (activeGoal) {
         document.getElementById('hudGoalTitle').textContent = activeGoal.title;
         if (activeGoal.image) document.getElementById('hudGoalImg').src = activeGoal.image;
