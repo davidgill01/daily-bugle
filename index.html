@@ -482,7 +482,7 @@
     // -------------------------------------------------------------
     var DEFAULT_STATE = {
       targetId: "w1",
-      lastUpdated: Date.now(),
+      lastUpdated: 0,
       bounties: [
         { 
           id: "b1", 
@@ -617,7 +617,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_firebase_v2');
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v3');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -643,20 +643,17 @@
 
         firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
 
-        // 1. Immediate Fast Fetch to confirm credentials & rules
+        // 1. Immediate Fast Fetch & Seed
         firestoreDocRef.get().then(function(doc) {
           if (doc.exists) {
             var cloudData = doc.data();
-            if (cloudData && cloudData.bounties) {
-              if (!cloudData.lastUpdated || cloudData.lastUpdated >= (appState.lastUpdated || 0)) {
-                appState = cloudData;
-                try {
-                  localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
-                } catch(e){}
-                renderAll();
-              }
+            if (cloudData && Array.isArray(cloudData.bounties)) {
+              appState = cloudData;
+              try { localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState)); } catch(e){}
+              renderAll();
             }
           } else {
+            // First time project run: seed initial board to cloud
             firestoreDocRef.set(appState);
           }
           isCloudConnected = true;
@@ -669,16 +666,15 @@
           updateSyncBadge(false);
         });
 
-        // 2. Real-Time WebSocket Listener
-        firestoreDocRef.onSnapshot(function(doc) {
+        // 2. Real-Time WebSocket Live Listener (Always applies remote updates!)
+        firestoreDocRef.onSnapshot({ includeMetadataChanges: true }, function(doc) {
           if (doc.exists) {
-            var cloudData = doc.data();
-            if (cloudData && cloudData.bounties) {
-              if (!cloudData.lastUpdated || cloudData.lastUpdated >= (appState.lastUpdated || 0)) {
+            // If the update came from another device (not a pending local write)
+            if (!doc.metadata.hasPendingWrites) {
+              var cloudData = doc.data();
+              if (cloudData && Array.isArray(cloudData.bounties)) {
                 appState = cloudData;
-                try {
-                  localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
-                } catch(e){}
+                try { localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState)); } catch(e){}
                 renderAll();
               }
             }
@@ -716,9 +712,11 @@
     function testCloudConnection() {
       playSound('click');
       if (isCloudConnected) {
-        alert("Status: Google Cloud Firestore is connected and syncing in real-time!\n\nBoth devices are mirroring changes automatically.");
+        var count = appState.bounties ? appState.bounties.length : 0;
+        var lastTime = appState.lastUpdated ? new Date(appState.lastUpdated).toLocaleTimeString() : "Just now";
+        alert("Status: Google Cloud Live 🟢\n\nConnected Document: family_boards/gill_main_board\nCurrent Bounties: " + count + " tasks\nLast Update: " + lastTime + "\n\nChanges from your phone and Lucas's tablet sync automatically in real time!");
       } else {
-        alert("Cloud Status: Offline / Not Connected.\n\nReason: " + (cloudErrorMessage || "Waiting for Firestore network handshake. Check that Firestore rules allow read/write in Firebase console."));
+        alert("Cloud Status: Offline / Not Connected.\n\nError: " + (cloudErrorMessage || "Waiting for Firestore handshake. Please ensure Cloud Firestore rules allow read/write in Firebase console."));
         setupFirebase();
       }
     }
@@ -726,7 +724,7 @@
     function persist() {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_firebase_v2', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_firebase_v3', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
