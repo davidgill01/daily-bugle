@@ -91,7 +91,7 @@
             
             <div class="text-center sm:text-right bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
               <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Available Balance</span>
-              <span id="hudCashTotal" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide leading-none my-0.5">$0.00</span>
+              <span id="hudCashTotal" onclick="adjustBalanceParent()" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide leading-none my-0.5 cursor-pointer" title="Tap in Parent Mode to edit">$5.00</span>
               <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1 animate-pulse">
                 ⏳ <span id="hudPendingAmt">$0</span> under review
               </div>
@@ -487,6 +487,7 @@
     // -------------------------------------------------------------
     var DEFAULT_STATE = {
       targetId: "w1",
+      balance: 5.00,
       lastUpdated: 0,
       balanceCalibrated: true,
       bounties: [
@@ -635,7 +636,7 @@
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_firebase_v6');
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v7');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -649,45 +650,10 @@
     // -------------------------------------------------------------
     function sanitizeCloudData(data) {
       if (!data) return data;
-      
-      // Auto-calibrate balance so Lucas has $41 spent from last Saturday and exactly $5.00 available balance:
-      if (!data.balanceCalibrated) {
-        // Set exact $41 Saturday purchase in loot:
-        data.loot = [
-          { id: "l_sat", title: "Saturday Purchase", price: 41, category: "Toys / General", date: "2026-10-24" }
-        ];
-
-        // Ensure total completed bounties equals $46 so: 46 (earned) - 41 (spent) = $5.00 available
-        var completedSum = 0;
-        var hasPrev = false;
-        if (Array.isArray(data.bounties)) {
-          for (var i = 0; i < data.bounties.length; i++) {
-            if (data.bounties[i].id === 'b_prev') hasPrev = true;
-            if (data.bounties[i].status === 'completed') {
-              completedSum += Number(data.bounties[i].reward) || 0;
-            }
-          }
-          if (completedSum < 46 && !hasPrev) {
-            var needed = 46 - completedSum;
-            data.bounties.push({
-              id: "b_prev",
-              title: "Prior Completed Missions",
-              reward: needed,
-              status: "completed",
-              category: "Helping Hand",
-              duration: "Past",
-              difficulty: "⭐ Easy",
-              location: "Home",
-              tools: ["Various supplies"],
-              steps: ["Completed and rewarded"],
-              safety: "Great work!"
-            });
-          }
-        }
+      if (typeof data.balance !== 'number' || isNaN(data.balance)) {
+        data.balance = 5.00;
         data.balanceCalibrated = true;
         data.lastUpdated = Date.now();
-        
-        // Auto-save this clean calibration to Firestore right away:
         if (firestoreDocRef) {
           firestoreDocRef.set(data).catch(function(){});
         }
@@ -714,7 +680,7 @@
             var cloudData = sanitizeCloudData(doc.data());
             if (cloudData && Array.isArray(cloudData.bounties)) {
               appState = cloudData;
-              try { localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState)); } catch(e){}
+              try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
               renderAll();
             }
           } else {
@@ -737,7 +703,7 @@
               var cloudData = sanitizeCloudData(doc.data());
               if (cloudData && Array.isArray(cloudData.bounties)) {
                 appState = cloudData;
-                try { localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState)); } catch(e){}
+                try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
                 renderAll();
               }
             }
@@ -787,7 +753,7 @@
     function persist() {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
@@ -797,6 +763,20 @@
           cloudErrorMessage = err.message || "Write failed";
           updateSyncBadge(false);
         });
+      }
+    }
+
+    function adjustBalanceParent() {
+      if (!isParent) return;
+      var cur = Number(appState.balance) || 0;
+      var input = prompt("Parent Edit: Set Lucas's current balance to ($):", cur);
+      if (input !== null) {
+        var num = parseFloat(input);
+        if (!isNaN(num) && num >= 0) {
+          appState.balance = Math.round(num * 100) / 100;
+          playSound('coin');
+          persist();
+        }
       }
     }
 
@@ -1157,7 +1137,11 @@
         totalSpent += Number(appState.loot[j].price) || 0;
       }
 
-      var availableBalance = Math.max(0, totalEarned - totalSpent);
+      // If balance is not yet initialized or was undefined in Firestore, set to $5.00
+      if (typeof appState.balance !== 'number' || isNaN(appState.balance)) {
+        appState.balance = 5.00;
+      }
+      var availableBalance = Number(appState.balance) || 0;
 
       var activeGoal = appState.wishlist[0];
       for (var k = 0; k < appState.wishlist.length; k++) {
@@ -1565,7 +1549,11 @@
     function approveChore(id) {
       for (var i = 0; i < appState.bounties.length; i++) {
         if (appState.bounties[i].id === id) {
-          appState.bounties[i].status = 'completed';
+          if (appState.bounties[i].status !== 'completed') {
+            var rew = Number(appState.bounties[i].reward) || 0;
+            appState.balance = Math.round(((Number(appState.balance) || 0) + rew) * 100) / 100;
+            appState.bounties[i].status = 'completed';
+          }
           break;
         }
       }
@@ -1658,6 +1646,7 @@
           category: cat,
           date: new Date().toISOString().split('T')[0]
         });
+        appState.balance = Math.max(0, Math.round(((Number(appState.balance) || 0) - price) * 100) / 100);
         closeLootModal();
         persist();
       }
@@ -1703,7 +1692,7 @@
         dur = t.indexOf('mech') !== -1 ? "30 mins" : "1.5 hours";
         safety = "Keep small pieces away from younger children and off the floor.";
         rew = t.indexOf('mech') !== -1 ? 5 : 20;
-      } else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) { || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
+      } else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
         cat = "Helping Hand";
         tools = "Dog shampoo, 2 large dry towels, gentle slicker brush, dog treats";
         steps = "Gently brush Millie's coat to remove loose fur\\nWet coat with lukewarm water (keep ears dry)\\nApply dog shampoo and lather gently\\nRinse completely with warm clean water\\nTowel dry thoroughly and give a reward treat!";
