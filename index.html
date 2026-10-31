@@ -84,12 +84,15 @@
                 <span>🎯</span> Currently Saving For
               </span>
               <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight mt-0.5">LEGO Daily Bugle (76178)</h2>
+              <div class="text-[11px] text-slate-400 font-semibold mt-1">
+                Earned: <span id="hudEarnedAmt" class="text-green-400 font-bold">$0</span> • Spent: <span id="hudSpentAmt" class="text-red-400 font-bold">$0</span>
+              </div>
             </div>
             
             <div class="text-center sm:text-right bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
               <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Available Balance</span>
               <span id="hudCashTotal" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide leading-none my-0.5">$0.00</span>
-              <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1">
+              <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1 animate-pulse">
                 ⏳ <span id="hudPendingAmt">$0</span> under review
               </div>
             </div>
@@ -147,9 +150,7 @@
         </button>
       </div>
 
-      <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="choreList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </div>
 
     <!-- VIEW 2: TOP 10 WISHLIST -->
@@ -163,9 +164,7 @@
           <span>＋ Add Goal</span>
         </button>
       </div>
-      <div id="wishlistContainer" class="space-y-3">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="wishlistContainer" class="space-y-3"></div>
     </div>
 
     <!-- VIEW 3: LOOT VAULT -->
@@ -175,13 +174,16 @@
           <h3 class="text-lg font-black text-slate-200">Purchased Loot & Cash Spent</h3>
           <p class="text-xs text-slate-400">All purchased sets and rewards. Automatically deducted from available earnings.</p>
         </div>
-        <button id="addLootBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-lg active:scale-95 transition">
-          <span>＋ I Bought Something!</span>
-        </button>
+        <div class="flex gap-2">
+          <button id="clearLootBtn" type="button" onclick="clearLootVault()" class="hidden px-3 py-2 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 font-bold text-xs rounded-xl items-center gap-1 transition">
+            <span>🗑️</span> Reset Spent Cash
+          </button>
+          <button id="addLootBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-lg active:scale-95 transition">
+            <span>＋ I Bought Something!</span>
+          </button>
+        </div>
       </div>
-      <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
     </div>
 
   </main>
@@ -486,6 +488,7 @@
     var DEFAULT_STATE = {
       targetId: "w1",
       lastUpdated: 0,
+      balanceCalibrated: true,
       bounties: [
         { 
           id: "b1", 
@@ -603,6 +606,19 @@
           tools: ["Recycling bin", "Sorting crates"],
           steps: ["Sort aluminum cans and bottles into crates", "Count total deposit containers", "Load crates into car with Dad"],
           safety: "Rinse cans first to avoid sticky edges and bees."
+        },
+        { 
+          id: "b_prev", 
+          title: "Prior Completed Missions", 
+          reward: 15, 
+          status: "completed", 
+          category: "Helping Hand", 
+          duration: "Past", 
+          difficulty: "⭐ Easy", 
+          location: "Home", 
+          tools: ["Various supplies"], 
+          steps: ["Completed and rewarded"], 
+          safety: "Great work!" 
         }
       ],
       wishlist: [
@@ -612,12 +628,14 @@
         { id: "w4", title: "Sanctum Sanctorum (76218)", price: 250, image: "https://images.brickset.com/sets/images/76218-1.jpg", url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218", desc: "Doctor Strange 3-story modular residence with portal effects." },
         { id: "w5", title: "Spider-Man vs. Sandman Final Battle", price: 38, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com", desc: "Battle with buildable Sandman character." }
       ],
-      loot: []
+      loot: [
+        { id: "l_sat", title: "Saturday Purchase", price: 41, category: "Toys / General", date: "2026-10-24" }
+      ]
     };
 
     var appState = DEFAULT_STATE;
     try {
-      var saved = localStorage.getItem('gill_daily_bugle_firebase_v4');
+      var saved = localStorage.getItem('gill_daily_bugle_firebase_v6');
       if (saved) appState = JSON.parse(saved);
     } catch(e) {}
 
@@ -627,8 +645,56 @@
     var currentFilter = 'all';
 
     // -------------------------------------------------------------
-    // 3. HARDENED FIREBASE FIRESTORE SYNC WITH LONG-POLLING AUTO-DETECT
+    // 3. HARDENED FIREBASE FIRESTORE SYNC & AUTO-CLEAN DEBT
     // -------------------------------------------------------------
+    function sanitizeCloudData(data) {
+      if (!data) return data;
+      
+      // Auto-calibrate balance so Lucas has $41 spent from last Saturday and exactly $5.00 available balance:
+      if (!data.balanceCalibrated) {
+        // Set exact $41 Saturday purchase in loot:
+        data.loot = [
+          { id: "l_sat", title: "Saturday Purchase", price: 41, category: "Toys / General", date: "2026-10-24" }
+        ];
+
+        // Ensure total completed bounties equals $46 so: 46 (earned) - 41 (spent) = $5.00 available
+        var completedSum = 0;
+        var hasPrev = false;
+        if (Array.isArray(data.bounties)) {
+          for (var i = 0; i < data.bounties.length; i++) {
+            if (data.bounties[i].id === 'b_prev') hasPrev = true;
+            if (data.bounties[i].status === 'completed') {
+              completedSum += Number(data.bounties[i].reward) || 0;
+            }
+          }
+          if (completedSum < 46 && !hasPrev) {
+            var needed = 46 - completedSum;
+            data.bounties.push({
+              id: "b_prev",
+              title: "Prior Completed Missions",
+              reward: needed,
+              status: "completed",
+              category: "Helping Hand",
+              duration: "Past",
+              difficulty: "⭐ Easy",
+              location: "Home",
+              tools: ["Various supplies"],
+              steps: ["Completed and rewarded"],
+              safety: "Great work!"
+            });
+          }
+        }
+        data.balanceCalibrated = true;
+        data.lastUpdated = Date.now();
+        
+        // Auto-save this clean calibration to Firestore right away:
+        if (firestoreDocRef) {
+          firestoreDocRef.set(data).catch(function(){});
+        }
+      }
+      return data;
+    }
+
     function setupFirebase() {
       try {
         if (!firebase.apps.length) {
@@ -636,24 +702,22 @@
         }
         db = firebase.firestore();
         
-        // Fix for mobile WebChannel hanging on cellular/cross-origin:
         try {
           db.settings({ experimentalAutoDetectLongPolling: true });
         } catch(e){}
 
         firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
 
-        // 1. Immediate Fast Fetch & Seed
+        // 1. Initial Fast Fetch
         firestoreDocRef.get().then(function(doc) {
           if (doc.exists) {
-            var cloudData = doc.data();
+            var cloudData = sanitizeCloudData(doc.data());
             if (cloudData && Array.isArray(cloudData.bounties)) {
               appState = cloudData;
-              try { localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState)); } catch(e){}
+              try { localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState)); } catch(e){}
               renderAll();
             }
           } else {
-            // First time project run: seed initial board to cloud
             firestoreDocRef.set(appState);
           }
           isCloudConnected = true;
@@ -666,15 +730,14 @@
           updateSyncBadge(false);
         });
 
-        // 2. Real-Time WebSocket Live Listener (Always applies remote updates!)
+        // 2. Real-Time Snapshot Listener
         firestoreDocRef.onSnapshot({ includeMetadataChanges: true }, function(doc) {
           if (doc.exists) {
-            // If the update came from another device (not a pending local write)
             if (!doc.metadata.hasPendingWrites) {
-              var cloudData = doc.data();
+              var cloudData = sanitizeCloudData(doc.data());
               if (cloudData && Array.isArray(cloudData.bounties)) {
                 appState = cloudData;
-                try { localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState)); } catch(e){}
+                try { localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState)); } catch(e){}
                 renderAll();
               }
             }
@@ -724,7 +787,7 @@
     function persist() {
       appState.lastUpdated = Date.now();
       try {
-        localStorage.setItem('gill_daily_bugle_firebase_v4', JSON.stringify(appState));
+        localStorage.setItem('gill_daily_bugle_firebase_v6', JSON.stringify(appState));
       } catch(e) {}
       renderAll();
 
@@ -734,6 +797,14 @@
           cloudErrorMessage = err.message || "Write failed";
           updateSyncBadge(false);
         });
+      }
+    }
+
+    function clearLootVault() {
+      if (confirm("Reset all spent loot to $0 so Lucas starts with a fresh balance?")) {
+        playSound('coin');
+        appState.loot = [];
+        persist();
       }
     }
 
@@ -862,150 +933,198 @@
     // -------------------------------------------------------------
     // 5. AI LEGO CATALOG & AUTO-COMPLETER
     // -------------------------------------------------------------
-    var LEGO_AI_CATALOG = [
-      {
-        match: ["daily bugle", "bugle", "spiderman tower", "76178"],
-        title: "LEGO Daily Bugle (76178)",
-        price: 100,
-        image: "https://images.brickset.com/sets/images/76178-1.jpg",
-        url: "https://www.lego.com/en-us/product/daily-bugle-76178",
-        desc: "3,772-piece 32-inch high Marvel skyscraper with 25 minifigures including Spider-Man, Venom, Miles Morales, and Green Goblin."
-      },
-      {
-        match: ["final battle", "statue of liberty", "no way home", "76261"],
-        title: "Spider-Man Final Battle (76261)",
-        price: 105,
-        image: "https://images.brickset.com/sets/images/76261-1.jpg",
-        url: "https://www.lego.com/en-us/product/spider-man-final-battle-76261",
-        desc: "360-degree Statue of Liberty roof showdown with 3 Spider-Man variants, Doc Ock, Green Goblin, Electro and Ned."
-      },
-      {
-        match: ["venom", "sandman", "76280", "sandman extension"],
-        title: "Spider-Man vs. Sandman: Final Battle (76280)",
-        price: 20,
-        image: "https://images.brickset.com/sets/images/76280-1.jpg",
-        url: "https://www.lego.com/en-us/product/spider-man-vs-sandman-final-battle-76280",
-        desc: "Buildable giant Sandman with movable hands, Spider-Man, Electro and Venom minifigures."
-      },
-      {
-        match: ["sanctum", "sanctorum", "doctor strange", "76218"],
-        title: "Sanctum Sanctorum (76218)",
-        price: 250,
-        image: "https://images.brickset.com/sets/images/76218-1.jpg",
-        url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218",
-        desc: "2,708-piece 3-story modular building of Doctor Strange's iconic residence with 9 Marvel minifigures."
-      },
-      {
-        match: ["avengers tower", "tower", "76269"],
-        title: "LEGO Marvel Avengers Tower (76269)",
-        price: 500,
-        image: "https://images.brickset.com/sets/images/76269-1.jpg",
-        url: "https://www.lego.com/en-us/product/avengers-tower-76269",
-        desc: "5,201-piece 35-inch tall Avengers headquarters with 31 minifigures and removable floors."
-      },
-      {
-        match: ["x-men", "x-jet", "xmen jet", "76281"],
-        title: "X-Men X-Jet (76281)",
-        price: 85,
-        image: "https://images.brickset.com/sets/images/76281-1.jpg",
-        url: "https://www.lego.com/en-us/product/x-men-x-jet-76281",
-        desc: "Iconic blue jet with twin cockpits, stud shooters, Wolverine, Cyclops, Rogue and Magneto."
-      },
-      {
-        match: ["millennium falcon", "falcon", "star wars falcon", "75257"],
-        title: "LEGO Star Wars Millennium Falcon (75257)",
-        price: 170,
-        image: "https://images.brickset.com/sets/images/75257-1.jpg",
-        url: "https://www.lego.com/en-us/product/millennium-falcon-75257",
-        desc: "1,353-piece Corellian freighter with rotating gun turrets, ramp, Chewbacca, Lando and Finn."
-      },
-      {
-        match: ["x-wing", "xwing", "luke x-wing", "75301"],
-        title: "Luke Skywalker's X-Wing Fighter (75301)",
-        price: 50,
-        image: "https://images.brickset.com/sets/images/75301-1.jpg",
-        url: "https://www.lego.com/en-us/product/luke-skywalkers-x-wing-fighter-75301",
-        desc: "Classic Star Wars starfighter with opening wings, R2-D2, Princess Leia and General Dodonna."
-      },
-      {
-        match: ["batcave", "batman", "batmobile", "76224"],
-        title: "Batmobile: Batman vs. The Joker Chase (76224)",
-        price: 48,
-        image: "https://images.brickset.com/sets/images/76224-1.jpg",
-        url: "https://www.lego.com/en-us/product/batmobile-batman-vs-the-joker-chase-76224",
-        desc: "1989 Batmobile with lift-off roof, flame exhaust, blaster controls, Batman and The Joker."
-      },
-      {
-        match: ["groot", "venomized groot", "76249"],
-        title: "Venomized Groot (76249)",
-        price: 35,
-        image: "https://images.brickset.com/sets/images/76249-1.jpg",
-        url: "https://www.lego.com/en-us/product/venomized-groot-76249",
-        desc: "Movable buildable Groot figure partially transformed by the black Venom symbiote."
-      },
-      {
-        match: ["spider-man mech", "spiderman mech", "mech", "76277", "war machine mech"],
-        title: "War Machine Mech Armor (76277)",
-        price: 15,
-        image: "https://images.brickset.com/sets/images/76277-1.jpg",
-        url: "https://www.lego.com/en-us/product/war-machine-mech-armor-76277",
-        desc: "Poseable mech with 3 stud shooters, back storage box, and War Machine pilot minifigure."
-      },
-      {
-        match: ["ghost rider", "mech and bike", "76245"],
-        title: "Ghost Rider Mech & Bike (76245)",
-        price: 35,
-        image: "https://images.brickset.com/sets/images/76245-1.jpg",
-        url: "https://www.lego.com/en-us/product/ghost-rider-mech-bike-76245",
-        desc: "Giant scale flame-exhaust motorcycle with posable Ghost Rider mech and chain weapon."
-      }
+        var LEGO_AI_CATALOG = [
+      // MARVEL & SPIDER-MAN
+      { match: ["daily bugle", "bugle", "spiderman tower", "76178"], num: "76178", title: "LEGO Daily Bugle (76178)", price: 100, image: "https://images.brickset.com/sets/images/76178-1.jpg", url: "https://www.lego.com/en-us/product/daily-bugle-76178", desc: "3,772-piece 32-inch high Marvel skyscraper with 25 minifigures including Spider-Man, Venom, Miles Morales, and Green Goblin." },
+      { match: ["final battle", "statue of liberty", "no way home", "76261"], num: "76261", title: "Spider-Man Final Battle (76261)", price: 105, image: "https://images.brickset.com/sets/images/76261-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-final-battle-76261", desc: "360-degree Statue of Liberty roof showdown with 3 Spider-Man variants, Doc Ock, Green Goblin, Electro and Ned." },
+      { match: ["venom", "sandman", "76280", "sandman battle"], num: "76280", title: "Spider-Man vs. Sandman: Final Battle (76280)", price: 38, image: "https://images.brickset.com/sets/images/76280-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-vs-sandman-final-battle-76280", desc: "Buildable giant Sandman with movable hands, Spider-Man, Electro and Venom minifigures." },
+      { match: ["sanctum", "sanctorum", "doctor strange", "76218"], num: "76218", title: "Sanctum Sanctorum (76218)", price: 250, image: "https://images.brickset.com/sets/images/76218-1.jpg", url: "https://www.lego.com/en-us/product/sanctum-sanctorum-76218", desc: "2,708-piece 3-story modular building of Doctor Strange's iconic residence with 9 Marvel minifigures." },
+      { match: ["avengers tower", "tower", "76269"], num: "76269", title: "LEGO Marvel Avengers Tower (76269)", price: 500, image: "https://images.brickset.com/sets/images/76269-1.jpg", url: "https://www.lego.com/en-us/product/avengers-tower-76269", desc: "5,201-piece 35-inch tall Avengers headquarters with 31 minifigures and removable floors." },
+      { match: ["x-men", "x-jet", "xmen jet", "76281"], num: "76281", title: "X-Men X-Jet (76281)", price: 85, image: "https://images.brickset.com/sets/images/76281-1.jpg", url: "https://www.lego.com/en-us/product/x-men-x-jet-76281", desc: "Iconic blue jet with twin cockpits, stud shooters, Wolverine, Cyclops, Rogue and Magneto." },
+      { match: ["spider-man mech", "spiderman mech", "mech armor", "76146"], num: "76146", title: "Spider-Man Mech Armor (76146)", price: 15, image: "https://images.brickset.com/sets/images/76146-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-mech-76146", desc: "Articulated robot mech suit with opening cockpit and minifigure." },
+      { match: ["miles morales mech", "miles mech", "76171"], num: "76171", title: "Miles Morales Mech Armor (76171)", price: 15, image: "https://images.brickset.com/sets/images/76171-1.jpg", url: "https://www.lego.com/en-us/product/miles-morales-mech-armor-76171", desc: "Movable black and red Spider-Man mech with extra-long electric web." },
+      { match: ["war machine mech", "war machine", "76277"], num: "76277", title: "War Machine Mech Armor (76277)", price: 15, image: "https://images.brickset.com/sets/images/76277-1.jpg", url: "https://www.lego.com/en-us/product/war-machine-mech-armor-76277", desc: "Poseable mech with 3 stud shooters, back storage box, and War Machine pilot minifigure." },
+      { match: ["venomized groot", "groot venom", "76249"], num: "76249", title: "Venomized Groot (76249)", price: 35, image: "https://images.brickset.com/sets/images/76249-1.jpg", url: "https://www.lego.com/en-us/product/venomized-groot-76249", desc: "Movable buildable Groot figure partially transformed by the black Venom symbiote." },
+      { match: ["i am groot", "baby groot", "groot", "76217"], num: "76217", title: "I am Groot (76217)", price: 55, image: "https://images.brickset.com/sets/images/76217-1.jpg", url: "https://www.lego.com/en-us/product/i-am-groot-76217", desc: "476-piece poseable model of Baby Groot with pretend cassette tape." },
+      { match: ["ghost rider", "ghost rider bike", "76245"], num: "76245", title: "Ghost Rider Mech & Bike (76245)", price: 35, image: "https://images.brickset.com/sets/images/76245-1.jpg", url: "https://www.lego.com/en-us/product/ghost-rider-mech-bike-76245", desc: "Giant scale flame-exhaust motorcycle with posable Ghost Rider mech and chain weapon." },
+      { match: ["quinjet", "avengers quinjet", "76248"], num: "76248", title: "The Avengers Quinjet (76248)", price: 100, image: "https://images.brickset.com/sets/images/76248-1.jpg", url: "https://www.lego.com/en-us/product/the-avengers-quinjet-76248", desc: "795-piece authentic aircraft with folding wheels, adjustable wings, and 5 Avengers minifigures." },
+      { match: ["hulkbuster", "iron man hulkbuster", "76210"], num: "76210", title: "Hulkbuster (76210)", price: 550, image: "https://images.brickset.com/sets/images/76210-1.jpg", url: "https://www.lego.com/en-us/product/hulkbuster-76210", desc: "4,049-piece ultimate collector model standing over 20.5 inches tall." },
+      { match: ["iron man armory", "hall of armor", "76216"], num: "76216", title: "Iron Man Armory (76216)", price: 90, image: "https://images.brickset.com/sets/images/76216-1.jpg", url: "https://www.lego.com/en-us/product/iron-man-armory-76216", desc: "Tony Stark's workshop with MK3, MK25 and MK85 armor suits." },
+      { match: ["venom mask", "venom helmet", "76187"], num: "76187", title: "Venom Mask (76187)", price: 70, image: "https://images.brickset.com/sets/images/76187-1.jpg", url: "https://www.lego.com/en-us/product/venom-76187", desc: "565-piece display bust with razor-sharp teeth and long twisting red tongue." },
+      { match: ["spider-man mask", "spiderman helmet", "76285"], num: "76285", title: "Spider-Man's Mask (76285)", price: 70, image: "https://images.brickset.com/sets/images/76285-1.jpg", url: "https://www.lego.com/en-us/product/spider-man-s-mask-76285", desc: "487-piece collectible display bust of the iconic Spider-Man mask." },
+
+      // STAR WARS
+      { match: ["millennium falcon", "falcon", "75257"], num: "75257", title: "LEGO Star Wars Millennium Falcon (75257)", price: 170, image: "https://images.brickset.com/sets/images/75257-1.jpg", url: "https://www.lego.com/en-us/product/millennium-falcon-75257", desc: "1,353-piece Corellian freighter with rotating gun turrets, ramp, Chewbacca, Lando and Finn." },
+      { match: ["ucs millennium falcon", "75192"], num: "75192", title: "UCS Millennium Falcon (75192)", price: 850, image: "https://images.brickset.com/sets/images/75192-1.jpg", url: "https://www.lego.com/en-us/product/millennium-falcon-75192", desc: "7,541-piece Ultimate Collector Series freighter, one of the biggest LEGO sets ever." },
+      { match: ["x-wing", "xwing", "luke x-wing", "75301"], num: "75301", title: "Luke Skywalker's X-Wing Fighter (75301)", price: 50, image: "https://images.brickset.com/sets/images/75301-1.jpg", url: "https://www.lego.com/en-us/product/luke-skywalkers-x-wing-fighter-75301", desc: "Classic Star Wars starfighter with opening wings, R2-D2, Princess Leia and General Dodonna." },
+      { match: ["tie fighter", "75300"], num: "75300", title: "Imperial TIE Fighter (75300)", price: 45, image: "https://images.brickset.com/sets/images/75300-1.jpg", url: "https://www.lego.com/en-us/product/imperial-tie-fighter-75300", desc: "432-piece Imperial starfighter with spring-loaded shooters and pilot minifigure." },
+      { match: ["at-at", "atat", "walker", "75288"], num: "75288", title: "AT-AT Walker (75288)", price: 170, image: "https://images.brickset.com/sets/images/75288-1.jpg", url: "https://www.lego.com/en-us/product/at-at-75288", desc: "1,267-piece 4-legged assault walker from the Battle of Hoth with Luke and Snowtroopers." },
+      { match: ["r2-d2", "r2d2", "75379"], num: "75379", title: "R2-D2 (75379)", price: 100, image: "https://images.brickset.com/sets/images/75379-1.jpg", url: "https://www.lego.com/en-us/product/r2-d2-75379", desc: "1,050-piece buildable droid with rotating head, periscope, and 25th anniversary minifigure." },
+      { match: ["droideka", "destroyer droid", "75381"], num: "75381", title: "Droideka Destroyer Droid (75381)", price: 65, image: "https://images.brickset.com/sets/images/75381-1.jpg", url: "https://www.lego.com/en-us/product/droideka-75381", desc: "583-piece buildable battle droid with movable arms that folds into ball form." },
+      { match: ["dark falcon", "75389"], num: "75389", title: "The Dark Falcon (75389)", price: 180, image: "https://images.brickset.com/sets/images/75389-1.jpg", url: "https://www.lego.com/en-us/product/the-dark-falcon-75389", desc: "Rebuild the Galaxy black Millennium Falcon with Darth Jar Jar and Beach Luke minifigures." },
+      { match: ["coruscant guard gunship", "gunship", "75354"], num: "75354", title: "Coruscant Guard Gunship (75354)", price: 140, image: "https://images.brickset.com/sets/images/75354-1.jpg", url: "https://www.lego.com/en-us/product/coruscant-guard-gunship-75354", desc: "1,083-piece Clone Wars red gunship with Commander Fox, Chancellor Palpatine and Padme." },
+      { match: ["battle pack", "clone battle pack", "501st", "75372"], num: "75372", title: "Clone Trooper & Battle Droid Battle Pack (75372)", price: 30, image: "https://images.brickset.com/sets/images/75372-1.jpg", url: "https://www.lego.com/en-us/product/clone-trooper-battle-droid-battle-pack-75372", desc: "215-piece battle pack with 4 Clone Troopers, 5 Battle Droids, speeder bike and tri-droid." },
+      { match: ["ghost", "phantom", "75357"], num: "75357", title: "Ghost & Phantom II (75357)", price: 160, image: "https://images.brickset.com/sets/images/75357-1.jpg", url: "https://www.lego.com/en-us/product/ghost-phantom-ii-75357", desc: "1,394-piece Star Wars Rebels & Ahsoka starship with General Hera Syndulla and Chopper." },
+
+      // DC & BATMAN
+      { match: ["batmobile", "batman joker chase", "76224"], num: "76224", title: "Batmobile: Batman vs. The Joker Chase (76224)", price: 48, image: "https://images.brickset.com/sets/images/76224-1.jpg", url: "https://www.lego.com/en-us/product/batmobile-batman-vs-the-joker-chase-76224", desc: "1989 Batmobile with lift-off roof, flame exhaust, blaster controls, Batman and The Joker." },
+      { match: ["animated batmobile", "batman animated", "76274"], num: "76274", title: "Batman: The Animated Series Batmobile (76274)", price: 60, image: "https://images.brickset.com/sets/images/76274-1.jpg", url: "https://www.lego.com/en-us/product/batman-with-the-batmobile-vs-harley-quinn-and-mr-freeze-76274", desc: "Iconic blue-trimmed animated Batmobile with Batman, Harley Quinn and Mr. Freeze minifigures." },
+      { match: ["batcave", "batcave shadow box", "76252"], num: "76252", title: "Batcave – Shadow Box (76252)", price: 400, image: "https://images.brickset.com/sets/images/76252-1.jpg", url: "https://www.lego.com/en-us/product/batcave-shadow-box-76252", desc: "3,981-piece theatrical shadow box with complete Batcave interior, movable items, and 1989 Batmobile." },
+      { match: ["tumbler", "batman tumbler", "76240"], num: "76240", title: "Batmobile Tumbler (76240)", price: 270, image: "https://images.brickset.com/sets/images/76240-1.jpg", url: "https://www.lego.com/en-us/product/batmobile-tumbler-76240", desc: "2,049-piece Dark Knight armored Tumbler with opening roof, Batman and Heath Ledger Joker." },
+
+      // ICONS & LORD OF THE RINGS
+      { match: ["rivendell", "lord of the rings", "lotr", "10316"], num: "10316", title: "The Lord of the Rings: Rivendell (10316)", price: 500, image: "https://images.brickset.com/sets/images/10316-1.jpg", url: "https://www.lego.com/en-us/product/the-lord-of-the-rings-rivendell-10316", desc: "6,167-piece masterpiece featuring Elrond's Council ring, weapon forge, and 15 fellowship minifigures." },
+      { match: ["barad-dur", "barad dur", "sauron tower", "10333"], num: "10333", title: "The Lord of the Rings: Barad-dûr (10333)", price: 460, image: "https://images.brickset.com/sets/images/10333-1.jpg", url: "https://www.lego.com/en-us/product/the-lord-of-the-rings-barad-dur-10333", desc: "5,471-piece 33-inch tall dark fortress with glowing Eye of Sauron and exclusive Sauron minifigure." },
+      { match: ["optimus prime", "transformers", "10302"], num: "10302", title: "LEGO Icons Optimus Prime (10302)", price: 180, image: "https://images.brickset.com/sets/images/10302-1.jpg", url: "https://www.lego.com/en-us/product/optimus-prime-10302", desc: "1,508-piece buildable Autobot that converts from robot to semi-truck without rebuilding." },
+      { match: ["delorean", "back to the future", "time machine", "10300"], num: "10300", title: "Back to the Future Time Machine (10300)", price: 200, image: "https://images.brickset.com/sets/images/10300-1.jpg", url: "https://www.lego.com/en-us/product/back-to-the-future-time-machine-10300", desc: "1,872-piece DeLorean with light-up flux capacitor, hover wheels, Marty and Doc Brown." },
+      { match: ["titanic", "10294"], num: "10294", title: "LEGO Titanic (10294)", price: 680, image: "https://images.brickset.com/sets/images/10294-1.jpg", url: "https://www.lego.com/en-us/product/titanic-10294", desc: "9,090-piece massive 53-inch scale model with swimming pool, engine pistons, and grand staircase." },
+      { match: ["eiffel tower", "10307"], num: "10307", title: "LEGO Eiffel Tower (10307)", price: 630, image: "https://images.brickset.com/sets/images/10307-1.jpg", url: "https://www.lego.com/en-us/product/eiffel-tower-10307", desc: "10,001-piece 58-inch tall architectural recreation of Paris's iconic landmark." },
+      { match: ["concorde", "airplane", "10318"], num: "10318", title: "LEGO Icons Concorde (10318)", price: 200, image: "https://images.brickset.com/sets/images/10318-1.jpg", url: "https://www.lego.com/en-us/product/concorde-10318", desc: "2,083-piece supersonic airliner with droop nose, delta wings, functioning landing gear and display stand." },
+      { match: ["pac-man", "pacman arcade", "10323"], num: "10323", title: "PAC-MAN Arcade (10323)", price: 270, image: "https://images.brickset.com/sets/images/10323-1.jpg", url: "https://www.lego.com/en-us/product/pac-man-arcade-10323", desc: "2,651-piece retro arcade cabinet with mechanical hand-cranked maze chase simulation." },
+
+      // MINECRAFT
+      { match: ["crafting table", "minecraft table", "21265"], num: "21265", title: "The Crafting Table (21265)", price: 90, image: "https://images.brickset.com/sets/images/21265-1.jpg", url: "https://www.lego.com/en-us/product/the-crafting-table-21265", desc: "1,195-piece anniversary block opening into 12 biomes and 8 microfigures including Steve and Alex." },
+      { match: ["deep dark battle", "warden", "21246"], num: "21246", title: "The Deep Dark Battle (21246)", price: 65, image: "https://images.brickset.com/sets/images/21246-1.jpg", url: "https://www.lego.com/en-us/product/the-deep-dark-battle-21246", desc: "584-piece ancient city set with giant buildable Warden mob with turning head and arms." },
+      { match: ["iron golem fortress", "21250"], num: "21250", title: "The Iron Golem Fortress (21250)", price: 110, image: "https://images.brickset.com/sets/images/21250-1.jpg", url: "https://www.lego.com/en-us/product/the-iron-golem-fortress-21250", desc: "868-piece castle fortress that transforms into a gigantic towering Iron Golem fighter." },
+      { match: ["end arena", "ender dragon", "21242"], num: "21242", title: "The End Arena (21242)", price: 25, image: "https://images.brickset.com/sets/images/21242-1.jpg", url: "https://www.lego.com/en-us/product/the-end-arena-21242", desc: "252-piece PvP battle arena with Enderman, Shulker, and launching lava blocks." },
+
+      // SPEED CHAMPIONS
+      { match: ["ferrari 812", "ferrari competizione", "76914"], num: "76914", title: "Ferrari 812 Competizione (76914)", price: 25, image: "https://images.brickset.com/sets/images/76914-1.jpg", url: "https://www.lego.com/en-us/product/ferrari-812-competizione-76914", desc: "261-piece red sports car replica with exhaust pipes, yellow stripe, and driver minifigure." },
+      { match: ["mclaren f1", "mclaren solus", "76918"], num: "76918", title: "McLaren Solus GT & F1 LM (76918)", price: 35, image: "https://images.brickset.com/sets/images/76918-1.jpg", url: "https://www.lego.com/en-us/product/mclaren-solus-gt-mclaren-f1-lm-76918", desc: "581-piece double pack featuring papaya orange 1990s F1 LM supercar and Solus GT track car." },
+      { match: ["porsche 963", "porsche", "76916"], num: "76916", title: "Porsche 963 (76916)", price: 25, image: "https://images.brickset.com/sets/images/76916-1.jpg", url: "https://www.lego.com/en-us/product/porsche-963-76916", desc: "280-piece Le Mans hybrid endurance racing car replica with red, white and black livery." }
     ];
 
     function runAiLegoFinder() {
       playSound('click');
-      var query = (document.getElementById('inputLegoSearch').value || document.getElementById('inputWishTitle').value || '').trim().toLowerCase();
+      var searchInput = document.getElementById('inputLegoSearch');
+      var btn = document.getElementById('btnAiLegoFetch');
+      var query = (searchInput.value || document.getElementById('inputWishTitle').value || '').trim();
+      
       if (!query) {
-        alert("Please type a LEGO set name or number (e.g. Daily Bugle, Millennium Falcon, X-Men, Mech)!");
+        alert("Please enter a LEGO set name or 5-digit set number (e.g. 76269, Rivendell, Dark Falcon)!");
         return;
       }
 
+      var qLower = query.toLowerCase();
+      var originalBtnText = btn.innerHTML;
+      btn.innerHTML = '<span class="animate-spin">🔄</span> Searching...';
+
+      // 1. Check if user provided an explicit set number (4-6 digits)
+      var numMatch = query.match(/\b(\d{4,6})\b/);
+      var setNum = numMatch ? numMatch[1] : null;
+
+      // 2. Search local curated catalog with scored matching
       var bestMatch = null;
+      var bestScore = 0;
+
       for (var i = 0; i < LEGO_AI_CATALOG.length; i++) {
         var itm = LEGO_AI_CATALOG[i];
+        var score = 0;
+        
+        // Exact number match is 100% certainty
+        if (setNum && itm.num === setNum) {
+          bestMatch = itm;
+          bestScore = 1000;
+          break;
+        }
+
+        // Keyword scoring
         for (var m = 0; m < itm.match.length; m++) {
-          if (query.indexOf(itm.match[m]) !== -1 || itm.match[m].indexOf(query) !== -1) {
-            bestMatch = itm;
-            break;
+          var keyword = itm.match[m];
+          if (qLower === keyword) {
+            score += 100;
+          } else if (qLower.indexOf(keyword) !== -1) {
+            score += 50;
+          } else if (keyword.indexOf(qLower) !== -1) {
+            score += 25;
           }
         }
-        if (bestMatch) break;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = itm;
+        }
       }
 
-      if (!bestMatch) {
-        var cleanTitle = query.split(' ').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
-        if (cleanTitle.toLowerCase().indexOf('lego') === -1) cleanTitle = "LEGO " + cleanTitle;
-        
-        var estPrice = 49;
-        if (query.indexOf('tower') !== -1 || query.indexOf('castle') !== -1 || query.indexOf('falcon') !== -1) estPrice = 160;
-        else if (query.indexOf('battle') !== -1 || query.indexOf('ship') !== -1 || query.indexOf('jet') !== -1) estPrice = 80;
-        else if (query.indexOf('mech') !== -1 || query.indexOf('micro') !== -1) estPrice = 15;
-
-        bestMatch = {
-          title: cleanTitle,
-          price: estPrice,
-          image: "https://images.brickset.com/sets/images/76178-1.jpg",
-          url: "https://www.lego.com/en-us/search?q=" + encodeURIComponent(query),
-          desc: "Awesome LEGO building set featuring authentic details and collectible minifigures."
-        };
+      // If we found a strong match in the catalog
+      if (bestMatch && bestScore >= 25) {
+        populateLegoResult(bestMatch);
+        btn.innerHTML = originalBtnText;
+        return;
       }
 
-      document.getElementById('inputWishTitle').value = bestMatch.title;
-      document.getElementById('inputWishPrice').value = bestMatch.price;
-      document.getElementById('inputWishImg').value = bestMatch.image;
-      document.getElementById('inputWishImgPreview').src = bestMatch.image;
-      document.getElementById('inputWishUrl').value = bestMatch.url;
-      document.getElementById('inputWishDesc').value = bestMatch.desc;
+      // 3. Live Online Fallback Search via Wikipedia Open API (CORS enabled, zero-auth)
+      var wikiUrl = "https://en.wikipedia.org/w/api.php?action=opensearch&search=Lego+" + encodeURIComponent(query) + "&limit=3&namespace=0&format=json&origin=*";
+      
+      fetch(wikiUrl)
+        .then(function(res) { return res.json(); })
+        .then(function(wikiData) {
+          btn.innerHTML = originalBtnText;
+          if (Array.isArray(wikiData) && wikiData[1] && wikiData[1].length > 0) {
+            var rawTitle = wikiData[1][0] || ("LEGO " + query);
+            var cleanTitle = rawTitle.replace(/\(LEGO\)/gi, "").replace(/\(theme\)/gi, "").trim();
+            if (cleanTitle.toLowerCase().indexOf("lego") === -1) cleanTitle = "LEGO " + cleanTitle;
+            
+            var snippet = (wikiData[2] && wikiData[2][0]) ? wikiData[2][0] : "Official collectible LEGO building set.";
+            var pageUrl = (wikiData[3] && wikiData[3][0]) ? wikiData[3][0] : ("https://www.lego.com/en-us/search?q=" + encodeURIComponent(query));
+            
+            // Extract set number if found in snippet or title
+            var extractedNum = (cleanTitle + " " + snippet).match(/\b(\d{4,6})\b/);
+            var finalNum = setNum || (extractedNum ? extractedNum[1] : null);
+            var imgUrl = finalNum ? ("https://images.brickset.com/sets/images/" + finalNum + "-1.jpg") : "https://images.brickset.com/sets/images/76178-1.jpg";
+
+            var estPrice = 49;
+            if (qLower.indexOf("tower") !== -1 || qLower.indexOf("castle") !== -1 || qLower.indexOf("falcon") !== -1 || qLower.indexOf("titanic") !== -1) estPrice = 170;
+            else if (qLower.indexOf("battle") !== -1 || qLower.indexOf("ship") !== -1 || qLower.indexOf("jet") !== -1 || qLower.indexOf("car") !== -1) estPrice = 65;
+            else if (qLower.indexOf("mech") !== -1 || qLower.indexOf("pack") !== -1) estPrice = 15;
+
+            populateLegoResult({
+              title: finalNum ? (cleanTitle + " (" + finalNum + ")") : cleanTitle,
+              price: estPrice,
+              image: imgUrl,
+              url: finalNum ? ("https://www.lego.com/en-us/product/" + finalNum) : pageUrl,
+              desc: snippet
+            });
+          } else {
+            fallbackLocalSynthesis(query, setNum);
+          }
+        })
+        .catch(function(err) {
+          btn.innerHTML = originalBtnText;
+          fallbackLocalSynthesis(query, setNum);
+        });
+    }
+
+    function populateLegoResult(result) {
+      document.getElementById('inputWishTitle').value = result.title;
+      document.getElementById('inputWishPrice').value = result.price;
+      document.getElementById('inputWishImg').value = result.image;
+      document.getElementById('inputWishImgPreview').src = result.image;
+      document.getElementById('inputWishUrl').value = result.url;
+      document.getElementById('inputWishDesc').value = result.desc || "";
       playSound('coin');
+    }
+
+    function fallbackLocalSynthesis(query, setNum) {
+      var clean = query.split(' ').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+      if (clean.toLowerCase().indexOf('lego') === -1) clean = "LEGO " + clean;
+      
+      var estPrice = 49;
+      var qL = query.toLowerCase();
+      if (qL.indexOf("tower") !== -1 || qL.indexOf("falcon") !== -1 || qL.indexOf("castle") !== -1) estPrice = 170;
+      else if (qL.indexOf("mech") !== -1 || qL.indexOf("pack") !== -1) estPrice = 15;
+      else if (qL.indexOf("car") !== -1 || qL.indexOf("speed") !== -1) estPrice = 25;
+
+      var img = setNum ? ("https://images.brickset.com/sets/images/" + setNum + "-1.jpg") : "https://images.brickset.com/sets/images/76178-1.jpg";
+      var url = setNum ? ("https://www.lego.com/en-us/product/" + setNum) : ("https://www.lego.com/en-us/search?q=" + encodeURIComponent(query));
+
+      populateLegoResult({
+        title: setNum ? (clean + " (" + setNum + ")") : clean,
+        price: estPrice,
+        image: img,
+        url: url,
+        desc: "Official collectible LEGO building set."
+      });
     }
 
     function pickPreset(title, price, img, url, desc) {
@@ -1053,6 +1172,9 @@
       var needed = Math.max(0, goalCost - availableBalance);
 
       document.getElementById('hudCashTotal').textContent = "$" + availableBalance + ".00";
+      document.getElementById('hudEarnedAmt').textContent = "$" + totalEarned;
+      document.getElementById('hudSpentAmt').textContent = "$" + totalSpent;
+
       var pBadge = document.getElementById('hudPendingBadge');
       if (pBadge) {
         if (totalPending > 0) {
@@ -1062,6 +1184,7 @@
           pBadge.classList.add('hidden');
         }
       }
+
       if (activeGoal) {
         document.getElementById('hudGoalTitle').textContent = activeGoal.title;
         if (activeGoal.image) document.getElementById('hudGoalImg').src = activeGoal.image;
@@ -1100,7 +1223,7 @@
 
           var card = document.createElement('div');
           card.className = "bg-slate-900 border-2 " + 
-            (isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-blue-400 shadow-blue-900/30 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
+            (isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-amber-500/80 shadow-amber-900/20 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
             " rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all";
 
           var topWrapper = document.createElement('div');
@@ -1179,9 +1302,9 @@
 
           if (isReview && isParent) {
             var approveBtn = document.createElement('button');
-            approveBtn.className = "flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg transition";
+            approveBtn.className = "flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-1";
             approveBtn.type = "button";
-            approveBtn.textContent = "Approve & Pay (+$" + b.reward + ")";
+            approveBtn.innerHTML = '<span>✓</span> Approve & Pay (+$' + b.reward + ')';
             approveBtn.onclick = function() { approveChore(b.id); };
             actionRow.appendChild(approveBtn);
 
@@ -1319,8 +1442,19 @@
       var container = document.getElementById('lootContainer');
       container.innerHTML = "";
 
-      if (appState.loot.length === 0) {
-        container.innerHTML = '<div class="col-span-full py-8 text-center text-slate-500 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800">No purchases logged yet.</div>';
+      var clearBtn = document.getElementById('clearLootBtn');
+      if (clearBtn) {
+        if (isParent && (appState.loot || []).length > 0) {
+          clearBtn.classList.remove('hidden');
+          clearBtn.classList.add('inline-flex');
+        } else {
+          clearBtn.classList.add('hidden');
+          clearBtn.classList.remove('inline-flex');
+        }
+      }
+
+      if (!appState.loot || appState.loot.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-8 text-center text-slate-500 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800">No purchases logged yet. Lucas has spent $0!</div>';
         return;
       }
 
@@ -1516,6 +1650,7 @@
 
       if (title && price > 0) {
         playSound('coin');
+        if (!appState.loot) appState.loot = [];
         appState.loot.unshift({
           id: 'l_' + Date.now(),
           title: title,
@@ -1559,7 +1694,16 @@
       var safety = "Work safely and ask Dad for help with heavy items.";
       var rew = 5;
 
-      if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
+            if (t.indexOf('lego') !== -1 || t.indexOf('brick') !== -1 || t.indexOf('build') !== -1) {
+        cat = "DIY & Repairs";
+        tools = "LEGO instruction manual, sorting bowls or trays, brick separator";
+        steps = "Open bags in numbered order\nSort pieces by color into shallow trays\nFollow visual steps carefully\nTest moving parts as you build";
+        loc = "Building Table / Desk";
+        diff = t.indexOf('daily bugle') !== -1 || t.indexOf('falcon') !== -1 || t.indexOf('tower') !== -1 ? "⭐⭐⭐ Epic" : "⭐⭐ Medium";
+        dur = t.indexOf('mech') !== -1 ? "30 mins" : "1.5 hours";
+        safety = "Keep small pieces away from younger children and off the floor.";
+        rew = t.indexOf('mech') !== -1 ? 5 : 20;
+      } else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) { || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
         cat = "Helping Hand";
         tools = "Dog shampoo, 2 large dry towels, gentle slicker brush, dog treats";
         steps = "Gently brush Millie's coat to remove loose fur\\nWet coat with lukewarm water (keep ears dry)\\nApply dog shampoo and lather gently\\nRinse completely with warm clean water\\nTowel dry thoroughly and give a reward treat!";
