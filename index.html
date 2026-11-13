@@ -284,6 +284,7 @@
       <div class="flex justify-between items-start mb-3">
         <div>
           <div class="flex items-center gap-1.5 flex-wrap">
+            <span id="mRecurBadge" class="hidden text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-700/80 shadow-sm"></span>
             <span id="mCategoryBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-900 text-blue-300"></span>
             <span id="mDifficultyBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300"></span>
             <span id="mDurationBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300"></span>
@@ -354,7 +355,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <label class="text-xs text-slate-400 block mb-1">Bounty Reward ($)</label>
             <input id="inputChoreReward" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="5" />
@@ -370,6 +371,18 @@
             </select>
           </div>
           <div>
+            <label class="text-xs text-slate-400 block mb-1">🔁 Recurrence</label>
+            <select id="inputChoreRecurrence" class="w-full bg-slate-950 border border-amber-600/70 rounded-xl p-2.5 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-400">
+              <option value="none">🎯 One-Time Bounty</option>
+              <option value="daily">🔁 Daily (Resets each morning)</option>
+              <option value="weekly">📅 Weekly (Resets every week)</option>
+              <option value="monthly">🗓️ Monthly (Resets monthly)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div>
             <label class="text-xs text-slate-400 block mb-1">Status</label>
             <select id="inputChoreStatus" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
               <option value="open">★ Open</option>
@@ -377,9 +390,6 @@
               <option value="completed">✓ Completed</option>
             </select>
           </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="text-xs text-slate-400 block mb-1">Estimated Time</label>
             <input id="inputChoreDuration" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="20 mins" />
@@ -587,6 +597,48 @@
       balanceCalibrated: true,
       bounties: [
         { 
+          id: "b_millie_weekly", 
+          title: "Feed & Walk Millie", 
+          reward: 5, 
+          status: "open", 
+          recurrence: "weekly",
+          category: "Helping Hand",
+          duration: "20 mins",
+          difficulty: "⭐ Easy",
+          location: "Neighborhood & Backyard",
+          tools: ["Leash & collar", "Water bowl & bottle", "Waste bags", "Dog treats", "Millie's kibble scoop"],
+          steps: ["Check Millie's water bowl and replenish with fresh, cool water", "Measure evening kibble scoop and place in food bowl", "Clip leash securely to collar before opening door", "Take Millie on safe neighborhood walk route with Dad", "Clean paws at door, refill water bowl, and give Millie a reward treat!"],
+          safety: "Hold leash handle securely around wrist; watch for approaching dogs and bikes."
+        },
+        { 
+          id: "b_recycle_weekly", 
+          title: "Can Deposit & Recycling Run", 
+          reward: 5, 
+          status: "open", 
+          recurrence: "weekly",
+          category: "Helping Hand",
+          duration: "15 mins",
+          difficulty: "⭐ Easy",
+          location: "Garage & Curbside",
+          tools: ["Work gloves", "Trash bags", "Recycling sorting crates"],
+          steps: ["Collect wastebaskets from bedrooms and bathrooms into main trash bag", "Separate returnable soda cans and plastic bottles into deposit crates", "Wheel outdoor rollout bins down driveway to curbside for pickup", "Replace indoor trash cans with fresh clean liners"],
+          safety: "Wear gloves to protect hands from sharp aluminum can tabs; wash hands when done."
+        },
+        { 
+          id: "b_secret_room_weekly", 
+          title: "Secret Room & LEGO Desk Tidy", 
+          reward: 10, 
+          status: "open", 
+          recurrence: "weekly",
+          category: "Secret Project",
+          duration: "30 mins",
+          difficulty: "⭐⭐ Medium",
+          location: "Secret Room / Playroom",
+          tools: ["Sorting tubs", "Microfiber dust cloth", "Handheld vacuum"],
+          steps: ["Pick up stray LEGO bricks from floor and sort into correct set tubs", "Clear clothes from floor into laundry hamper", "Dust model display shelves and building desk", "Vacuum floor corners thoroughly"],
+          safety: "Pick up small LEGO pieces by hand before vacuuming so they don't get sucked up!"
+        },
+        { 
           id: "b1", 
           title: "Wash out Sandpit", 
           reward: 5, 
@@ -745,18 +797,123 @@
     var pendingPinCallback = null;
 
     // -------------------------------------------------------------
-    // 3. HARDENED FIREBASE FIRESTORE SYNC & AUTO-CLEAN DEBT
+    // 3. RECURRING TASKS CALENDAR ENGINE & CLOUD SYNC
     // -------------------------------------------------------------
+    function getIsoDate(d) {
+      d = d || new Date();
+      var year = d.getFullYear();
+      var month = String(d.getMonth() + 1).padStart(2, '0');
+      var day = String(d.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    function getIsoWeek(d) {
+      d = d || new Date();
+      var date = new Date(d.getTime());
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+      var week1 = new Date(date.getFullYear(), 0, 4);
+      var weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+      return date.getFullYear() + '-W' + String(weekNum).padStart(2, '0');
+    }
+
+    function getIsoMonth(d) {
+      d = d || new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    function checkAndResetRecurringBounties(state) {
+      if (!state || !Array.isArray(state.bounties)) return false;
+      var now = new Date();
+      var today = getIsoDate(now);
+      var thisWeek = getIsoWeek(now);
+      var thisMonth = getIsoMonth(now);
+      var changed = false;
+
+      state.bounties.forEach(function(b) {
+        if (!b.recurrence || b.recurrence === 'none') return;
+        if (b.status === 'completed') {
+          var shouldReset = false;
+          if (b.recurrence === 'daily' && b.lastCompletedDate && b.lastCompletedDate !== today) {
+            shouldReset = true;
+          } else if (b.recurrence === 'weekly' && b.lastCompletedWeek && b.lastCompletedWeek !== thisWeek) {
+            shouldReset = true;
+          } else if (b.recurrence === 'monthly' && b.lastCompletedMonth && b.lastCompletedMonth !== thisMonth) {
+            shouldReset = true;
+          }
+
+          if (shouldReset) {
+            b.status = 'open';
+            changed = true;
+          }
+        }
+      });
+      return changed;
+    }
+
+    function resetRecurringBountyNow(id) {
+      playSound('click');
+      for (var i = 0; i < appState.bounties.length; i++) {
+        if (appState.bounties[i].id === id) {
+          appState.bounties[i].status = 'open';
+          break;
+        }
+      }
+      persist();
+    }
+
     function sanitizeCloudData(data) {
       if (!data) return data;
+      var needsSync = false;
       if (typeof data.balance !== 'number' || isNaN(data.balance)) {
         data.balance = 5.00;
         data.balanceCalibrated = true;
-        data.lastUpdated = Date.now();
-        if (firestoreDocRef) {
-          firestoreDocRef.set(data).catch(function(){});
+        needsSync = true;
+      }
+
+      if (!Array.isArray(data.bounties)) {
+        data.bounties = DEFAULT_STATE.bounties;
+        needsSync = true;
+      } else {
+        // Ensure "Feed & Walk Millie" recurring task exists
+        var hasMillie = data.bounties.some(function(b) {
+          return b.id === 'b_millie_weekly' || (b.title && b.title.toLowerCase().indexOf('millie') !== -1);
+        });
+        if (!hasMillie) {
+          data.bounties.unshift({
+            id: "b_millie_weekly",
+            title: "Feed & Walk Millie",
+            reward: 5,
+            status: "open",
+            recurrence: "weekly",
+            category: "Helping Hand",
+            duration: "20 mins",
+            difficulty: "⭐ Easy",
+            location: "Neighborhood & Backyard",
+            tools: ["Leash & collar", "Water bowl & bottle", "Waste bags", "Dog treats", "Millie's kibble scoop"],
+            steps: [
+              "Check Millie's water bowl and replenish with fresh, cool water",
+              "Measure evening kibble scoop and place in food bowl",
+              "Clip leash securely to collar before opening door",
+              "Take Millie on safe neighborhood walk route with Dad",
+              "Clean paws at door, refill water bowl, and give Millie a reward treat!"
+            ],
+            safety: "Hold leash handle securely around wrist; watch for approaching dogs and bikes."
+          });
+          needsSync = true;
+        }
+
+        // Auto-reset recurring bounties if their cycle has rolled over
+        if (checkAndResetRecurringBounties(data)) {
+          needsSync = true;
         }
       }
+
+      if (needsSync && firestoreDocRef && isPermittedUser) {
+        data.lastUpdated = Date.now();
+        firestoreDocRef.set(data).catch(function(){});
+      }
+
       return data;
     }
 
@@ -1736,10 +1893,27 @@
           var leftBadges = document.createElement('div');
           leftBadges.className = "flex flex-wrap gap-1.5 items-center";
 
+          if (b.recurrence && b.recurrence !== 'none') {
+            var recurTag = document.createElement('span');
+            var recurLabel = b.recurrence === 'daily' ? '🔁 Daily' : b.recurrence === 'weekly' ? '📅 Weekly' : '🗓️ Monthly';
+            recurTag.className = "text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-950/80 text-amber-300 border border-amber-700/80 shadow-sm flex items-center gap-1";
+            recurTag.textContent = recurLabel;
+            leftBadges.appendChild(recurTag);
+          }
+
           var statusTag = document.createElement('span');
+          var statusText = "★ OPEN BOUNTY";
+          if (isDone) {
+            if (b.recurrence === 'daily') statusText = "✓ DONE TODAY";
+            else if (b.recurrence === 'weekly') statusText = "✓ DONE THIS WEEK";
+            else if (b.recurrence === 'monthly') statusText = "✓ DONE THIS MONTH";
+            else statusText = "✓ COMPLETED";
+          } else if (isReview) {
+            statusText = "⏳ UNDER REVIEW";
+          }
           statusTag.className = "text-[10px] font-black px-2.5 py-0.5 rounded-lg tracking-wider uppercase " + 
             (isDone ? "bg-slate-800 text-slate-400" : isReview ? "bg-amber-950/80 text-amber-400 border border-amber-800" : "bg-blue-950 text-blue-300 border border-blue-800");
-          statusTag.textContent = isDone ? "✓ COMPLETED" : isReview ? "⏳ UNDER REVIEW" : "★ OPEN BOUNTY";
+          statusTag.textContent = statusText;
           leftBadges.appendChild(statusTag);
 
           if (b.difficulty) {
@@ -1817,6 +1991,16 @@
           }
 
           if (isParent) {
+            if (isDone && b.recurrence && b.recurrence !== 'none') {
+              var resetBtn = document.createElement('button');
+              resetBtn.className = "px-3 py-2.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm";
+              resetBtn.type = "button";
+              resetBtn.innerHTML = '<span>🔄</span> Reset for ' + (b.recurrence === 'daily' ? 'Today' : 'New Week');
+              resetBtn.title = "Reset this recurring bounty to Open now";
+              resetBtn.onclick = function() { resetRecurringBountyNow(b.id); };
+              actionRow.appendChild(resetBtn);
+            }
+
             var editBtn = document.createElement('button');
             editBtn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1";
             editBtn.type = "button";
@@ -2043,6 +2227,16 @@
       document.getElementById('mDifficultyBadge').textContent = b.difficulty || "⭐ Easy";
       document.getElementById('mDurationBadge').textContent = "⏱️ " + (b.duration || "20 mins");
 
+      var rBadge = document.getElementById('mRecurBadge');
+      if (rBadge) {
+        if (b.recurrence && b.recurrence !== 'none') {
+          rBadge.classList.remove('hidden');
+          rBadge.textContent = b.recurrence === 'daily' ? '🔁 Daily Schedule' : b.recurrence === 'weekly' ? '📅 Weekly Schedule' : '🗓️ Monthly Schedule';
+        } else {
+          rBadge.classList.add('hidden');
+        }
+      }
+
       var toolsBox = document.getElementById('mTools');
       toolsBox.innerHTML = "";
       var tools = b.tools || ["Standard supplies"];
@@ -2117,6 +2311,7 @@
       document.getElementById('inputChoreTitle').value = b.title || "";
       document.getElementById('inputChoreReward').value = b.reward || 5;
       document.getElementById('inputChoreCategory').value = b.category || "Cleaning & Tidy";
+      document.getElementById('inputChoreRecurrence').value = b.recurrence || "none";
       document.getElementById('inputChoreStatus').value = b.status || "open";
       document.getElementById('inputChoreDuration').value = b.duration || "20 mins";
       document.getElementById('inputChoreDifficulty').value = b.difficulty || "⭐ Easy";
@@ -2138,6 +2333,7 @@
       document.getElementById('inputChoreTitle').value = "";
       document.getElementById('inputChoreReward').value = 5;
       document.getElementById('inputChoreCategory').value = "Yard & Garden";
+      document.getElementById('inputChoreRecurrence').value = "none";
       document.getElementById('inputChoreStatus').value = "open";
       document.getElementById('inputChoreDuration').value = "20 mins";
       document.getElementById('inputChoreDifficulty').value = "⭐ Easy";
@@ -2159,6 +2355,7 @@
       var title = document.getElementById('inputChoreTitle').value.trim();
       var reward = parseInt(document.getElementById('inputChoreReward').value) || 5;
       var cat = document.getElementById('inputChoreCategory').value;
+      var recurrence = document.getElementById('inputChoreRecurrence').value || 'none';
       var status = document.getElementById('inputChoreStatus').value || 'open';
       var loc = document.getElementById('inputChoreLoc').value.trim() || 'Home';
       var dur = document.getElementById('inputChoreDuration').value.trim() || '20 mins';
@@ -2178,6 +2375,7 @@
             appState.bounties[i].title = title;
             appState.bounties[i].reward = reward;
             appState.bounties[i].category = cat;
+            appState.bounties[i].recurrence = recurrence;
             appState.bounties[i].status = status;
             appState.bounties[i].duration = dur;
             appState.bounties[i].difficulty = diff;
@@ -2195,6 +2393,7 @@
           reward: reward,
           status: status,
           category: cat,
+          recurrence: recurrence,
           duration: dur,
           difficulty: diff,
           location: loc,
@@ -2221,12 +2420,23 @@
     }
 
     function approveChore(id) {
+      var now = new Date();
+      var todayDate = getIsoDate(now);
+      var currentWeek = getIsoWeek(now);
+      var currentMonth = getIsoMonth(now);
+
       for (var i = 0; i < appState.bounties.length; i++) {
         if (appState.bounties[i].id === id) {
-          if (appState.bounties[i].status !== 'completed') {
-            var rew = Number(appState.bounties[i].reward) || 0;
+          var b = appState.bounties[i];
+          if (b.status !== 'completed') {
+            var rew = Number(b.reward) || 0;
             appState.balance = Math.round(((Number(appState.balance) || 0) + rew) * 100) / 100;
-            appState.bounties[i].status = 'completed';
+            b.status = 'completed';
+            b.lastCompletedDate = todayDate;
+            b.lastCompletedWeek = currentWeek;
+            b.lastCompletedMonth = currentMonth;
+            b.lastCompletedTimestamp = Date.now();
+            b.timesCompleted = (b.timesCompleted || 0) + 1;
           }
           break;
         }
@@ -2529,6 +2739,18 @@
       var safety = "Work carefully and ask Dad for assistance with heavy or high items.";
       var rew = 5;
 
+      var recur = "none";
+      if (t.indexOf('weekly') !== -1 || t.indexOf('week') !== -1 || t.indexOf('every week') !== -1) {
+        recur = "weekly";
+      } else if (t.indexOf('daily') !== -1 || t.indexOf('day') !== -1 || t.indexOf('every day') !== -1) {
+        recur = "daily";
+      } else if (t.indexOf('monthly') !== -1 || t.indexOf('month') !== -1) {
+        recur = "monthly";
+      }
+
+      var rewardMatch = t.match(/\$(\d+)/);
+      if (rewardMatch) rew = parseInt(rewardMatch[1], 10);
+
       // 1. ELECTRICAL / LIGHT SWITCH / OUTLET / COVER PLATES
       if (t.indexOf('switch') !== -1 || t.indexOf('outlet') !== -1 || t.indexOf('cover plate') !== -1 || 
           t.indexOf('faceplate') !== -1 || t.indexOf('light switch') !== -1 || t.indexOf('lightbulb') !== -1 || 
@@ -2591,19 +2813,34 @@
       else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('puppy') !== -1 || 
                t.indexOf('cat') !== -1 || t.indexOf('pet') !== -1 || t.indexOf('groom') !== -1) {
         cat = "Helping Hand";
-        loc = extractChoreLocation(t, "Backyard / Laundry Bath");
-        tools = "Gentle dog shampoo, 2 large dry towels, slicker brush, treat pouch, warm water hose/pitcher";
-        steps = [
-          "Gently brush Millie's coat to remove loose fur before getting wet",
-          "Check water temperature—must be lukewarm, never hot",
-          "Apply dog shampoo and lather gently, keeping face and inner ears dry",
-          "Rinse thoroughly with warm water until rinse water runs completely clear",
-          "Towel dry vigorously and reward Millie with a tasty treat!"
-        ];
-        safety = "Keep shampoo away from Millie's eyes; ensure bath floor has a non-slip mat.";
-        diff = "⭐⭐ Medium";
-        dur = "25 mins";
-        rew = 10;
+        loc = extractChoreLocation(t, "Neighborhood & Backyard");
+        var isWalkOrFeed = t.indexOf('walk') !== -1 || t.indexOf('feed') !== -1;
+        if (isWalkOrFeed) {
+          recur = "weekly";
+          dur = "20 mins";
+          rew = 5;
+          tools = "Leash & collar, fresh water bowl, waste bags, dog treats, Millie's kibble scoop";
+          steps = [
+            "Check Millie's water bowl and replenish with fresh, cool water",
+            "Measure evening kibble scoop and place in food bowl",
+            "Clip leash securely to collar before opening door",
+            "Take Millie on safe neighborhood walk route with Dad",
+            "Clean paws at door, refill water bowl, and give Millie a reward treat!"
+          ];
+          safety = "Hold leash handle securely around wrist; watch for approaching dogs and bikes.";
+        } else {
+          tools = "Gentle dog shampoo, 2 large dry towels, slicker brush, treat pouch, warm water hose/pitcher";
+          steps = [
+            "Gently brush Millie's coat to remove loose fur before getting wet",
+            "Check water temperature—must be lukewarm, never hot",
+            "Apply dog shampoo and lather gently, keeping face and inner ears dry",
+            "Rinse thoroughly with warm water until rinse water runs completely clear",
+            "Towel dry vigorously and reward Millie with a tasty treat!"
+          ];
+          safety = "Keep shampoo away from Millie's eyes; ensure bath floor has a non-slip mat.";
+          dur = "25 mins";
+          rew = 10;
+        }
       }
       // 5. FURNITURE / SHELVES / ASSEMBLY / IKEA
       else if (t.indexOf('shelf') !== -1 || t.indexOf('shelves') !== -1 || t.indexOf('bookcase') !== -1 || 
@@ -2820,6 +3057,8 @@
       document.getElementById('inputChoreDifficulty').value = diff;
       document.getElementById('inputChoreDuration').value = dur;
       document.getElementById('inputChoreSafety').value = safety;
+      var recurInput = document.getElementById('inputChoreRecurrence');
+      if (recurInput) recurInput.value = recur;
       if (!document.getElementById('inputChoreReward').value) {
         document.getElementById('inputChoreReward').value = rew;
       }
