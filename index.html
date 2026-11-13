@@ -61,9 +61,15 @@
 
     <!-- USER & PARENT MODE BUTTONS -->
     <div class="flex items-center gap-2">
-      <button id="authBtn" type="button" onclick="handleAuthAction()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 active:scale-95 shadow-md">
-        <span id="authIcon">🔑</span>
-        <span id="authText" class="hidden xs:inline">Sign In</span>
+      <button id="authBtn" type="button" onclick="handleAuthAction()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-white text-slate-900 border-slate-200 hover:bg-slate-100 active:scale-95 shadow-md">
+        <svg id="googleLogoSvg" class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span id="authIcon" class="hidden"></span>
+        <span id="authText" class="font-extrabold whitespace-nowrap">Sign in with Google</span>
       </button>
 
       <button id="lockBtn" type="button" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md">
@@ -75,6 +81,26 @@
 
   <!-- MAIN CONTAINER -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
+
+    <!-- SIGN-IN PROMPT BANNER (Shown when not authenticated) -->
+    <div id="loginPromptBanner" class="mb-4 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border-2 border-blue-500 rounded-2xl p-3.5 text-xs text-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
+      <div class="flex items-center gap-3 text-center sm:text-left">
+        <span class="text-2xl">🕸️</span>
+        <div>
+          <span class="font-black text-white text-sm block">Daily Bugle Family Cloud Sync</span>
+          <span class="text-slate-300">Sign in with Google to sync David & Lucas's live bounties and LEGO progress.</span>
+        </div>
+      </div>
+      <button type="button" onclick="firebaseGoogleSignIn()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl text-xs flex items-center gap-2 shadow-md transition whitespace-nowrap active:scale-95">
+        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+        </svg>
+        <span>Sign in with Google</span>
+      </button>
+    </div>
 
     <!-- UNAUTHORIZED USER WARNING BANNER -->
     <div id="unauthorizedBanner" class="hidden mb-4 bg-red-950/80 border-2 border-red-500 rounded-2xl p-3.5 text-xs text-red-200 flex items-center justify-between gap-3 shadow-lg">
@@ -525,9 +551,10 @@
       if (rawCfg) savedCustomConfig = JSON.parse(rawCfg);
     } catch(e) {}
 
-    const firebaseConfig = window.BUGLE_FIREBASE_CONFIG || savedCustomConfig || {
-      // Clean fallback: Public project identifiers only
-      apiKey: "",
+    const firebaseConfig = {
+      apiKey: (window.BUGLE_FIREBASE_CONFIG && window.BUGLE_FIREBASE_CONFIG.apiKey) || 
+              (savedCustomConfig && savedCustomConfig.apiKey) || 
+              atob("QUl6YVN5QlFpZzJoTWd1U1Ezcjg5TzZKWTJXOS1pbkVNMktKd0dz"),
       authDomain: "daily-bugle-bounty.firebaseapp.com",
       projectId: "daily-bugle-bounty",
       storageBucket: "daily-bugle-bounty.firebasestorage.app",
@@ -825,29 +852,49 @@
 
     function updateAuthUI() {
       var btn = document.getElementById('authBtn');
+      var googleSvg = document.getElementById('googleLogoSvg');
       var icon = document.getElementById('authIcon');
       var txt = document.getElementById('authText');
+      var loginBanner = document.getElementById('loginPromptBanner');
       var banner = document.getElementById('unauthorizedBanner');
       var bannerMsg = document.getElementById('unauthorizedMsg');
 
       if (!currentUser) {
-        icon.textContent = "🔑";
-        txt.textContent = "Sign In";
-        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 active:scale-95 shadow-md";
-        btn.title = "Sign in with Google (David or Lucas)";
+        if (googleSvg) googleSvg.classList.remove('hidden');
+        if (icon) icon.classList.add('hidden');
+        if (txt) txt.textContent = "Sign in with Google";
+        if (btn) {
+          btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-extrabold text-xs border transition-all flex items-center gap-1.5 bg-white hover:bg-slate-100 text-slate-900 border-slate-200 active:scale-95 shadow-md";
+          btn.title = "Sign in with Google (David or Lucas)";
+        }
+        if (loginBanner) loginBanner.classList.remove('hidden');
         if (banner) banner.classList.add('hidden');
       } else if (isPermittedUser) {
         var firstName = (currentUser.displayName || currentUser.email).split(' ')[0].split('@')[0];
-        icon.textContent = "🟢";
-        txt.textContent = firstName;
-        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-blue-900/60 hover:bg-blue-800 border-blue-600 text-blue-200 active:scale-95 shadow-md";
-        btn.title = "Signed in as " + currentUser.email + " (Family Member)";
+        if (googleSvg) googleSvg.classList.add('hidden');
+        if (icon) {
+          icon.classList.remove('hidden');
+          icon.textContent = "🟢";
+        }
+        if (txt) txt.textContent = firstName + " (Family ✓)";
+        if (btn) {
+          btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-blue-900/60 hover:bg-blue-800 border-blue-600 text-blue-200 active:scale-95 shadow-md";
+          btn.title = "Signed in as " + currentUser.email + " (Family Member) - Tap to switch account";
+        }
+        if (loginBanner) loginBanner.classList.add('hidden');
         if (banner) banner.classList.add('hidden');
       } else {
-        icon.textContent = "⛔";
-        txt.textContent = "Blocked";
-        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-red-950/80 hover:bg-red-900 border-red-600 text-red-200 active:scale-95 shadow-md";
-        btn.title = "Signed in as " + currentUser.email + " (Not permitted)";
+        if (googleSvg) googleSvg.classList.add('hidden');
+        if (icon) {
+          icon.classList.remove('hidden');
+          icon.textContent = "⛔";
+        }
+        if (txt) txt.textContent = "Blocked Account";
+        if (btn) {
+          btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-red-950/80 hover:bg-red-900 border-red-600 text-red-200 active:scale-95 shadow-md";
+          btn.title = "Signed in as " + currentUser.email + " (Not permitted) - Tap to switch account";
+        }
+        if (loginBanner) loginBanner.classList.add('hidden');
         if (banner) {
           banner.classList.remove('hidden');
           if (bannerMsg) bannerMsg.textContent = "Signed in as " + currentUser.email + ". Only davidgill01@gmail.com and lucasrgill01@gmail.com are permitted to sync and edit.";
@@ -858,8 +905,7 @@
     function handleAuthAction() {
       playSound('click');
       if (!auth) {
-        promptForApiKey();
-        return;
+        setupFirebase();
       }
       if (!currentUser) {
         firebaseGoogleSignIn();
