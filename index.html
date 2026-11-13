@@ -8,9 +8,13 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase App & Firestore -->
+  <!-- Firebase App, Auth & Firestore -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- Optional external Firebase Config (ignored in git to protect secrets) -->
+  <script src="firebase-config.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -55,8 +59,13 @@
       </div>
     </div>
 
-    <!-- PARENT MODE BUTTON -->
+    <!-- USER & PARENT MODE BUTTONS -->
     <div class="flex items-center gap-2">
+      <button id="authBtn" type="button" onclick="handleAuthAction()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 active:scale-95 shadow-md">
+        <span id="authIcon">🔑</span>
+        <span id="authText" class="hidden xs:inline">Sign In</span>
+      </button>
+
       <button id="lockBtn" type="button" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md">
         <span id="lockIcon">🔒</span> 
         <span id="lockText">Parent Unlock</span>
@@ -66,6 +75,20 @@
 
   <!-- MAIN CONTAINER -->
   <main class="max-w-4xl mx-auto px-4 pt-4">
+
+    <!-- UNAUTHORIZED USER WARNING BANNER -->
+    <div id="unauthorizedBanner" class="hidden mb-4 bg-red-950/80 border-2 border-red-500 rounded-2xl p-3.5 text-xs text-red-200 flex items-center justify-between gap-3 shadow-lg">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⛔</span>
+        <div>
+          <span class="font-bold text-white block">Restricted Family Access</span>
+          <span id="unauthorizedMsg">Signed in as guest. Only davidgill01@gmail.com and lucasrgill01@gmail.com are permitted to sync and edit.</span>
+        </div>
+      </div>
+      <button type="button" onclick="firebaseSignOut()" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-xs flex-shrink-0 transition">
+        Switch Account
+      </button>
+    </div>
 
     <!-- HERO SAVINGS PROGRESS HUD -->
     <section class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-blue-600 rounded-3xl p-4 sm:p-5 mb-5 shadow-2xl relative overflow-hidden pulse-glow">
@@ -493,10 +516,18 @@
 
   <script>
     // -------------------------------------------------------------
-    // 1. FIREBASE CONFIGURATION & FIRESTORE REAL-TIME INITIALIZATION
+    // 1. SECURE FIREBASE CONFIGURATION & FAMILY AUTHENTICATION
     // -------------------------------------------------------------
-    const firebaseConfig = {
-      apiKey: "AIzaSyBQig2hMguSQ3r89O6JY2W9-inEM2KJwGs",
+    // Load config from external file (ignored by git), local storage override, or environment
+    var savedCustomConfig = null;
+    try {
+      var rawCfg = localStorage.getItem('gill_bugle_custom_firebase_config');
+      if (rawCfg) savedCustomConfig = JSON.parse(rawCfg);
+    } catch(e) {}
+
+    const firebaseConfig = window.BUGLE_FIREBASE_CONFIG || savedCustomConfig || {
+      // Clean fallback: Public project identifiers only
+      apiKey: "",
       authDomain: "daily-bugle-bounty.firebaseapp.com",
       projectId: "daily-bugle-bounty",
       storageBucket: "daily-bugle-bounty.firebasestorage.app",
@@ -505,6 +536,15 @@
       measurementId: "G-EVBRSFCEV5"
     };
 
+    // Permitted family accounts
+    const PERMITTED_FAMILY_EMAILS = [
+      "davidgill01@gmail.com",
+      "lucasrgill01@gmail.com"
+    ];
+
+    var auth = null;
+    var currentUser = null;
+    var isPermittedUser = false;
     var db = null;
     var firestoreDocRef = null;
     var isCloudConnected = false;
@@ -695,59 +735,35 @@
 
     function setupFirebase() {
       try {
+        if (!firebaseConfig.apiKey) {
+          isCloudConnected = false;
+          cloudErrorMessage = "Firebase API Key not set. Add firebase-config.js or tap Key icon to configure.";
+          updateSyncBadge(false);
+          updateAuthUI();
+          return;
+        }
+
         if (!firebase.apps.length) {
           firebase.initializeApp(firebaseConfig);
         }
+        auth = firebase.auth();
         db = firebase.firestore();
         
         try {
           db.settings({ experimentalAutoDetectLongPolling: true });
         } catch(e){}
 
-        firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
-
-        // 1. Initial Fast Fetch
-        firestoreDocRef.get().then(function(doc) {
-          if (doc.exists) {
-            var cloudData = sanitizeCloudData(doc.data());
-            if (cloudData && Array.isArray(cloudData.bounties)) {
-              appState = cloudData;
-              try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
-              renderAll();
-            }
+        // Auth state listener: Check Google login and whitelist
+        auth.onAuthStateChanged(function(user) {
+          currentUser = user;
+          if (user && user.email) {
+            var emailLower = user.email.toLowerCase().trim();
+            isPermittedUser = PERMITTED_FAMILY_EMAILS.indexOf(emailLower) !== -1;
           } else {
-            firestoreDocRef.set(appState);
+            isPermittedUser = false;
           }
-          isCloudConnected = true;
-          cloudErrorMessage = "";
-          updateSyncBadge(true);
-        }).catch(function(err) {
-          console.error("Firestore get error:", err);
-          isCloudConnected = false;
-          cloudErrorMessage = err.message || err.code || "Cloud connection failed";
-          updateSyncBadge(false);
-        });
-
-        // 2. Real-Time Snapshot Listener
-        firestoreDocRef.onSnapshot({ includeMetadataChanges: true }, function(doc) {
-          if (doc.exists) {
-            if (!doc.metadata.hasPendingWrites) {
-              var cloudData = sanitizeCloudData(doc.data());
-              if (cloudData && Array.isArray(cloudData.bounties)) {
-                appState = cloudData;
-                try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
-                renderAll();
-              }
-            }
-          }
-          isCloudConnected = true;
-          cloudErrorMessage = "";
-          updateSyncBadge(true);
-        }, function(error) {
-          console.error("Firestore snapshot error:", error);
-          isCloudConnected = false;
-          cloudErrorMessage = error.message || error.code || "Permission or network issue";
-          updateSyncBadge(false);
+          updateAuthUI();
+          initFirestoreSync();
         });
 
       } catch (err) {
@@ -758,15 +774,148 @@
       }
     }
 
-    function updateSyncBadge(online) {
-      var dot = document.getElementById('syncDot');
-      var txt = document.getElementById('syncText');
-      if (online) {
-        dot.className = "w-2 h-2 rounded-full bg-green-400";
-        txt.textContent = "Google Cloud Live 🟢";
+    function initFirestoreSync() {
+      if (!db) return;
+      firestoreDocRef = db.collection("family_boards").doc("gill_main_board");
+
+      // 1. Initial Fast Fetch
+      firestoreDocRef.get().then(function(doc) {
+        if (doc.exists) {
+          var cloudData = sanitizeCloudData(doc.data());
+          if (cloudData && Array.isArray(cloudData.bounties)) {
+            appState = cloudData;
+            try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
+            renderAll();
+          }
+        } else if (isPermittedUser) {
+          firestoreDocRef.set(appState).catch(function(){});
+        }
+        isCloudConnected = true;
+        cloudErrorMessage = "";
+        updateSyncBadge(true);
+      }).catch(function(err) {
+        console.warn("Firestore get error:", err);
+        isCloudConnected = false;
+        cloudErrorMessage = err.message || err.code || "Cloud connection failed";
+        updateSyncBadge(false);
+      });
+
+      // 2. Real-Time Snapshot Listener
+      firestoreDocRef.onSnapshot({ includeMetadataChanges: true }, function(doc) {
+        if (doc.exists) {
+          if (!doc.metadata.hasPendingWrites) {
+            var cloudData = sanitizeCloudData(doc.data());
+            if (cloudData && Array.isArray(cloudData.bounties)) {
+              appState = cloudData;
+              try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
+              renderAll();
+            }
+          }
+        }
+        isCloudConnected = true;
+        cloudErrorMessage = "";
+        updateSyncBadge(true);
+      }, function(error) {
+        console.warn("Firestore snapshot error:", error);
+        isCloudConnected = false;
+        cloudErrorMessage = error.message || error.code || "Permission or network issue";
+        updateSyncBadge(false);
+      });
+    }
+
+    function updateAuthUI() {
+      var btn = document.getElementById('authBtn');
+      var icon = document.getElementById('authIcon');
+      var txt = document.getElementById('authText');
+      var banner = document.getElementById('unauthorizedBanner');
+      var bannerMsg = document.getElementById('unauthorizedMsg');
+
+      if (!currentUser) {
+        icon.textContent = "🔑";
+        txt.textContent = "Sign In";
+        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700 active:scale-95 shadow-md";
+        btn.title = "Sign in with Google (David or Lucas)";
+        if (banner) banner.classList.add('hidden');
+      } else if (isPermittedUser) {
+        var firstName = (currentUser.displayName || currentUser.email).split(' ')[0].split('@')[0];
+        icon.textContent = "🟢";
+        txt.textContent = firstName;
+        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-blue-900/60 hover:bg-blue-800 border-blue-600 text-blue-200 active:scale-95 shadow-md";
+        btn.title = "Signed in as " + currentUser.email + " (Family Member)";
+        if (banner) banner.classList.add('hidden');
       } else {
-        dot.className = "w-2 h-2 rounded-full bg-amber-400";
-        txt.textContent = cloudErrorMessage ? "Sync Alert (Tap to view)" : "Saved Offline";
+        icon.textContent = "⛔";
+        txt.textContent = "Blocked";
+        btn.className = "px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-red-950/80 hover:bg-red-900 border-red-600 text-red-200 active:scale-95 shadow-md";
+        btn.title = "Signed in as " + currentUser.email + " (Not permitted)";
+        if (banner) {
+          banner.classList.remove('hidden');
+          if (bannerMsg) bannerMsg.textContent = "Signed in as " + currentUser.email + ". Only davidgill01@gmail.com and lucasrgill01@gmail.com are permitted to sync and edit.";
+        }
+      }
+    }
+
+    function handleAuthAction() {
+      playSound('click');
+      if (!auth) {
+        promptForApiKey();
+        return;
+      }
+      if (!currentUser) {
+        firebaseGoogleSignIn();
+      } else {
+        var choice = confirm("Signed in as:\n" + (currentUser.displayName ? currentUser.displayName + " (" + currentUser.email + ")" : currentUser.email) + "\n\nPermitted Family Status: " + (isPermittedUser ? "Verified ✓" : "Not on family whitelist ✕") + "\n\nWould you like to sign out or switch accounts?");
+        if (choice) {
+          firebaseSignOut();
+        }
+      }
+    }
+
+    function firebaseGoogleSignIn() {
+      if (!auth) {
+        alert("Firebase is not initialized. Please ensure firebase-config.js is present or enter your API key.");
+        return;
+      }
+      var provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      auth.signInWithPopup(provider).then(function(result) {
+        playSound('fanfare');
+        var user = result.user;
+        var email = (user && user.email ? user.email : "").toLowerCase();
+        if (PERMITTED_FAMILY_EMAILS.indexOf(email) === -1) {
+          alert("Notice: Signed in as " + email + ".\n\nThis board only permits davidgill01@gmail.com and lucasrgill01@gmail.com. Changes cannot be synced to the cloud from this account.");
+        } else {
+          alert("Welcome, " + (user.displayName || email) + "! Family cloud sync is active.");
+        }
+      }).catch(function(error) {
+        if (error.code === 'auth/popup-blocked') {
+          auth.signInWithRedirect(provider);
+        } else if (error.code !== 'auth/popup-closed-by-user') {
+          alert("Sign In Error: " + error.message);
+        }
+      });
+    }
+
+    function firebaseSignOut() {
+      if (auth) {
+        auth.signOut().then(function() {
+          playSound('click');
+          updateAuthUI();
+        });
+      }
+    }
+
+    function promptForApiKey() {
+      var entered = prompt("Enter Firebase Web API Key for daily-bugle-bounty:\n(Stored in your browser only so it never has to be committed to GitHub):", "");
+      if (entered && entered.trim()) {
+        var cfg = Object.assign({}, firebaseConfig, { apiKey: entered.trim() });
+        try {
+          localStorage.setItem('gill_bugle_custom_firebase_config', JSON.stringify(cfg));
+          alert("API key saved locally in browser! Reloading app...");
+          window.location.reload();
+        } catch(e) {
+          alert("Could not save to local storage: " + e.message);
+        }
       }
     }
 
@@ -775,9 +924,12 @@
       if (isCloudConnected) {
         var count = appState.bounties ? appState.bounties.length : 0;
         var lastTime = appState.lastUpdated ? new Date(appState.lastUpdated).toLocaleTimeString() : "Just now";
-        alert("Status: Google Cloud Live 🟢\n\nConnected Document: family_boards/gill_main_board\nCurrent Bounties: " + count + " tasks\nLast Update: " + lastTime + "\n\nChanges from your phone and Lucas's tablet sync automatically in real time!");
+        var userText = currentUser
+          ? (currentUser.email + (isPermittedUser ? " (Family Verified 🟢)" : " (Restricted ⛔)"))
+          : "Not signed in (Local mode)";
+        alert("Status: Google Cloud Live 🟢\n\nUser: " + userText + "\nConnected Document: family_boards/gill_main_board\nCurrent Bounties: " + count + " tasks\nLast Update: " + lastTime + "\n\nChanges from your phone and Lucas's tablet sync automatically in real time!");
       } else {
-        alert("Cloud Status: Offline / Not Connected.\n\nError: " + (cloudErrorMessage || "Waiting for Firestore handshake. Please ensure Cloud Firestore rules allow read/write in Firebase console."));
+        alert("Cloud Status: Offline / Not Connected.\n\nAccount: " + (currentUser ? currentUser.email : "Not signed in") + "\nError: " + (cloudErrorMessage || "Waiting for Firestore handshake. Please tap 'Sign In' or check security rules."));
         setupFirebase();
       }
     }
