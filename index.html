@@ -2122,7 +2122,8 @@
       document.getElementById('inputChoreDifficulty').value = b.difficulty || "⭐ Easy";
       document.getElementById('inputChoreLoc').value = b.location || "Home";
       document.getElementById('inputChoreTools').value = (b.tools || []).join(', ');
-      document.getElementById('inputChoreSteps').value = (b.steps || []).join('\n');
+      var cleanedSteps = (b.steps || []).map(function(s){ return String(s).replace(/\\n/g, '\n'); }).join('\n');
+      document.getElementById('inputChoreSteps').value = cleanedSteps;
       document.getElementById('inputChoreSafety').value = b.safety || "";
 
       document.getElementById('choreModal').classList.remove('hidden');
@@ -2163,7 +2164,8 @@
       var dur = document.getElementById('inputChoreDuration').value.trim() || '20 mins';
       var diff = document.getElementById('inputChoreDifficulty').value;
       var tools = document.getElementById('inputChoreTools').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-      var steps = document.getElementById('inputChoreSteps').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+      var rawSteps = (document.getElementById('inputChoreSteps').value || '').replace(/\\n/g, '\n');
+      var steps = rawSteps.split(/\r?\n/).map(function(s){ return s.trim(); }).filter(Boolean);
       var safety = document.getElementById('inputChoreSafety').value.trim();
 
       if (!title) return alert("Please type a chore title!");
@@ -2485,79 +2487,334 @@
       renderBounties();
     }
 
-    // AI MISSION BRIEFING PLAN GENERATOR
+    // INTELLIGENT AI MISSION BRIEFING PLAN GENERATOR
+    function extractChoreLocation(text, defaultLoc) {
+      var t = text.toLowerCase();
+      if (t.indexOf('bathroom') !== -1 || t.indexOf('bath ') !== -1 || t.indexOf('shower') !== -1) return "Bathroom";
+      if (t.indexOf('kitchen') !== -1 || t.indexOf('pantry') !== -1) return "Kitchen";
+      if (t.indexOf('bedroom') !== -1) return "Bedroom";
+      if (t.indexOf('secret room') !== -1 || t.indexOf('playroom') !== -1) return "Playroom / Secret Room";
+      if (t.indexOf('living room') !== -1 || t.indexOf('family room') !== -1) return "Living Room";
+      if (t.indexOf('garage') !== -1 || t.indexOf('workshop') !== -1) return "Garage / Workshop";
+      if (t.indexOf('roof') !== -1 || t.indexOf('gutter') !== -1 || t.indexOf('downspout') !== -1) return "Roof Edge / Yard Downspouts";
+      if (t.indexOf('driveway') !== -1) return "Driveway";
+      if (t.indexOf('backyard') !== -1 || t.indexOf('patio') !== -1 || t.indexOf('deck') !== -1) return "Backyard / Patio";
+      if (t.indexOf('front yard') !== -1 || t.indexOf('porch') !== -1) return "Front Yard / Porch";
+      if (t.indexOf('yard') !== -1 || t.indexOf('lawn') !== -1 || t.indexOf('garden') !== -1) return "Yard & Garden";
+      if (t.indexOf('hallway') !== -1 || t.indexOf('stairs') !== -1 || t.indexOf('stairway') !== -1) return "Hallway / Stairs";
+      if (t.indexOf('laundry') !== -1) return "Laundry Room";
+      if (t.indexOf('car') !== -1 || t.indexOf('vehicle') !== -1 || t.indexOf('truck') !== -1) return "Driveway / Car";
+      if (t.indexOf('closet') !== -1) return "Closet";
+      if (t.indexOf('attic') !== -1 || t.indexOf('basement') !== -1) return "Basement / Storage";
+      return defaultLoc || "Home";
+    }
+
     function runAiPlan() {
       playSound('click');
-      var t = (document.getElementById('inputChoreTitle').value || '').toLowerCase();
-      if (!t) return alert("Please type a chore title first (e.g. Wash the dog, Build a shelf)");
+      var rawTitle = document.getElementById('inputChoreTitle').value || '';
+      var t = rawTitle.toLowerCase().trim();
+      if (!t) return alert("Please type a chore title first (e.g. 'Replace Bathroom light switch cover', 'Wash Millie', 'Rake yard')");
 
       var tools = "Standard household supplies, gloves, storage bin";
-      var steps = "Clear work area\\nFollow instructions step-by-step\\nHave Dad inspect upon completion";
-      var loc = "Inside / Backyard";
+      var steps = [
+        "Review task instructions with Dad",
+        "Clear immediate work area and organize supplies",
+        "Perform task carefully step-by-step",
+        "Have Dad inspect the finished work"
+      ];
+      var loc = extractChoreLocation(t, "Home");
       var cat = "Cleaning & Tidy";
       var diff = "⭐ Easy";
       var dur = "20 mins";
-      var safety = "Work safely and ask Dad for help with heavy items.";
+      var safety = "Work carefully and ask Dad for assistance with heavy or high items.";
       var rew = 5;
 
-            if (t.indexOf('lego') !== -1 || t.indexOf('brick') !== -1 || t.indexOf('build') !== -1) {
+      // 1. ELECTRICAL / LIGHT SWITCH / OUTLET / COVER PLATES
+      if (t.indexOf('switch') !== -1 || t.indexOf('outlet') !== -1 || t.indexOf('cover plate') !== -1 || 
+          t.indexOf('faceplate') !== -1 || t.indexOf('light switch') !== -1 || t.indexOf('lightbulb') !== -1 || 
+          t.indexOf('light bulb') !== -1 || t.indexOf('lamp') !== -1 || t.indexOf('socket') !== -1) {
         cat = "DIY & Repairs";
-        tools = "LEGO instruction manual, sorting bowls or trays, brick separator";
-        steps = "Open bags in numbered order\nSort pieces by color into shallow trays\nFollow visual steps carefully\nTest moving parts as you build";
-        loc = "Building Table / Desk";
-        diff = t.indexOf('daily bugle') !== -1 || t.indexOf('falcon') !== -1 || t.indexOf('tower') !== -1 ? "⭐⭐⭐ Epic" : "⭐⭐ Medium";
-        dur = t.indexOf('mech') !== -1 ? "30 mins" : "1.5 hours";
-        safety = "Keep small pieces away from younger children and off the floor.";
-        rew = t.indexOf('mech') !== -1 ? 5 : 20;
-      } else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('pet') !== -1) {
-        cat = "Helping Hand";
-        tools = "Dog shampoo, 2 large dry towels, gentle slicker brush, dog treats";
-        steps = "Gently brush Millie's coat to remove loose fur\\nWet coat with lukewarm water (keep ears dry)\\nApply dog shampoo and lather gently\\nRinse completely with warm clean water\\nTowel dry thoroughly and give a reward treat!";
-        loc = "Backyard / Laundry Bath";
+        loc = extractChoreLocation(t, "Wall Switch / Wall Outlet");
+        tools = "Flathead & Phillips screwdriver, replacement cover plate, cover screws, magnetic parts tray";
+        steps = [
+          "Confirm with Dad that the wall switch or power circuit is turned OFF",
+          "Carefully remove the screws from the existing switch/outlet cover",
+          "Set the old cover aside and place small screws safely in a parts tray",
+          "Align the new cover plate straight and flat against the wall",
+          "Hand-tighten screws gently until snug (do not overtighten or crack plastic)",
+          "Have Dad inspect the installation and test the switch!"
+        ];
+        safety = "NEVER touch internal wiring, terminals, or exposed metal parts. Dad must always verify power is off first.";
+        diff = "⭐ Easy";
+        dur = "15 mins";
+        rew = 5;
+      }
+      // 2. PLUMBING / DRAINS / FAUCETS / SINKS / TOILETS
+      else if (t.indexOf('drain') !== -1 || t.indexOf('faucet') !== -1 || t.indexOf('pipe') !== -1 || 
+               t.indexOf('sink') !== -1 || t.indexOf('toilet') !== -1 || t.indexOf('leak') !== -1 || 
+               t.indexOf('shower') !== -1 || t.indexOf('plumbing') !== -1 || t.indexOf('clog') !== -1) {
+        cat = "DIY & Repairs";
+        loc = extractChoreLocation(t, "Bathroom / Kitchen Plumbing");
+        tools = "Catch bucket, adjustable wrench / pliers, work gloves, old towels, drain cleaning snake";
+        steps = [
+          "Place a catch bucket and old towels beneath the drain pipe to catch any drips",
+          "Remove drain stopper or clear immediate grating safely",
+          "Clear hair, silt, or debris blocking smooth water flow",
+          "Wipe down fittings and hand-tighten connections firmly",
+          "Run water for 60 seconds to test for smooth flow and check for drips"
+        ];
+        safety = "Wear protective gloves; keep floor dry to prevent slipping.";
         diff = "⭐⭐ Medium";
         dur = "25 mins";
-        safety = "Keep shampoo away from Millie's eyes; ensure water is warm, never hot.";
         rew = 10;
-      } else if (t.indexOf('shelf') !== -1 || t.indexOf('build') !== -1 || t.indexOf('ikea') !== -1) {
+      }
+      // 3. LEGO / MINIFIGS / MODEL BUILDING
+      else if (t.indexOf('lego') !== -1 || t.indexOf('brick') !== -1 || t.indexOf('minifig') !== -1 || 
+               t.indexOf('bugle') !== -1 || t.indexOf('falcon') !== -1 || t.indexOf('moc') !== -1) {
+        cat = "Secret Project";
+        loc = extractChoreLocation(t, "Building Table / Desk");
+        tools = "LEGO instruction manual, shallow sorting trays or bowls, brick separator";
+        var isBigSet = t.indexOf('bugle') !== -1 || t.indexOf('tower') !== -1 || t.indexOf('falcon') !== -1 || t.indexOf('sanctum') !== -1;
+        steps = [
+          "Clear and wipe down the building table surface",
+          "Open numbered bags in exact order—keep other bags sealed",
+          "Sort pins, small tiles, and structural bricks into shallow bowls",
+          "Follow visual steps carefully and test mechanical functions as you build",
+          "Display finished hero model proudly on the Bugle showcase shelf!"
+        ];
+        safety = "Watch floor for rogue bricks; keep tiny pieces out of reach of younger siblings and pets.";
+        diff = isBigSet ? "⭐⭐⭐ Epic" : "⭐⭐ Medium";
+        dur = isBigSet ? "2 hours" : "45 mins";
+        rew = isBigSet ? 25 : 10;
+      }
+      // 4. PETS / DOGS / MILLIE
+      else if (t.indexOf('dog') !== -1 || t.indexOf('millie') !== -1 || t.indexOf('puppy') !== -1 || 
+               t.indexOf('cat') !== -1 || t.indexOf('pet') !== -1 || t.indexOf('groom') !== -1) {
+        cat = "Helping Hand";
+        loc = extractChoreLocation(t, "Backyard / Laundry Bath");
+        tools = "Gentle dog shampoo, 2 large dry towels, slicker brush, treat pouch, warm water hose/pitcher";
+        steps = [
+          "Gently brush Millie's coat to remove loose fur before getting wet",
+          "Check water temperature—must be lukewarm, never hot",
+          "Apply dog shampoo and lather gently, keeping face and inner ears dry",
+          "Rinse thoroughly with warm water until rinse water runs completely clear",
+          "Towel dry vigorously and reward Millie with a tasty treat!"
+        ];
+        safety = "Keep shampoo away from Millie's eyes; ensure bath floor has a non-slip mat.";
+        diff = "⭐⭐ Medium";
+        dur = "25 mins";
+        rew = 10;
+      }
+      // 5. FURNITURE / SHELVES / ASSEMBLY / IKEA
+      else if (t.indexOf('shelf') !== -1 || t.indexOf('shelves') !== -1 || t.indexOf('bookcase') !== -1 || 
+               t.indexOf('ikea') !== -1 || t.indexOf('desk') !== -1 || t.indexOf('table') !== -1 || 
+               t.indexOf('chair') !== -1 || t.indexOf('assemble') !== -1 || t.indexOf('assembly') !== -1 || 
+               t.indexOf('cabinet') !== -1 || t.indexOf('drawer') !== -1) {
         cat = "DIY & Repairs";
-        tools = "Allen key / screwdriver, cardboard floor protector, parts sorting tray";
-        steps = "Lay cardboard flat on floor to avoid scratching\\nSort screws and wooden dowels into small bowls\\nAssemble frame pieces step by step with Dad\\nCheck that all joints fit tightly and square";
-        loc = "Living Room / Bedroom";
+        loc = extractChoreLocation(t, "Living Room / Bedroom");
+        tools = "Allen keys, screwdriver set, parts sorting trays, rubber mallet, cardboard floor protector";
+        steps = [
+          "Lay cardboard flat on floor to protect wood finish from scratches",
+          "Open hardware packs and sort screws, wooden dowels, and cams into bowls",
+          "Assemble frame panels step-by-step with Dad following the diagrams",
+          "Check that all corners and joints are square before final tightening",
+          "Test stability and install wall safety anchor with Dad if needed"
+        ];
+        safety = "Keep small screws off floor; always team-lift heavy wood panels with Dad.";
         diff = "⭐⭐ Medium";
         dur = "45 mins";
-        safety = "Keep small screws off floor away from younger siblings.";
         rew = 15;
-      } else if (t.indexOf('clean') !== -1 || t.indexOf('room') !== -1 || t.indexOf('tidy') !== -1) {
-        cat = "Cleaning & Tidy";
-        tools = "Storage tubs, microfiber dust cloth, handheld vacuum";
-        steps = "Sort loose LEGO bricks into labeled organizing bins\\nPut clothes in hamper\\nDust desk and shelf surfaces\\nVacuum floor corners thoroughly";
-        loc = "Bedroom / Secret Room";
-        diff = "⭐ Easy";
-        dur = "30 mins";
-        safety = "Lift heavy toy tubs using your legs, not your back.";
-        rew = 10;
-      } else if (t.indexOf('tree') !== -1 || t.indexOf('garden') !== -1 || t.indexOf('plant') !== -1 || t.indexOf('yard') !== -1) {
+      }
+      // 6. YARD / LEAVES / WEEDS / GARDEN / LAWN
+      else if (t.indexOf('rake') !== -1 || t.indexOf('leaves') !== -1 || t.indexOf('leaf') !== -1 || 
+               t.indexOf('weed') !== -1 || t.indexOf('weeding') !== -1 || t.indexOf('mulch') !== -1 || 
+               t.indexOf('mow') !== -1 || t.indexOf('plant') !== -1 || t.indexOf('garden') !== -1 || 
+               t.indexOf('tree') !== -1 || t.indexOf('dirt') !== -1 || t.indexOf('lawn') !== -1) {
         cat = "Yard & Garden";
-        tools = "Garden shovel, watering hose, organic mulch";
-        steps = "Dig planting hole twice as wide as root ball\\nStand plant upright in center\\nBackfill soil firmly around base\\nWater deeply for 3 minutes";
-        loc = "Backyard Garden";
+        loc = extractChoreLocation(t, "Yard & Garden");
+        tools = "Leaf rake / hand trowel, thick garden gloves, yard waste bags or green bin, wheelbarrow";
+        steps = [
+          "Walk yard perimeter to clear sticks, toys, and large debris first",
+          "Rake leaves into small manageable piles (or pull weeds firmly from root)",
+          "Scoop yard waste safely into green compost bin or yard bags",
+          "Sweep driveway, patio, and walkway clean of loose clippings",
+          "Hose down garden tools and store neatly in the shed"
+        ];
+        safety = "Wear thick gloves to avoid blisters and thorns; bend knees when lifting heavy bins.";
         diff = "⭐⭐ Medium";
         dur = "35 mins";
-        safety = "Bend knees when shoveling soil; wear sun protection.";
         rew = 10;
-      } else if (t.indexOf('drain') !== -1 || t.indexOf('gutter') !== -1 || t.indexOf('tap') !== -1) {
+      }
+      // 7. ROOF / GUTTERS / DOWNSPOUTS
+      else if (t.indexOf('gutter') !== -1 || t.indexOf('downspout') !== -1 || t.indexOf('roof') !== -1) {
         cat = "DIY & Repairs";
-        tools = "Work gloves, bucket, hose, wrench";
-        steps = "Clear immediate perimeter\\nRemove debris blocking water flow\\nFlush with clean water to test smooth drainage";
-        loc = "Exterior / Yard";
+        loc = "Roof Edge / Yard Downspouts";
+        tools = "Heavy work gloves, debris bucket, garden hose with spray nozzle";
+        steps = [
+          "Keep perimeter safe and clear on ground while Dad operates on ladder",
+          "Collect debris bucket as Dad passes it down from the roofline",
+          "Empty leaf mulch and silt safely into green waste bin",
+          "Hose down splash guard at base of downspout to ensure smooth drainage"
+        ];
+        safety = "STAY CLEAR of ladder base. Never climb onto roof or ladder without an adult!";
+        diff = "⭐⭐⭐ Epic";
+        dur = "1.5 hours";
+        rew = 25;
+      }
+      // 8. CAR / VEHICLE WASHING
+      else if (t.indexOf('car') !== -1 || t.indexOf('truck') !== -1 || t.indexOf('van') !== -1 || 
+               t.indexOf('vehicle') !== -1 || t.indexOf('auto') !== -1) {
+        cat = "Helping Hand";
+        loc = "Driveway / Car";
+        tools = "Car wash soap, 2 wash buckets, microfiber wash mitt, soft wheel brush, drying chamois";
+        steps = [
+          "Hose down car completely to loosen surface grit and road dust",
+          "Lather body panels from roof down using sudsy microfiber wash mitt",
+          "Scrub wheels and rims with dedicated wheel brush",
+          "Rinse thoroughly with clean water before soap dries in the sun",
+          "Dry panels with chamois or plush microfiber towel to prevent water spots"
+        ];
+        safety = "Watch footing on wet driveway; keep hose away from car tires.";
         diff = "⭐⭐ Medium";
-        dur = "30 mins";
-        safety = "Wear gloves and do not climb ladders without Dad.";
-        rew = 10;
+        dur = "45 mins";
+        rew = 15;
+      }
+      // 9. BICYCLE / SCOOTER / SPORTS GEAR
+      else if (t.indexOf('bike') !== -1 || t.indexOf('bicycle') !== -1 || t.indexOf('scooter') !== -1 || 
+               t.indexOf('tire') !== -1 || t.indexOf('chain') !== -1 || t.indexOf('pump') !== -1) {
+        cat = "DIY & Repairs";
+        loc = "Garage / Driveway";
+        tools = "Bicycle tire pump with gauge, rag, bike chain lubricant, hex key multi-tool";
+        steps = [
+          "Check tire sidewall for recommended PSI rating",
+          "Attach pump head securely to valve stem and pump tires to target pressure",
+          "Inspect front and rear brake pads to confirm firm contact without rubbing",
+          "Wipe road grit off chain with rag and apply a light drop of chain lube",
+          "Take a short test ride in driveway to ensure smooth gear shifts and braking"
+        ];
+        safety = "Keep fingers well clear of spinning wheel spokes and gear chain.";
+        diff = "⭐ Easy";
+        dur = "20 mins";
+        rew = 7;
+      }
+      // 10. DISHES / DISHWASHER / KITCHEN COUNTERS
+      else if (t.indexOf('dish') !== -1 || t.indexOf('dishwasher') !== -1 || t.indexOf('pot') !== -1 || 
+               t.indexOf('pan') !== -1 || t.indexOf('counter') !== -1) {
+        cat = "Cleaning & Tidy";
+        loc = "Kitchen";
+        tools = "Dish drying towel, non-scratch sponge, dish soap, dish drying rack";
+        steps = [
+          "Scrape leftover food scraps into compost bin",
+          "Unload clean dishes from dishwasher and put away in cupboards",
+          "Load dirty plates, bowls, cups, and utensils neatly into racks",
+          "Wipe down kitchen countertops and dining table with a clean damp cloth",
+          "Add detergent pod and start the dishwasher cycle"
+        ];
+        safety = "Handle glassware and ceramic mugs carefully; let Dad wash sharp chef knives.";
+        diff = "⭐ Easy";
+        dur = "20 mins";
+        rew = 6;
+      }
+      // 11. TRASH / RECYCLING / CAN DEPOSIT
+      else if (t.indexOf('trash') !== -1 || t.indexOf('garbage') !== -1 || t.indexOf('recycle') !== -1 || 
+               t.indexOf('recycling') !== -1 || t.indexOf('can deposit') !== -1 || t.indexOf('bottle') !== -1) {
+        cat = "Helping Hand";
+        loc = "Garage / Recycling Station";
+        tools = "Work gloves, trash bags, recycling sorting crates";
+        steps = [
+          "Empty wastebaskets from bedrooms, bathrooms, and office into main trash bag",
+          "Sort deposit soda/sparkling water cans and bottles into return crates",
+          "Tie trash bags securely and carry to outdoor curbside rollout bins",
+          "Install fresh trash liner bags into each empty indoor can",
+          "Wash hands thoroughly with soap and warm water when finished"
+        ];
+        safety = "Watch for sharp aluminum can edges or broken items; always wear gloves.";
+        diff = "⭐ Easy";
+        dur = "15 mins";
+        rew = 5;
+      }
+      // 12. PAINTING / WALL REPAIR / HANGING PICTURES
+      else if (t.indexOf('paint') !== -1 || t.indexOf('wall') !== -1 || t.indexOf('spackle') !== -1 || 
+               t.indexOf('hang') !== -1 || t.indexOf('picture') !== -1 || t.indexOf('frame') !== -1) {
+        cat = "DIY & Repairs";
+        loc = extractChoreLocation(t, "Living Room / Bedroom");
+        tools = "Painter's tape, drop cloth, paintbrush or roller, paint tray, picture hooks, hammer, level";
+        steps = [
+          "Lay down drop cloth to protect floor and trim from accidental drips",
+          "Apply blue painter's tape smoothly along edges for sharp, clean lines",
+          "Stir paint well and pour a small working amount into painting tray",
+          "Apply smooth, even coats with paintbrush or roller",
+          "Clean brushes thoroughly with warm water and seal paint lids tightly"
+        ];
+        safety = "Keep work room well ventilated; wipe any stray drips immediately with damp rag.";
+        diff = "⭐⭐ Medium";
+        dur = "45 mins";
+        rew = 12;
+      }
+      // 13. LAUNDRY / CLOTHES / BEDDING / HAMPER
+      else if (t.indexOf('laundry') !== -1 || t.indexOf('fold') !== -1 || t.indexOf('clothes') !== -1 || 
+               t.indexOf('bed') !== -1 || t.indexOf('sheet') !== -1 || t.indexOf('linen') !== -1 || 
+               t.indexOf('hamper') !== -1 || t.indexOf('closet') !== -1) {
+        cat = "Cleaning & Tidy";
+        loc = extractChoreLocation(t, "Bedroom / Laundry Room");
+        tools = "Laundry basket, clothes hangers, folding table or bed surface";
+        steps = [
+          "Sort clean laundry into shirts, pants, socks, and underwear piles",
+          "Fold shirts and pants with neat, flat edges",
+          "Hang collared shirts and jackets on hangers in the closet",
+          "Match socks and tuck into dresser drawers",
+          "Strip dirty sheets or towels and place into the laundry hamper"
+        ];
+        safety = "Keep floor and hallways clear of laundry baskets to prevent tripping.";
+        diff = "⭐ Easy";
+        dur = "20 mins";
+        rew = 6;
+      }
+      // 14. GENERAL CLEANING / VACUUMING / MOPPING / DUSTING / ORGANIZING
+      else if (t.indexOf('clean') !== -1 || t.indexOf('vacuum') !== -1 || t.indexOf('mop') !== -1 || 
+               t.indexOf('dust') !== -1 || t.indexOf('sweep') !== -1 || t.indexOf('wipe') !== -1 || 
+               t.indexOf('tidy') !== -1 || t.indexOf('organize') !== -1 || t.indexOf('sort') !== -1) {
+        cat = "Cleaning & Tidy";
+        loc = extractChoreLocation(t, "Bedroom / Playroom");
+        tools = "Microfiber dust cloth, vacuum cleaner with attachments, broom & dustpan, sorting tubs";
+        steps = [
+          "Pick up all loose items from the floor and return to their proper spots",
+          "Dust desks, shelves, and tabletops working from top to bottom",
+          "Wipe down surfaces or smudges with a damp microfiber cloth",
+          "Vacuum or sweep the floor thoroughly, getting into corners and edges",
+          "Empty the room wastebasket into main trash"
+        ];
+        safety = "Check floor for small toys, coins, or charging cables before turning on vacuum.";
+        diff = "⭐ Easy";
+        dur = "25 mins";
+        rew = 8;
+      }
+      // 15. DYNAMIC CUSTOM FALLBACK
+      else {
+        var actionWord = "Complete";
+        if (t.indexOf('replace') !== -1) { actionWord = "Replace"; cat = "DIY & Repairs"; }
+        else if (t.indexOf('fix') !== -1 || t.indexOf('repair') !== -1) { actionWord = "Repair"; cat = "DIY & Repairs"; }
+        else if (t.indexOf('build') !== -1 || t.indexOf('make') !== -1) { actionWord = "Build"; cat = "DIY & Repairs"; }
+        else if (t.indexOf('install') !== -1) { actionWord = "Install"; cat = "DIY & Repairs"; }
+        else if (t.indexOf('wash') !== -1) { actionWord = "Wash"; cat = "Cleaning & Tidy"; }
+        else if (t.indexOf('clean') !== -1) { actionWord = "Clean"; cat = "Cleaning & Tidy"; }
+        else if (t.indexOf('help') !== -1) { actionWord = "Help Dad with"; cat = "Helping Hand"; }
+
+        tools = "Appropriate hand tools for " + rawTitle + ", work gloves, cleanup supplies";
+        steps = [
+          "Gather necessary supplies and prepare work area in " + loc,
+          "Review instructions and safety steps carefully with Dad",
+          actionWord + " " + rawTitle + " step-by-step with focus and patience",
+          "Clean up all tools, wipe down work area, and have Dad inspect the result"
+        ];
+        safety = "Take your time, work safely, and ask Dad for assistance whenever needed.";
+        diff = "⭐ Easy";
+        dur = "20 mins";
+        rew = 5;
       }
 
       document.getElementById('inputChoreTools').value = tools;
-      document.getElementById('inputChoreSteps').value = steps;
+      document.getElementById('inputChoreSteps').value = steps.join('\n');
       document.getElementById('inputChoreLoc').value = loc;
       document.getElementById('inputChoreCategory').value = cat;
       document.getElementById('inputChoreDifficulty').value = diff;
@@ -2565,46 +2822,6 @@
       document.getElementById('inputChoreSafety').value = safety;
       if (!document.getElementById('inputChoreReward').value) {
         document.getElementById('inputChoreReward').value = rew;
-      }
-    }
-
-    // POST CHORE MODAL
-    function openChoreModal() {
-      playSound('click');
-      document.getElementById('choreModal').classList.remove('hidden');
-    }
-    function closeChoreModal() {
-      playSound('click');
-      document.getElementById('choreModal').classList.add('hidden');
-    }
-    function saveNewChore() {
-      var title = document.getElementById('inputChoreTitle').value.trim();
-      var reward = parseInt(document.getElementById('inputChoreReward').value) || 5;
-      var cat = document.getElementById('inputChoreCategory').value;
-      var loc = document.getElementById('inputChoreLoc').value.trim() || 'Home';
-      var dur = document.getElementById('inputChoreDuration').value.trim() || '20 mins';
-      var diff = document.getElementById('inputChoreDifficulty').value;
-      var tools = document.getElementById('inputChoreTools').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-      var steps = document.getElementById('inputChoreSteps').value.split('\\n').map(function(s){ return s.trim(); }).filter(Boolean);
-      var safety = document.getElementById('inputChoreSafety').value.trim();
-
-      if (title) {
-        playSound('coin');
-        appState.bounties.unshift({
-          id: 'b_' + Date.now(),
-          title: title,
-          reward: reward,
-          status: 'open',
-          category: cat,
-          duration: dur,
-          difficulty: diff,
-          location: loc,
-          tools: tools.length ? tools : ["Standard household supplies"],
-          steps: steps.length ? steps : ["Complete chore carefully", "Have Dad inspect"],
-          safety: safety || "Work safely!"
-        });
-        closeChoreModal();
-        persist();
       }
     }
 
