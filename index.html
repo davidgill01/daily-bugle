@@ -611,32 +611,32 @@
           safety: "Hold leash handle securely around wrist; watch for approaching dogs and bikes."
         },
         { 
-          id: "b_recycle_weekly", 
+          id: "b_recycle_monthly", 
           title: "Can Deposit & Recycling Run", 
           reward: 5, 
           status: "open", 
-          recurrence: "weekly",
+          recurrence: "monthly",
           category: "Helping Hand",
-          duration: "15 mins",
+          duration: "20 mins",
           difficulty: "⭐ Easy",
           location: "Garage & Curbside",
           tools: ["Work gloves", "Trash bags", "Recycling sorting crates"],
-          steps: ["Collect wastebaskets from bedrooms and bathrooms into main trash bag", "Separate returnable soda cans and plastic bottles into deposit crates", "Wheel outdoor rollout bins down driveway to curbside for pickup", "Replace indoor trash cans with fresh clean liners"],
+          steps: ["Collect wastebaskets from bedrooms and bathrooms into main trash bag", "Separate returnable soda cans and plastic bottles into deposit crates", "Take deposit containers to recycling center with Dad (or curbside)", "Count return total and update final bounty payout!"],
           safety: "Wear gloves to protect hands from sharp aluminum can tabs; wash hands when done."
         },
         { 
-          id: "b_secret_room_weekly", 
-          title: "Secret Room & LEGO Desk Tidy", 
-          reward: 10, 
+          id: "b_bedroom_playroom_weekly", 
+          title: "Bedroom & Playroom Tidy-Up", 
+          reward: 5, 
           status: "open", 
           recurrence: "weekly",
-          category: "Secret Project",
-          duration: "30 mins",
-          difficulty: "⭐⭐ Medium",
-          location: "Secret Room / Playroom",
-          tools: ["Sorting tubs", "Microfiber dust cloth", "Handheld vacuum"],
-          steps: ["Pick up stray LEGO bricks from floor and sort into correct set tubs", "Clear clothes from floor into laundry hamper", "Dust model display shelves and building desk", "Vacuum floor corners thoroughly"],
-          safety: "Pick up small LEGO pieces by hand before vacuuming so they don't get sucked up!"
+          category: "Cleaning & Tidy",
+          duration: "20 mins",
+          difficulty: "⭐ Easy",
+          location: "Bedroom & Playroom",
+          tools: ["Toy sorting tubs", "Microfiber dust cloth", "Laundry hamper", "Vacuum"],
+          steps: ["Put dirty clothes into laundry hamper and hang up jackets", "Sort loose LEGO bricks and toys into labeled tubs", "Dust off desk and nightstand surfaces", "Quick vacuum of floor and play rug area"],
+          safety: "Pick up tiny LEGO pieces by hand first before vacuuming!"
         },
         { 
           id: "b1", 
@@ -718,16 +718,16 @@
         },
         { 
           id: "b7", 
-          title: "Secret Room Cleanup", 
+          title: "Secret Room Deep Clean & Organization", 
           reward: 30, 
           status: "open", 
           category: "Secret Project",
-          duration: "1 hour",
-          difficulty: "⭐⭐ Medium",
+          duration: "2-3 hours",
+          difficulty: "⭐⭐⭐ Epic",
           location: "Secret Room",
-          tools: ["Sorting tubs", "Microfiber dust cloth", "Vacuum cleaner"],
-          steps: ["Sort loose LEGO bricks by color or set into tubs", "Pick up all clothing and put in hamper", "Dust shelving and display tables", "Vacuum floor corners thoroughly"],
-          safety: "Pick up tiny LEGO pieces by hand first so they don't get sucked into the vacuum."
+          tools: ["Sorting tubs", "Microfiber dust cloth", "Vacuum cleaner with attachments", "Storage labels"],
+          steps: ["Complete spring cleaning sort of all loose LEGO sets and parts", "Deep dust all display tables and shelving", "Pack finished models securely on display shelves", "Vacuum floor corners, under desks, and baseboards thoroughly"],
+          safety: "Spring cleaning project! Take breaks and team-lift heavy storage bins with Dad."
         },
         { 
           id: "b8", 
@@ -862,6 +862,45 @@
       persist();
     }
 
+    function promptAdjustReward(id) {
+      if (!isParent) {
+        requestParentAuth(function() { promptAdjustReward(id); });
+        return;
+      }
+      var b = null;
+      for (var i = 0; i < appState.bounties.length; i++) {
+        if (appState.bounties[i].id === id) { b = appState.bounties[i]; break; }
+      }
+      if (!b) return;
+
+      var current = Number(b.reward) || 5;
+      var promptMsg = "Update bounty reward for \"" + b.title + "\":\n\nCurrent reward: $" + current + "\nEnter new amount (e.g. 5, 8, 9, 10):";
+      if (b.status === 'completed') {
+        promptMsg += "\n\n(Note: Changing this will adjust Lucas's available balance by the difference).";
+      }
+
+      var input = prompt(promptMsg, current);
+      if (input === null) return;
+      var newReward = parseInt(input.trim(), 10);
+      if (isNaN(newReward) || newReward < 0) {
+        alert("Please enter a valid dollar amount (e.g. 8).");
+        return;
+      }
+
+      if (b.status === 'completed') {
+        var diff = newReward - current;
+        appState.balance = Math.round(((Number(appState.balance) || 0) + diff) * 100) / 100;
+        b.reward = newReward;
+        alert("Updated \"" + b.title + "\" reward to $" + newReward + "!\nBalance adjusted by " + (diff >= 0 ? "+$" : "-$") + Math.abs(diff) + " (New balance: $" + appState.balance.toFixed(2) + ").");
+      } else {
+        b.reward = newReward;
+      }
+
+      playSound('coin');
+      renderAll();
+      persist();
+    }
+
     function sanitizeCloudData(data) {
       if (!data) return data;
       var needsSync = false;
@@ -875,6 +914,35 @@
         data.bounties = DEFAULT_STATE.bounties;
         needsSync = true;
       } else {
+        // Ensure "Can Deposit & Recycling Run" is monthly recurrence
+        data.bounties.forEach(function(b) {
+          if (b.id === 'b_recycle_weekly' || b.id === 'b_recycle_monthly' || (b.title && b.title.toLowerCase().indexOf('can deposit') !== -1)) {
+            if (b.recurrence !== 'monthly') {
+              b.recurrence = 'monthly';
+              b.id = 'b_recycle_monthly';
+              needsSync = true;
+            }
+          }
+          // Convert weekly secret room into Bedroom & Playroom Tidy-Up
+          if (b.id === 'b_secret_room_weekly' || (b.recurrence === 'weekly' && b.title && b.title.toLowerCase().indexOf('secret room') !== -1)) {
+            b.id = 'b_bedroom_playroom_weekly';
+            b.title = 'Bedroom & Playroom Tidy-Up';
+            b.reward = 5;
+            b.recurrence = 'weekly';
+            b.category = 'Cleaning & Tidy';
+            b.location = 'Bedroom & Playroom';
+            b.tools = ["Toy sorting tubs", "Microfiber dust cloth", "Laundry hamper", "Vacuum"];
+            b.steps = [
+              "Put dirty clothes into laundry hamper and hang up jackets",
+              "Sort loose LEGO bricks and toys into labeled tubs",
+              "Dust off desk and nightstand surfaces",
+              "Quick vacuum of floor and play rug area"
+            ];
+            b.safety = "Pick up tiny LEGO pieces by hand first before vacuuming!";
+            needsSync = true;
+          }
+        });
+
         // Ensure "Feed & Walk Millie" recurring task exists
         var hasMillie = data.bounties.some(function(b) {
           return b.id === 'b_millie_weekly' || (b.title && b.title.toLowerCase().indexOf('millie') !== -1);
@@ -899,6 +967,60 @@
               "Clean paws at door, refill water bowl, and give Millie a reward treat!"
             ],
             safety: "Hold leash handle securely around wrist; watch for approaching dogs and bikes."
+          });
+          needsSync = true;
+        }
+
+        // Ensure "Bedroom & Playroom Tidy-Up" exists
+        var hasBedroomTidy = data.bounties.some(function(b) {
+          return b.id === 'b_bedroom_playroom_weekly' || (b.title && b.title.toLowerCase().indexOf('bedroom & playroom') !== -1);
+        });
+        if (!hasBedroomTidy) {
+          data.bounties.splice(2, 0, {
+            id: "b_bedroom_playroom_weekly",
+            title: "Bedroom & Playroom Tidy-Up",
+            reward: 5,
+            status: "open",
+            recurrence: "weekly",
+            category: "Cleaning & Tidy",
+            duration: "20 mins",
+            difficulty: "⭐ Easy",
+            location: "Bedroom & Playroom",
+            tools: ["Toy sorting tubs", "Microfiber dust cloth", "Laundry hamper", "Vacuum"],
+            steps: [
+              "Put dirty clothes into laundry hamper and hang up jackets",
+              "Sort loose LEGO bricks and toys into labeled tubs",
+              "Dust off desk and nightstand surfaces",
+              "Quick vacuum of floor and play rug area"
+            ],
+            safety: "Pick up tiny LEGO pieces by hand first before vacuuming!"
+          });
+          needsSync = true;
+        }
+
+        // Ensure "Secret Room" exists as an Epic Spring Cleaning activity ($30)
+        var hasSecretRoomSpring = data.bounties.some(function(b) {
+          return b.id === 'b7' || (b.title && b.title.toLowerCase().indexOf('secret room') !== -1 && b.reward >= 20);
+        });
+        if (!hasSecretRoomSpring) {
+          data.bounties.push({
+            id: "b7",
+            title: "Secret Room Deep Clean & Organization",
+            reward: 30,
+            status: "open",
+            recurrence: "none",
+            category: "Secret Project",
+            duration: "2-3 hours",
+            difficulty: "⭐⭐⭐ Epic",
+            location: "Secret Room",
+            tools: ["Sorting tubs", "Microfiber dust cloth", "Vacuum cleaner with attachments", "Storage labels"],
+            steps: [
+              "Complete spring cleaning sort of all loose LEGO sets and parts",
+              "Deep dust all display tables and shelving",
+              "Pack finished models securely on display shelves",
+              "Vacuum floor corners, under desks, and baseboards thoroughly"
+            ],
+            safety: "Spring cleaning project! Take breaks and team-lift heavy storage bins with Dad."
           });
           needsSync = true;
         }
@@ -1931,8 +2053,15 @@
           }
 
           var rewardEl = document.createElement('div');
-          rewardEl.className = "text-2xl font-black font-comic " + (isDone ? "text-slate-500" : "text-blue-400");
+          rewardEl.className = "text-2xl font-black font-comic " + (isDone ? "text-slate-500" : "text-blue-400") + (isParent ? " cursor-pointer hover:text-amber-400 transition" : "");
           rewardEl.textContent = "+$" + b.reward;
+          if (isParent) {
+            rewardEl.title = "Tap in Parent Mode to adjust reward (e.g. from $5 to $8, $9, $10)";
+            rewardEl.onclick = function(e) {
+              e.stopPropagation();
+              promptAdjustReward(b.id);
+            };
+          }
 
           badgeRow.appendChild(leftBadges);
           badgeRow.appendChild(rewardEl);
@@ -1978,9 +2107,17 @@
             var approveBtn = document.createElement('button');
             approveBtn.className = "flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-1";
             approveBtn.type = "button";
-            approveBtn.innerHTML = '<span>✓</span> Approve & Pay (+$' + b.reward + ')';
+            approveBtn.innerHTML = '<span>✓</span> Pay +$' + b.reward;
             approveBtn.onclick = function() { approveChore(b.id); };
             actionRow.appendChild(approveBtn);
+
+            var adjustRewardBtn = document.createElement('button');
+            adjustRewardBtn.className = "px-2.5 py-2.5 bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700/80 rounded-xl text-xs font-bold transition flex items-center gap-1";
+            adjustRewardBtn.type = "button";
+            adjustRewardBtn.innerHTML = '<span>✏️</span> $' + b.reward;
+            adjustRewardBtn.title = "Adjust payout amount before approving (e.g. $8, $9, $10 for extra cans)";
+            adjustRewardBtn.onclick = function() { promptAdjustReward(b.id); };
+            actionRow.appendChild(adjustRewardBtn);
 
             var reworkBtn = document.createElement('button');
             reworkBtn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl";
@@ -1995,10 +2132,20 @@
               var resetBtn = document.createElement('button');
               resetBtn.className = "px-3 py-2.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm";
               resetBtn.type = "button";
-              resetBtn.innerHTML = '<span>🔄</span> Reset for ' + (b.recurrence === 'daily' ? 'Today' : 'New Week');
+              resetBtn.innerHTML = '<span>🔄</span> Reset for ' + (b.recurrence === 'daily' ? 'Today' : b.recurrence === 'monthly' ? 'New Month' : 'New Week');
               resetBtn.title = "Reset this recurring bounty to Open now";
               resetBtn.onclick = function() { resetRecurringBountyNow(b.id); };
               actionRow.appendChild(resetBtn);
+            }
+
+            if (isDone) {
+              var adjustPaidBtn = document.createElement('button');
+              adjustPaidBtn.className = "px-2.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1";
+              adjustPaidBtn.type = "button";
+              adjustPaidBtn.innerHTML = '<span>💵</span> $' + b.reward;
+              adjustPaidBtn.title = "Update payout for this completed chore (adjusts balance)";
+              adjustPaidBtn.onclick = function() { promptAdjustReward(b.id); };
+              actionRow.appendChild(adjustPaidBtn);
             }
 
             var editBtn = document.createElement('button');
@@ -2372,6 +2519,20 @@
       if (editingChoreId) {
         for (var i = 0; i < appState.bounties.length; i++) {
           if (appState.bounties[i].id === editingChoreId) {
+            var oldReward = Number(appState.bounties[i].reward) || 0;
+            var wasCompleted = appState.bounties[i].status === 'completed';
+            var willBeCompleted = status === 'completed';
+
+            // If already completed and stays completed, automatically adjust balance by the difference!
+            if (wasCompleted && willBeCompleted && reward !== oldReward) {
+              var diffReward = reward - oldReward;
+              appState.balance = Math.round(((Number(appState.balance) || 0) + diffReward) * 100) / 100;
+            } else if (!wasCompleted && willBeCompleted) {
+              appState.balance = Math.round(((Number(appState.balance) || 0) + reward) * 100) / 100;
+            } else if (wasCompleted && !willBeCompleted) {
+              appState.balance = Math.round(((Number(appState.balance) || 0) - oldReward) * 100) / 100;
+            }
+
             appState.bounties[i].title = title;
             appState.bounties[i].reward = reward;
             appState.bounties[i].category = cat;
@@ -2954,21 +3115,66 @@
       }
       // 11. TRASH / RECYCLING / CAN DEPOSIT
       else if (t.indexOf('trash') !== -1 || t.indexOf('garbage') !== -1 || t.indexOf('recycle') !== -1 || 
-               t.indexOf('recycling') !== -1 || t.indexOf('can deposit') !== -1 || t.indexOf('bottle') !== -1) {
+               t.indexOf('recycling') !== -1 || t.indexOf('can deposit') !== -1 || t.indexOf('bottle') !== -1 || t.indexOf('deposit') !== -1) {
         cat = "Helping Hand";
-        loc = "Garage / Recycling Station";
+        loc = "Garage & Curbside";
         tools = "Work gloves, trash bags, recycling sorting crates";
-        steps = [
-          "Empty wastebaskets from bedrooms, bathrooms, and office into main trash bag",
-          "Sort deposit soda/sparkling water cans and bottles into return crates",
-          "Tie trash bags securely and carry to outdoor curbside rollout bins",
-          "Install fresh trash liner bags into each empty indoor can",
-          "Wash hands thoroughly with soap and warm water when finished"
-        ];
+        if (t.indexOf('deposit') !== -1 || t.indexOf('can') !== -1 || t.indexOf('bottle') !== -1) {
+          recur = "monthly";
+          dur = "20 mins";
+          steps = [
+            "Collect returnable beverage cans and plastic bottles into deposit crates",
+            "Separate and count containers with Dad",
+            "Take deposit containers to recycling center or load for pickup",
+            "Count total return value and adjust bounty reward if extra was earned!"
+          ];
+        } else {
+          steps = [
+            "Empty wastebaskets from bedrooms, bathrooms, and office into main trash bag",
+            "Sort deposit soda/sparkling water cans and bottles into return crates",
+            "Tie trash bags securely and carry to outdoor curbside rollout bins",
+            "Install fresh trash liner bags into each empty indoor can",
+            "Wash hands thoroughly with soap and warm water when finished"
+          ];
+        }
         safety = "Watch for sharp aluminum can edges or broken items; always wear gloves.";
         diff = "⭐ Easy";
-        dur = "15 mins";
+        dur = dur || "15 mins";
+        rew = rew || 5;
+      }
+      // 11b. SECRET ROOM SPRING CLEANING
+      else if (t.indexOf('secret room') !== -1) {
+        cat = "Secret Project";
+        loc = "Secret Room";
+        tools = "Sorting tubs, microfiber dust cloth, vacuum cleaner with attachments, storage labels";
+        steps = [
+          "Complete spring cleaning sort of all loose LEGO sets and parts",
+          "Deep dust all display tables and shelving",
+          "Pack finished models securely on display shelves",
+          "Vacuum floor corners, under desks, and baseboards thoroughly"
+        ];
+        safety = "Spring cleaning project! Take breaks and team-lift heavy storage bins with Dad.";
+        diff = "⭐⭐⭐ Epic";
+        dur = "2-3 hours";
+        rew = 30;
+        recur = "none";
+      }
+      // 11c. BEDROOM & PLAYROOM TIDY
+      else if ((t.indexOf('bedroom') !== -1 || t.indexOf('playroom') !== -1) && (t.indexOf('tidy') !== -1 || t.indexOf('clean') !== -1 || t.indexOf('room') !== -1)) {
+        cat = "Cleaning & Tidy";
+        loc = "Bedroom & Playroom";
+        tools = "Toy sorting tubs, microfiber dust cloth, laundry hamper, vacuum";
+        steps = [
+          "Put dirty clothes into laundry hamper and hang up jackets",
+          "Sort loose LEGO bricks and toys into labeled tubs",
+          "Dust off desk and nightstand surfaces",
+          "Quick vacuum of floor and play rug area"
+        ];
+        safety = "Pick up tiny LEGO pieces by hand first before vacuuming!";
+        diff = "⭐ Easy";
+        dur = "20 mins";
         rew = 5;
+        recur = "weekly";
       }
       // 12. PAINTING / WALL REPAIR / HANGING PICTURES
       else if (t.indexOf('paint') !== -1 || t.indexOf('wall') !== -1 || t.indexOf('spackle') !== -1 || 
