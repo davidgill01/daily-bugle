@@ -136,6 +136,9 @@
                 <button type="button" onclick="editCurrentTargetWish()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700 transition" title="Edit Target Toy">
                   ✏️ Edit Toy
                 </button>
+                <button id="hudBuyBtn" type="button" onclick="buyCurrentTargetWish()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1" title="Mark this goal as purchased!">
+                  🛒 Mark Purchased
+                </button>
               </div>
               <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight mt-0.5">LEGO Daily Bugle (76178)</h2>
               <div class="text-[11px] text-slate-400 font-semibold mt-1">
@@ -190,6 +193,7 @@
         <button onclick="setFilter('open')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="open">★ Available</button>
         <button onclick="setFilter('review')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="review">⏳ Under Review</button>
         <button onclick="setFilter('completed')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="completed">✓ Completed</button>
+        <button onclick="setFilter('purchased')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="purchased">🛒 Purchased</button>
         <button onclick="setFilter('Yard & Garden')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Yard & Garden">🌿 Yard & Garden</button>
         <button onclick="setFilter('DIY & Repairs')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="DIY & Repairs">🔧 DIY & Repairs</button>
         <button onclick="setFilter('Cleaning & Tidy')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Cleaning & Tidy">🧹 Cleaning & Tidy</button>
@@ -321,12 +325,15 @@
       </div>
 
       <!-- ACTION BUTTONS -->
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-2">
         <button type="button" onclick="closeMission()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl transition">
           Back
         </button>
         <button type="button" onclick="editActiveMission()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-bold text-xs text-slate-200 rounded-xl transition flex items-center gap-1">
           <span>✏️</span> Edit Job
+        </button>
+        <button id="mMissionBuyBtn" type="button" onclick="buyActiveMission()" class="hidden px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl shadow-lg transition flex items-center gap-1" title="Mark this item as purchased and log under Loot & Spent">
+          <span>🛒</span> Mark Purchased
         </button>
         <button id="finishMissionBtn" type="button" onclick="confirmMissionFinish()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg transition">
           I Finished This!
@@ -1971,6 +1978,27 @@
         document.getElementById('hudRemainingText').textContent = "$" + needed + " needed";
         document.getElementById('hudProgressPercent').textContent = pct + "% Complete";
         document.getElementById('hudProgressBar').style.width = pct + "%";
+
+        var hudBuyBtn = document.getElementById('hudBuyBtn');
+        if (hudBuyBtn) {
+          if (activeGoal.status === 'purchased') {
+            hudBuyBtn.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800 transition flex items-center gap-1";
+            hudBuyBtn.innerHTML = "✓ Purchased!";
+            hudBuyBtn.title = "Goal already purchased! View in Loot & Spent";
+            hudBuyBtn.onclick = function() { switchTab('loot'); };
+          } else {
+            if (availableBalance >= goalCost && goalCost > 0) {
+              hudBuyBtn.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black shadow-lg animate-pulse transition flex items-center gap-1 active:scale-95";
+              hudBuyBtn.innerHTML = "🎉 Goal Reached! Buy";
+              hudBuyBtn.title = "Lucas has saved enough money! Mark as purchased!";
+            } else {
+              hudBuyBtn.className = "text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1 active:scale-95";
+              hudBuyBtn.innerHTML = "🛒 Mark Purchased";
+              hudBuyBtn.title = "Mark this goal as purchased and log to Loot & Spent";
+            }
+            hudBuyBtn.onclick = function() { buyCurrentTargetWish(); };
+          }
+        }
       }
 
       renderBounties();
@@ -1987,6 +2015,7 @@
         if (currentFilter === 'all') return true;
         if (currentFilter === 'open') return b.status === 'open' || b.status === 'review';
         if (currentFilter === 'completed') return b.status === 'completed';
+        if (currentFilter === 'purchased') return b.status === 'purchased';
         return b.category === currentFilter;
       });
 
@@ -1999,10 +2028,11 @@
         (function(b) {
           var isDone = b.status === 'completed';
           var isReview = b.status === 'review';
+          var isPurchased = b.status === 'purchased';
 
           var card = document.createElement('div');
           card.className = "bg-slate-900 border-2 " + 
-            (isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-amber-500/80 shadow-amber-900/20 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
+            (isPurchased ? "border-emerald-700/60 bg-emerald-950/20" : isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-amber-500/80 shadow-amber-900/20 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
             " rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all";
 
           var topWrapper = document.createElement('div');
@@ -2025,7 +2055,9 @@
 
           var statusTag = document.createElement('span');
           var statusText = "★ OPEN BOUNTY";
-          if (isDone) {
+          if (isPurchased) {
+            statusText = "🛒 PURCHASED";
+          } else if (isDone) {
             if (b.recurrence === 'daily') statusText = "✓ DONE TODAY";
             else if (b.recurrence === 'weekly') statusText = "✓ DONE THIS WEEK";
             else if (b.recurrence === 'monthly') statusText = "✓ DONE THIS MONTH";
@@ -2034,7 +2066,7 @@
             statusText = "⏳ UNDER REVIEW";
           }
           statusTag.className = "text-[10px] font-black px-2.5 py-0.5 rounded-lg tracking-wider uppercase " + 
-            (isDone ? "bg-slate-800 text-slate-400" : isReview ? "bg-amber-950/80 text-amber-400 border border-amber-800" : "bg-blue-950 text-blue-300 border border-blue-800");
+            (isPurchased ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : isDone ? "bg-slate-800 text-slate-400" : isReview ? "bg-amber-950/80 text-amber-400 border border-amber-800" : "bg-blue-950 text-blue-300 border border-blue-800");
           statusTag.textContent = statusText;
           leftBadges.appendChild(statusTag);
 
@@ -2053,7 +2085,7 @@
           }
 
           var rewardEl = document.createElement('div');
-          rewardEl.className = "text-2xl font-black font-comic " + (isDone ? "text-slate-500" : "text-blue-400") + (isParent ? " cursor-pointer hover:text-amber-400 transition" : "");
+          rewardEl.className = "text-2xl font-black font-comic " + (isDone || isPurchased ? "text-slate-500" : "text-blue-400") + (isParent ? " cursor-pointer hover:text-amber-400 transition" : "");
           rewardEl.textContent = "+$" + b.reward;
           if (isParent) {
             rewardEl.title = "Tap in Parent Mode to adjust reward (e.g. from $5 to $8, $9, $10)";
@@ -2067,7 +2099,7 @@
           badgeRow.appendChild(rewardEl);
 
           var titleEl = document.createElement('h4');
-          titleEl.className = "font-black text-base text-white leading-snug " + (isDone ? "line-through text-slate-500" : "");
+          titleEl.className = "font-black text-base text-white leading-snug " + (isDone || isPurchased ? "line-through text-slate-500" : "");
           titleEl.textContent = b.title;
 
           var locEl = document.createElement('p');
@@ -2094,13 +2126,32 @@
           var actionRow = document.createElement('div');
           actionRow.className = "mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2";
 
-          if (!isDone && !isReview) {
+          if (!isDone && !isReview && !isPurchased) {
             var finishBtn = document.createElement('button');
             finishBtn.className = "flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg transition";
             finishBtn.type = "button";
             finishBtn.textContent = "I Finished This!";
             finishBtn.onclick = function() { markChoreDone(b.id); };
             actionRow.appendChild(finishBtn);
+          }
+
+          if (isPurchased) {
+            var inLootBtn = document.createElement('button');
+            inLootBtn.className = "flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1";
+            inLootBtn.type = "button";
+            inLootBtn.innerHTML = '<span>📦</span> View in Loot & Spent';
+            inLootBtn.onclick = function() { switchTab('loot'); };
+            actionRow.appendChild(inLootBtn);
+
+            if (isParent) {
+              var reopenBtn = document.createElement('button');
+              reopenBtn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs rounded-xl border border-slate-700";
+              reopenBtn.type = "button";
+              reopenBtn.textContent = "↩️ Reopen";
+              reopenBtn.title = "Reopen bounty";
+              reopenBtn.onclick = function() { reworkChore(b.id); };
+              actionRow.appendChild(reopenBtn);
+            }
           }
 
           if (isReview && isParent) {
@@ -2148,6 +2199,16 @@
               actionRow.appendChild(adjustPaidBtn);
             }
 
+            if (!isPurchased) {
+              var buyBountyBtn = document.createElement('button');
+              buyBountyBtn.className = "px-2.5 py-2.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/80 rounded-xl text-xs font-bold transition flex items-center gap-1";
+              buyBountyBtn.type = "button";
+              buyBountyBtn.innerHTML = '<span>🛒</span> Buy';
+              buyBountyBtn.title = "Mark as purchased by Lucas and log into Loot & Spent";
+              buyBountyBtn.onclick = function() { markBountyPurchased(b.id); };
+              actionRow.appendChild(buyBountyBtn);
+            }
+
             var editBtn = document.createElement('button');
             editBtn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1";
             editBtn.type = "button";
@@ -2180,9 +2241,12 @@
       for (var idx = 0; idx < appState.wishlist.length; idx++) {
         (function(w, rank) {
           var isTarget = w.id === appState.targetId;
+          var isPurchased = w.status === 'purchased';
 
           var item = document.createElement('div');
-          item.className = "bg-slate-900 border " + (isTarget ? "border-blue-500 bg-slate-900/90 shadow-lg" : "border-slate-800") + " rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-md";
+          item.className = "bg-slate-900 border " + 
+            (isPurchased ? "border-emerald-700/60 bg-emerald-950/20" : isTarget ? "border-blue-500 bg-slate-900/90 shadow-lg" : "border-slate-800") + 
+            " rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all";
 
           var left = document.createElement('div');
           left.className = "flex items-center gap-3 flex-1 min-w-0";
@@ -2194,7 +2258,7 @@
           upBtn.type = "button";
           upBtn.className = "text-xs font-bold text-blue-400 hover:text-white disabled:opacity-20 px-1";
           upBtn.textContent = "▲";
-          upBtn.disabled = rank === 0;
+          upBtn.disabled = rank === 0 || isPurchased;
           upBtn.onclick = function() { moveWish(rank, -1); };
 
           var rankNum = document.createElement('span');
@@ -2205,7 +2269,7 @@
           dnBtn.type = "button";
           dnBtn.className = "text-xs font-bold text-blue-400 hover:text-white disabled:opacity-20 px-1";
           dnBtn.textContent = "▼";
-          dnBtn.disabled = rank === appState.wishlist.length - 1;
+          dnBtn.disabled = rank === appState.wishlist.length - 1 || isPurchased;
           dnBtn.onclick = function() { moveWish(rank, 1); };
 
           arrowBox.appendChild(upBtn);
@@ -2219,15 +2283,26 @@
           var info = document.createElement('div');
           info.className = "min-w-0 flex-1";
 
+          var titleRow = document.createElement('div');
+          titleRow.className = "flex items-center gap-2 flex-wrap";
+
           var title = document.createElement('h5');
-          title.className = "font-bold text-sm text-white truncate";
+          title.className = "font-bold text-sm text-white " + (isPurchased ? "line-through text-slate-400" : "truncate");
           title.textContent = w.title;
+          titleRow.appendChild(title);
+
+          if (isPurchased) {
+            var pBadge = document.createElement('span');
+            pBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase";
+            pBadge.textContent = "✓ Purchased" + (w.actualPrice ? " ($" + w.actualPrice + ")" : "");
+            titleRow.appendChild(pBadge);
+          }
 
           var price = document.createElement('span');
           price.className = "text-xs font-extrabold text-blue-400 block mt-0.5";
           price.textContent = "$" + w.price;
 
-          info.appendChild(title);
+          info.appendChild(titleRow);
           info.appendChild(price);
 
           if (w.desc) {
@@ -2251,14 +2326,42 @@
           left.appendChild(info);
 
           var right = document.createElement('div');
-          right.className = "flex items-center gap-1.5 flex-shrink-0";
+          right.className = "flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end";
 
-          var targetBtn = document.createElement('button');
-          targetBtn.type = "button";
-          targetBtn.className = "px-3 py-1.5 text-xs font-bold rounded-xl transition " + 
-            (isTarget ? "bg-blue-600 text-white shadow-md" : "bg-slate-800 text-slate-300 hover:bg-slate-700");
-          targetBtn.textContent = isTarget ? "★ Target Set" : "Make Target";
-          targetBtn.onclick = function() { setGoalTarget(w.id); };
+          if (!isPurchased) {
+            var buyBtn = document.createElement('button');
+            buyBtn.type = "button";
+            buyBtn.className = "px-3 py-1.5 text-xs font-black bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl shadow-md transition flex items-center gap-1 active:scale-95";
+            buyBtn.innerHTML = '<span>🛒</span> Mark Purchased';
+            buyBtn.title = "Mark as bought by Lucas and log into Loot & Spent";
+            buyBtn.onclick = function() { markWishPurchased(w.id); };
+            right.appendChild(buyBtn);
+
+            var targetBtn = document.createElement('button');
+            targetBtn.type = "button";
+            targetBtn.className = "px-3 py-1.5 text-xs font-bold rounded-xl transition " + 
+              (isTarget ? "bg-blue-600 text-white shadow-md" : "bg-slate-800 text-slate-300 hover:bg-slate-700");
+            targetBtn.textContent = isTarget ? "★ Target Set" : "Make Target";
+            targetBtn.onclick = function() { setGoalTarget(w.id); };
+            right.appendChild(targetBtn);
+          } else {
+            var inLootBtn = document.createElement('button');
+            inLootBtn.type = "button";
+            inLootBtn.className = "px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition flex items-center gap-1";
+            inLootBtn.innerHTML = '<span>📦</span> In Loot & Spent';
+            inLootBtn.onclick = function() { switchTab('loot'); };
+            right.appendChild(inLootBtn);
+
+            if (isParent) {
+              var unmarkBtn = document.createElement('button');
+              unmarkBtn.type = "button";
+              unmarkBtn.className = "px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700 transition";
+              unmarkBtn.textContent = "↩️ Undo";
+              unmarkBtn.title = "Unmark as purchased and refund cash";
+              unmarkBtn.onclick = function() { unmarkWishPurchased(w.id); };
+              right.appendChild(unmarkBtn);
+            }
+          }
 
           var editBtn = document.createElement('button');
           editBtn.type = "button";
@@ -2266,15 +2369,13 @@
           editBtn.innerHTML = "✏️";
           editBtn.title = "Edit Goal / Toy";
           editBtn.onclick = function() { openEditWishModal(w.id); };
+          right.appendChild(editBtn);
 
           var delBtn = document.createElement('button');
           delBtn.type = "button";
           delBtn.className = "p-2 text-red-400 hover:bg-red-950/40 rounded-xl transition";
           delBtn.textContent = "✕";
           delBtn.onclick = function() { deleteWish(w.id); };
-
-          right.appendChild(targetBtn);
-          right.appendChild(editBtn);
           right.appendChild(delBtn);
 
           item.appendChild(left);
@@ -2316,8 +2417,14 @@
           title.textContent = l.title;
 
           var meta = document.createElement('div');
-          meta.className = "text-xs text-slate-400 mt-0.5 flex items-center gap-2";
-          meta.innerHTML = '<span>' + (l.date || 'Recent') + '</span><span>•</span><span class="text-blue-400 font-medium">' + (l.category || 'General') + '</span>';
+          meta.className = "text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap";
+          var tagHtml = '';
+          if (l.wishId) {
+            tagHtml = '<span>•</span><span class="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px]">🎯 Goal Achieved</span>';
+          } else if (l.bountyId) {
+            tagHtml = '<span>•</span><span class="text-purple-400 font-bold bg-purple-950/80 border border-purple-800 px-1.5 py-0.5 rounded text-[10px]">📋 Bounty</span>';
+          }
+          meta.innerHTML = '<span>' + (l.date || 'Recent') + '</span><span>•</span><span class="text-blue-400 font-medium">' + (l.category || 'General') + '</span>' + tagHtml;
 
           left.appendChild(title);
           left.appendChild(meta);
@@ -2414,6 +2521,23 @@
         finishBtn.style.display = "none";
       }
 
+      var missionBuyBtn = document.getElementById('mMissionBuyBtn');
+      if (missionBuyBtn) {
+        if (b.status === 'purchased') {
+          missionBuyBtn.classList.remove('hidden');
+          missionBuyBtn.className = "px-4 py-2.5 bg-slate-800 text-emerald-400 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1";
+          missionBuyBtn.innerHTML = "<span>📦</span> In Loot & Spent";
+          missionBuyBtn.onclick = function() { closeMission(); switchTab('loot'); };
+        } else if (isParent) {
+          missionBuyBtn.classList.remove('hidden');
+          missionBuyBtn.className = "px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl shadow-lg transition flex items-center gap-1";
+          missionBuyBtn.innerHTML = "<span>🛒</span> Mark Purchased";
+          missionBuyBtn.onclick = function() { buyActiveMission(); };
+        } else {
+          missionBuyBtn.classList.add('hidden');
+        }
+      }
+
       document.getElementById('missionModal').classList.remove('hidden');
     }
 
@@ -2440,6 +2564,13 @@
       } else {
         openEditChoreModal(missionId);
       }
+    }
+
+    function buyActiveMission() {
+      if (!activeMission) return;
+      var missionId = activeMission.id;
+      closeMission();
+      markBountyPurchased(missionId);
     }
 
     // CHORE ACTIONS
@@ -2610,10 +2741,79 @@
     function reworkChore(id) {
       for (var i = 0; i < appState.bounties.length; i++) {
         if (appState.bounties[i].id === id) {
+          if (appState.bounties[i].status === 'purchased') {
+            unmarkBountyPurchased(id);
+            return;
+          }
           appState.bounties[i].status = 'open';
           break;
         }
       }
+      persist();
+    }
+
+    function markBountyPurchased(id) {
+      var b = null;
+      for (var i = 0; i < appState.bounties.length; i++) {
+        if (appState.bounties[i].id === id) { b = appState.bounties[i]; break; }
+      }
+      if (!b) return;
+
+      var defaultPrice = Number(b.reward) || 5;
+      var promptVal = prompt("🛒 Mark Bounty item '" + b.title + "' as purchased!\n\nEnter the purchase price paid ($):", defaultPrice);
+      if (promptVal === null) return;
+      var pricePaid = parseFloat(promptVal);
+      if (isNaN(pricePaid) || pricePaid < 0) {
+        alert("Please enter a valid price!");
+        return;
+      }
+
+      b.status = 'purchased';
+      b.purchasedPrice = pricePaid;
+      b.purchasedDate = getIsoDate(new Date());
+
+      if (!appState.loot) appState.loot = [];
+      var lootItem = {
+        id: 'l_' + Date.now(),
+        bountyId: b.id,
+        title: b.title,
+        price: pricePaid,
+        category: b.category || 'Bounties',
+        date: getIsoDate(new Date())
+      };
+      appState.loot.unshift(lootItem);
+      appState.balance = Math.max(0, Math.round(((Number(appState.balance) || 0) - pricePaid) * 100) / 100);
+
+      playSound('fanfare');
+      triggerConfetti();
+      persist();
+    }
+
+    function unmarkBountyPurchased(id) {
+      var b = null;
+      for (var i = 0; i < appState.bounties.length; i++) {
+        if (appState.bounties[i].id === id) { b = appState.bounties[i]; break; }
+      }
+      if (!b) return;
+
+      if (!confirm("Unmark '" + b.title + "' as purchased?\nThis will remove it from Loot & Spent and refund $" + (b.purchasedPrice || b.reward || 0) + " to balance.")) return;
+
+      var refunded = Number(b.purchasedPrice || b.reward || 0);
+      b.status = 'open';
+      delete b.purchasedPrice;
+      delete b.purchasedDate;
+
+      if (appState.loot) {
+        appState.loot = appState.loot.filter(function(l) {
+          if (l.bountyId === id) {
+            refunded = Number(l.price) || refunded;
+            return false;
+          }
+          return true;
+        });
+      }
+      appState.balance = Math.round(((Number(appState.balance) || 0) + refunded) * 100) / 100;
+      playSound('coin');
       persist();
     }
 
@@ -2623,6 +2823,99 @@
     }
 
     // WISHLIST ACTIONS
+    function buyCurrentTargetWish() {
+      var activeGoal = appState.wishlist[0];
+      for (var k = 0; k < appState.wishlist.length; k++) {
+        if (appState.wishlist[k].id === appState.targetId) {
+          activeGoal = appState.wishlist[k];
+          break;
+        }
+      }
+      if (activeGoal) {
+        markWishPurchased(activeGoal.id);
+      }
+    }
+
+    function markWishPurchased(id) {
+      var w = null;
+      for (var i = 0; i < appState.wishlist.length; i++) {
+        if (appState.wishlist[i].id === id) { w = appState.wishlist[i]; break; }
+      }
+      if (!w) return;
+
+      var defaultPrice = Number(w.price) || 0;
+      var promptVal = prompt("🎉 Awesome! Lucas bought '" + w.title + "'!\n\nEnter the final purchase price paid ($):", defaultPrice);
+      if (promptVal === null) return;
+      var pricePaid = parseFloat(promptVal);
+      if (isNaN(pricePaid) || pricePaid < 0) {
+        alert("Please enter a valid price!");
+        return;
+      }
+
+      w.status = 'purchased';
+      w.actualPrice = pricePaid;
+      w.purchasedDate = getIsoDate(new Date());
+
+      if (!appState.loot) appState.loot = [];
+      var lootItem = {
+        id: 'l_' + Date.now(),
+        wishId: w.id,
+        title: w.title,
+        price: pricePaid,
+        category: 'Goals & Toys',
+        date: getIsoDate(new Date())
+      };
+      appState.loot.unshift(lootItem);
+
+      // Deduct balance
+      appState.balance = Math.max(0, Math.round(((Number(appState.balance) || 0) - pricePaid) * 100) / 100);
+
+      // If this was the active target, find the next unpurchased wishlist item to be the new target
+      if (appState.targetId === w.id) {
+        var nextTarget = null;
+        for (var j = 0; j < appState.wishlist.length; j++) {
+          if (appState.wishlist[j].status !== 'purchased' && appState.wishlist[j].id !== w.id) {
+            nextTarget = appState.wishlist[j].id;
+            break;
+          }
+        }
+        if (nextTarget) {
+          appState.targetId = nextTarget;
+        }
+      }
+
+      playSound('fanfare');
+      triggerConfetti();
+      persist();
+    }
+
+    function unmarkWishPurchased(id) {
+      var w = null;
+      for (var i = 0; i < appState.wishlist.length; i++) {
+        if (appState.wishlist[i].id === id) { w = appState.wishlist[i]; break; }
+      }
+      if (!w) return;
+
+      if (!confirm("Unmark '" + w.title + "' as purchased?\nThis will remove it from Loot & Spent and refund $" + (w.actualPrice || w.price) + " to balance.")) return;
+
+      var refunded = Number(w.actualPrice || w.price) || 0;
+      w.status = 'wanted';
+      delete w.actualPrice;
+      delete w.purchasedDate;
+
+      if (appState.loot) {
+        appState.loot = appState.loot.filter(function(l) {
+          if (l.wishId === id) {
+            refunded = Number(l.price) || refunded;
+            return false;
+          }
+          return true;
+        });
+      }
+      appState.balance = Math.round(((Number(appState.balance) || 0) + refunded) * 100) / 100;
+      playSound('coin');
+      persist();
+    }
     function setGoalTarget(id) {
       playSound('coin');
       appState.targetId = id;
@@ -2744,7 +3037,8 @@
           price: price,
           image: img,
           url: url,
-          desc: desc
+          desc: desc,
+          status: 'wanted'
         });
       }
 
@@ -2794,13 +3088,40 @@
     function deleteLoot(id) {
       if (!confirm("Remove this purchase and refund the cash back into Lucas's balance?")) return;
       var removedPrice = 0;
+      var wishIdToReset = null;
+      var bountyIdToReset = null;
       appState.loot = (appState.loot || []).filter(function(l) {
         if (l.id === id) {
           removedPrice = Number(l.price) || 0;
+          if (l.wishId) wishIdToReset = l.wishId;
+          if (l.bountyId) bountyIdToReset = l.bountyId;
           return false;
         }
         return true;
       });
+
+      if (wishIdToReset) {
+        for (var i = 0; i < (appState.wishlist || []).length; i++) {
+          if (appState.wishlist[i].id === wishIdToReset) {
+            appState.wishlist[i].status = 'wanted';
+            delete appState.wishlist[i].actualPrice;
+            delete appState.wishlist[i].purchasedDate;
+            break;
+          }
+        }
+      }
+
+      if (bountyIdToReset) {
+        for (var j = 0; j < (appState.bounties || []).length; j++) {
+          if (appState.bounties[j].id === bountyIdToReset) {
+            appState.bounties[j].status = 'open';
+            delete appState.bounties[j].purchasedPrice;
+            delete appState.bounties[j].purchasedDate;
+            break;
+          }
+        }
+      }
+
       appState.balance = Math.round(((Number(appState.balance) || 0) + removedPrice) * 100) / 100;
       playSound('coin');
       persist();
