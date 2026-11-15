@@ -657,7 +657,7 @@
       bounties: [
         { 
           id: "b_millie_weekly", 
-          title: "Feed & Walk Millie", 
+          title: "Feed and Walk Millie", 
           reward: 5, 
           status: "open", 
           recurrence: "weekly",
@@ -1002,14 +1002,21 @@
           }
         });
 
-        // Ensure "Feed & Walk Millie" recurring task exists
-        var hasMillie = data.bounties.some(function(b) {
-          return b.id === 'b_millie_weekly' || (b.title && b.title.toLowerCase().indexOf('millie') !== -1);
-        });
-        if (!hasMillie) {
+        // Ensure "Feed and Walk Millie" ($5 weekly recurring) task exists and is restored
+        var millieIdx = -1;
+        for (var mIdx = 0; mIdx < data.bounties.length; mIdx++) {
+          var mb = data.bounties[mIdx];
+          var mTitle = (mb.title || '').toLowerCase();
+          if (mb.id === 'b_millie_weekly' || (mTitle.indexOf('millie') !== -1 && (mTitle.indexOf('walk') !== -1 || mTitle.indexOf('feed') !== -1))) {
+            millieIdx = mIdx;
+            break;
+          }
+        }
+
+        if (millieIdx === -1) {
           data.bounties.unshift({
             id: "b_millie_weekly",
-            title: "Feed & Walk Millie",
+            title: "Feed and Walk Millie",
             reward: 5,
             status: "open",
             recurrence: "weekly",
@@ -1027,7 +1034,42 @@
             ],
             safety: "Hold leash handle securely around wrist; watch for approaching dogs and bikes."
           });
+          data.millieRestored_v3 = true;
           needsSync = true;
+        } else {
+          var existingMillie = data.bounties[millieIdx];
+          if (existingMillie.title !== "Feed and Walk Millie" || existingMillie.recurrence !== "weekly" || !data.millieRestored_v3) {
+            existingMillie.id = "b_millie_weekly";
+            existingMillie.title = "Feed and Walk Millie";
+            existingMillie.reward = Number(existingMillie.reward) || 5;
+            existingMillie.recurrence = "weekly";
+            existingMillie.category = existingMillie.category || "Helping Hand";
+            existingMillie.duration = existingMillie.duration || "20 mins";
+            existingMillie.difficulty = existingMillie.difficulty || "⭐ Easy";
+            existingMillie.location = existingMillie.location || "Neighborhood & Backyard";
+            if (!Array.isArray(existingMillie.tools) || !existingMillie.tools.length) {
+              existingMillie.tools = ["Leash & collar", "Water bowl & bottle", "Waste bags", "Dog treats", "Millie's kibble scoop"];
+            }
+            if (!Array.isArray(existingMillie.steps) || !existingMillie.steps.length) {
+              existingMillie.steps = [
+                "Check Millie's water bowl and replenish with fresh, cool water",
+                "Measure evening kibble scoop and place in food bowl",
+                "Clip leash securely to collar before opening door",
+                "Take Millie on safe neighborhood walk route with Dad",
+                "Clean paws at door, refill water bowl, and give Millie a reward treat!"
+              ];
+            }
+            existingMillie.safety = existingMillie.safety || "Hold leash handle securely around wrist; watch for approaching dogs and bikes.";
+            if (!data.millieRestored_v3) {
+              existingMillie.status = "open";
+              if (millieIdx > 0) {
+                data.bounties.splice(millieIdx, 1);
+                data.bounties.unshift(existingMillie);
+              }
+              data.millieRestored_v3 = true;
+            }
+            needsSync = true;
+          }
         }
 
         // Ensure "Bedroom & Playroom Tidy-Up" exists
@@ -3766,6 +3808,13 @@
     // GITHUB CHANGELOG & VERSION
     var FALLBACK_COMMITS = [
       {
+        sha: "cde159f",
+        date: "2026-11-15T09:40:15-08:00",
+        author: "davidgill01",
+        message: "Support laptop keyboard input for parent PIN unlock; add version badge and live GitHub commit/PR changelog",
+        url: "https://github.com/davidgill01/daily-bugle/commit/cde159f"
+      },
+      {
         sha: "8a0e173",
         date: "2026-11-15T09:35:10-08:00",
         author: "davidgill01",
@@ -3988,7 +4037,9 @@
       document.getElementById('addWishBtn').onclick = openWishModal;
       document.getElementById('addLootBtn').onclick = openLootModal;
 
-      // 1. Initial Local Render
+      // 1. Initial Local Sanitize & Render
+      appState = sanitizeCloudData(appState);
+      try { localStorage.setItem('gill_daily_bugle_firebase_v7', JSON.stringify(appState)); } catch(e){}
       renderAll();
 
       // 2. Start Live Google Cloud Firestore Sync
