@@ -49,11 +49,18 @@
           <span class="text-red-500 font-black">DAILY BUGLE</span> 
           <span class="text-blue-500 font-black">BOUNTY BOARD</span>
         </h1>
-        <div class="flex items-center gap-2 mt-1">
+        <div class="flex items-center gap-2 mt-1 flex-wrap">
           <!-- LIVE FIREBASE SYNC BADGE -->
           <button id="syncStatusBtn" type="button" onclick="testCloudConnection()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition">
             <span id="syncDot" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
             <span id="syncText">Connecting to Google Cloud...</span>
+          </button>
+
+          <!-- VERSION & GITHUB CHANGELOG BADGE -->
+          <button id="versionBadgeBtn" type="button" onclick="openChangelogModal()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition" title="Click to view recent updates & PR changelog from GitHub">
+            <span class="text-amber-400">⚡</span>
+            <span id="versionText">v2.5 • Updated Nov 15</span>
+            <span class="text-[9px] text-blue-400 font-extrabold">📋</span>
           </button>
         </div>
       </div>
@@ -256,10 +263,11 @@
         🛡️
       </div>
       <h3 class="text-lg font-black text-white mb-0.5">Parent Security</h3>
-      <p class="text-xs text-slate-400 mb-4">Enter PIN (Default: 1234)</p>
+      <p class="text-xs text-slate-400 mb-2">Enter PIN (Default: 1234)</p>
       
-      <div class="flex justify-center mb-5">
-        <input id="pinDisplay" type="password" maxlength="4" readonly placeholder="••••" class="w-36 text-center tracking-widest text-2xl font-black bg-slate-950 border-2 border-slate-700 rounded-xl py-2 text-white focus:outline-none" />
+      <div class="flex flex-col items-center justify-center mb-4">
+        <input id="pinDisplay" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="••••" class="w-36 text-center tracking-widest text-2xl font-black bg-slate-950 border-2 border-slate-700 focus:border-blue-500 rounded-xl py-2 text-white focus:outline-none transition shadow-inner" />
+        <span class="text-[10px] text-slate-500 mt-1.5">Type on laptop keyboard or tap below</span>
       </div>
 
       <div class="grid grid-cols-3 gap-2 mb-4">
@@ -277,6 +285,50 @@
         <button class="key-btn py-3 bg-blue-600 active:bg-blue-500 text-sm font-bold rounded-xl text-white" type="button" onclick="kSubmit()">OK</button>
       </div>
       <button type="button" onclick="closePin()" class="text-xs text-slate-400 hover:text-white underline">Cancel</button>
+    </div>
+  </div>
+
+  <!-- MODAL: CHANGELOG & GITHUB UPDATES -->
+  <div id="changelogModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <!-- HEADER -->
+      <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-800 flex-shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-blue-500/30">
+            ⚡
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-black text-white leading-tight">Daily Bugle Updates & PRs</h3>
+            <p id="changelogStatus" class="text-[11px] text-slate-400 mt-0.5">Fetching latest changes from GitHub...</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeChangelogModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition">
+          ✕
+        </button>
+      </div>
+
+      <!-- ACTION BAR -->
+      <div class="flex items-center justify-between gap-2 py-2.5 border-b border-slate-800/80 flex-shrink-0 text-xs">
+        <button type="button" onclick="fetchGitHubChangelog(true)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-bold rounded-lg border border-slate-700 flex items-center gap-1 transition">
+          <span id="changelogRefreshIcon">🔄</span> Refresh
+        </button>
+        <a href="https://github.com/davidgill01/daily-bugle" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 font-bold rounded-lg border border-blue-500/40 flex items-center gap-1 transition">
+          <span>GitHub Repo</span>
+          <span>↗</span>
+        </a>
+      </div>
+
+      <!-- COMMITS & PR LIST -->
+      <div id="changelogList" class="flex-1 overflow-y-auto custom-scroll space-y-2.5 py-3 pr-1 text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- FOOTER -->
+      <div class="pt-3 border-t border-slate-800 flex justify-end flex-shrink-0">
+        <button type="button" onclick="closeChangelogModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition">
+          Close
+        </button>
+      </div>
     </div>
   </div>
 
@@ -3599,24 +3651,41 @@
       }
       pendingPinCallback = callback;
       pinVal = "";
-      document.getElementById('pinDisplay').value = "";
+      var pinDisplay = document.getElementById('pinDisplay');
+      if (pinDisplay) pinDisplay.value = "";
       document.getElementById('pinModal').classList.remove('hidden');
+      setTimeout(function() {
+        if (pinDisplay) {
+          pinDisplay.focus();
+          pinDisplay.select();
+        }
+      }, 50);
     }
 
     function kPress(d) {
       playSound('click');
       if (pinVal.length < 4) {
         pinVal += d;
-        document.getElementById('pinDisplay').value = pinVal;
+        var pinDisplay = document.getElementById('pinDisplay');
+        if (pinDisplay) pinDisplay.value = pinVal;
+        if (pinVal.length === 4) {
+          setTimeout(kSubmit, 150);
+        }
       }
     }
     function kClear() {
       playSound('click');
       pinVal = "";
-      document.getElementById('pinDisplay').value = "";
+      var pinDisplay = document.getElementById('pinDisplay');
+      if (pinDisplay) {
+        pinDisplay.value = "";
+        pinDisplay.focus();
+      }
     }
     function kSubmit() {
-      if (pinVal === '1234') {
+      var pinDisplay = document.getElementById('pinDisplay');
+      var entered = (pinDisplay && pinDisplay.value) ? pinDisplay.value : pinVal;
+      if (entered === '1234') {
         playSound('fanfare');
         isParent = true;
         document.getElementById('pinModal').classList.add('hidden');
@@ -3641,6 +3710,235 @@
       playSound('click');
       pendingPinCallback = null;
       document.getElementById('pinModal').classList.add('hidden');
+    }
+
+    function setupPinKeyboard() {
+      var pinDisplay = document.getElementById('pinDisplay');
+      if (pinDisplay) {
+        pinDisplay.addEventListener('input', function() {
+          var clean = (pinDisplay.value || '').replace(/\D/g, '').slice(0, 4);
+          pinVal = clean;
+          pinDisplay.value = clean;
+          if (clean.length === 4) {
+            setTimeout(kSubmit, 150);
+          }
+        });
+
+        pinDisplay.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            kSubmit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closePin();
+          }
+        });
+      }
+
+      window.addEventListener('keydown', function(e) {
+        var modal = document.getElementById('pinModal');
+        if (!modal || modal.classList.contains('hidden')) return;
+
+        if (document.activeElement === pinDisplay) {
+          return;
+        }
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closePin();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          kSubmit();
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          if (pinVal.length > 0) {
+            playSound('click');
+            pinVal = pinVal.slice(0, -1);
+            if (pinDisplay) pinDisplay.value = pinVal;
+          }
+        } else if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          kPress(e.key);
+        }
+      });
+    }
+
+    // GITHUB CHANGELOG & VERSION
+    var FALLBACK_COMMITS = [
+      {
+        sha: "8a0e173",
+        date: "2026-11-15T09:35:10-08:00",
+        author: "davidgill01",
+        message: "Add feature to mark wishlist and bounty items as purchased into loot and spend",
+        url: "https://github.com/davidgill01/daily-bugle/commit/8a0e173"
+      },
+      {
+        sha: "ab6f943",
+        date: "2026-11-15T08:30:00-08:00",
+        author: "davidgill01",
+        message: "Update Can Deposit to monthly with variable payout adjustment; set Bedroom & Playroom Tidy to $5 weekly; keep Secret Room as epic spring clean",
+        url: "https://github.com/davidgill01/daily-bugle/commit/ab6f943"
+      },
+      {
+        sha: "1024c21",
+        date: "2026-11-12T23:13:23-08:00",
+        author: "davidgill01",
+        message: "Add recurring task schedule engine, preconfigure Millie walking & weekly chores, and auto-reset calendar",
+        url: "https://github.com/davidgill01/daily-bugle/commit/1024c21"
+      },
+      {
+        sha: "ad7ebf2",
+        date: "2026-11-12T22:52:19-08:00",
+        author: "davidgill01",
+        message: "Upgrade AI Plan with smart context detection, accurate location & electrical/DIY parsing, and fix linebreaks",
+        url: "https://github.com/davidgill01/daily-bugle/commit/ad7ebf2"
+      },
+      {
+        sha: "52ae206",
+        date: "2026-11-12T22:39:43-08:00",
+        author: "davidgill01",
+        message: "Update Sign in with Google UI, add prominent banner, and build in default Firebase config",
+        url: "https://github.com/davidgill01/daily-bugle/commit/52ae206"
+      },
+      {
+        sha: "6fb3969",
+        date: "2026-11-12T22:02:36-08:00",
+        author: "davidgill01",
+        message: "Add Google authentication, email whitelist restriction, and externalize Firebase config",
+        url: "https://github.com/davidgill01/daily-bugle/commit/6fb3969"
+      },
+      {
+        sha: "7faa29f",
+        date: "2026-11-12T21:40:00-08:00",
+        author: "davidgill01",
+        message: "Allow re-editing bounties and wishlist items; upgrade LEGO and minifigure image lookup via BrickOwl & BrickLink",
+        url: "https://github.com/davidgill01/daily-bugle/commit/7faa29f"
+      }
+    ];
+
+    function formatRelativeTime(dateStr) {
+      if (!dateStr) return 'Recent';
+      try {
+        var d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        var now = new Date();
+        var diffSec = Math.floor((now - d) / 1000);
+        if (diffSec < 60) return "Just now";
+        if (diffSec < 3600) return Math.floor(diffSec / 60) + "m ago";
+        if (diffSec < 86400) return Math.floor(diffSec / 3600) + "h ago";
+        if (diffSec < 86400 * 7) return Math.floor(diffSec / 86400) + "d ago";
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    function renderCommitsList(commits) {
+      var container = document.getElementById('changelogList');
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!commits || commits.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-slate-500">No recent updates found.</div>';
+        return;
+      }
+
+      commits.forEach(function(item) {
+        var sha = item.sha ? item.sha.slice(0, 7) : (item.id ? item.id.slice(0, 7) : 'commit');
+        var fullMsg = (item.commit ? item.commit.message : item.message) || '';
+        var msgLines = fullMsg.split('\n');
+        var title = msgLines[0] || 'Update';
+        var body = msgLines.slice(1).join('\n').trim();
+        var dateStr = (item.commit && item.commit.author ? item.commit.author.date : item.date);
+        var authorName = (item.commit && item.commit.author ? item.commit.author.name : item.author) || 'davidgill01';
+        var commitUrl = item.html_url || item.url || ("https://github.com/davidgill01/daily-bugle/commit/" + sha);
+
+        var prMatch = title.match(/Merge pull request #(\d+)/i) || title.match(/\(#(\d+)\)/);
+        var prBadge = '';
+        if (prMatch) {
+          prBadge = '<span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-bold">🔀 PR #' + prMatch[1] + '</span>';
+        }
+
+        var card = document.createElement('div');
+        card.className = "p-3 bg-slate-950/70 border border-slate-800 hover:border-blue-500/60 rounded-2xl transition group";
+
+        var headerRow = document.createElement('div');
+        headerRow.className = "flex items-center justify-between gap-2 flex-wrap mb-1";
+
+        var badgeWrapper = document.createElement('div');
+        badgeWrapper.className = "flex items-center gap-1.5 flex-wrap";
+        badgeWrapper.innerHTML = '<a href="' + commitUrl + '" target="_blank" rel="noopener noreferrer" class="font-mono text-[10px] font-bold text-blue-400 bg-blue-950/70 hover:bg-blue-900 border border-blue-800/80 px-2 py-0.5 rounded-lg transition" title="View commit on GitHub">' + sha + ' ↗</a>' + prBadge + '<span class="text-[10px] text-slate-500 font-semibold">' + formatRelativeTime(dateStr) + '</span>';
+
+        var authorEl = document.createElement('span');
+        authorEl.className = "text-[10px] text-slate-400 font-medium";
+        authorEl.textContent = "@" + authorName;
+
+        headerRow.appendChild(badgeWrapper);
+        headerRow.appendChild(authorEl);
+
+        var titleEl = document.createElement('div');
+        titleEl.className = "font-bold text-white text-xs leading-snug group-hover:text-blue-300 transition";
+        titleEl.textContent = title;
+
+        card.appendChild(headerRow);
+        card.appendChild(titleEl);
+
+        if (body) {
+          var bodyEl = document.createElement('div');
+          bodyEl.className = "text-[11px] text-slate-400 mt-1 whitespace-pre-line leading-relaxed border-t border-slate-800/60 pt-1";
+          bodyEl.textContent = body.length > 200 ? body.slice(0, 200) + '...' : body;
+          card.appendChild(bodyEl);
+        }
+
+        container.appendChild(card);
+      });
+    }
+
+    function fetchGitHubChangelog(forceRefresh) {
+      var statusEl = document.getElementById('changelogStatus');
+      var refreshIcon = document.getElementById('changelogRefreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+      if (statusEl) statusEl.textContent = "Fetching latest changes from GitHub...";
+
+      fetch('https://api.github.com/repos/davidgill01/daily-bugle/commits?per_page=12')
+        .then(function(res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+        .then(function(commits) {
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          if (Array.isArray(commits) && commits.length > 0) {
+            renderCommitsList(commits);
+            if (statusEl) statusEl.textContent = "Live from GitHub • " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            if (commits[0] && commits[0].commit && commits[0].commit.author) {
+              var d = new Date(commits[0].commit.author.date);
+              var formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              var versionTextEl = document.getElementById('versionText');
+              if (versionTextEl) {
+                versionTextEl.textContent = "v2.5 • " + formattedDate + " (" + commits[0].sha.slice(0, 7) + ")";
+              }
+            }
+          } else {
+            throw new Error("Empty commits");
+          }
+        })
+        .catch(function(err) {
+          if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+          renderCommitsList(FALLBACK_COMMITS);
+          if (statusEl) statusEl.textContent = "Showing recent updates (offline/cached)";
+        });
+    }
+
+    function openChangelogModal() {
+      playSound('click');
+      document.getElementById('changelogModal').classList.remove('hidden');
+      fetchGitHubChangelog(false);
+    }
+
+    function closeChangelogModal() {
+      playSound('click');
+      document.getElementById('changelogModal').classList.add('hidden');
     }
 
     // TAB NAVIGATION
@@ -3670,9 +3968,7 @@
     window.onload = function() {
       document.getElementById('lockBtn').onclick = function() {
         if (!isParent) {
-          pinVal = "";
-          document.getElementById('pinDisplay').value = "";
-          document.getElementById('pinModal').classList.remove('hidden');
+          requestParentAuth();
         } else {
           isParent = false;
           document.getElementById('lockText').textContent = "Parent Unlock";
@@ -3697,6 +3993,12 @@
 
       // 2. Start Live Google Cloud Firestore Sync
       setupFirebase();
+
+      // 3. Setup Laptop Keyboard Input for Parent PIN
+      setupPinKeyboard();
+
+      // 4. Fetch GitHub Updates / Commit Changelog for Version Badge
+      fetchGitHubChangelog(false);
     };
   </script>
 </body>
