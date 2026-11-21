@@ -145,6 +145,87 @@
       opacity: 0.8;
     }
 
+    /* Trophy Shelf Gallery (Subgrid + Container Queries + Direct Media) */
+    .trophy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+      gap: 1rem;
+    }
+    .trophy-card {
+      container-type: inline-size;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 23, 42, 0.88) 100%);
+      border: 2px solid #1e293b;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      transition: border-color 180ms ease-out, box-shadow 180ms ease-out, transform 180ms ease-out;
+    }
+    @supports (grid-template-rows: subgrid) {
+      .trophy-card {
+        grid-row: span 4;
+        grid-template-rows: subgrid;
+        row-gap: 0;
+      }
+    }
+    .trophy-card.is-goal-trophy {
+      border-color: rgba(245, 158, 11, 0.55);
+      box-shadow: 0 12px 30px rgba(245, 158, 11, 0.12);
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .trophy-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(59, 130, 246, 0.75);
+        box-shadow: 0 16px 34px rgba(37, 99, 235, 0.22);
+      }
+      .trophy-card.is-goal-trophy:hover {
+        border-color: rgba(251, 191, 36, 0.9);
+        box-shadow: 0 16px 36px rgba(245, 158, 11, 0.25);
+      }
+    }
+    .trophy-card > img {
+      inline-size: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: contain;
+      padding: 0.85rem;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(59, 130, 246, 0.22), rgba(2, 6, 23, 0.96) 76%);
+      border-bottom: 3px solid rgba(51, 65, 85, 0.9);
+    }
+    .trophy-card.is-goal-trophy > img {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(245, 158, 11, 0.24), rgba(2, 6, 23, 0.96) 76%);
+      border-bottom-color: rgba(245, 158, 11, 0.55);
+    }
+    .trophy-card > .media {
+      inline-size: 100%;
+      aspect-ratio: 4 / 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(99, 102, 241, 0.22), rgba(2, 6, 23, 0.96) 76%);
+      border-bottom: 3px solid rgba(51, 65, 85, 0.9);
+    }
+    .trophy-card > header {
+      padding: 0.85rem 1rem 0.25rem;
+    }
+    .trophy-card > p {
+      padding: 0.25rem 1rem 0.75rem;
+    }
+    .trophy-card > footer {
+      padding: 0.65rem 1rem 0.85rem;
+      border-top: 1px solid rgba(30, 41, 59, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
     /* Scroll containment inside modal overlays */
     .modal-overlay {
       overscroll-behavior: contain;
@@ -377,14 +458,24 @@
       <div id="wishlistContainer" class="space-y-3"></div>
     </div>
 
-    <!-- VIEW 3: LOOT VAULT -->
+    <!-- VIEW 3: LOOT VAULT & TROPHY SHELF -->
     <div id="viewLoot" style="display:none;">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <div>
-          <h3 id="headingLoot" tabindex="-1" class="text-lg font-black text-slate-200">Purchased Loot & Cash Spent</h3>
-          <p class="text-xs text-slate-400">All purchased sets and rewards. Automatically deducted from available earnings.</p>
+          <h3 id="headingLoot" tabindex="-1" class="text-lg font-black text-slate-200 flex items-center gap-1.5">
+            <span aria-hidden="true">🏆</span> Lucas's Trophy Shelf & Loot Vault
+          </h3>
+          <p class="text-xs text-slate-400">Every LEGO set, minifigure, and reward Lucas has conquered and bought!</p>
         </div>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <div role="group" aria-label="Loot view layout" class="inline-flex bg-slate-900 border border-slate-800 rounded-xl p-0.5">
+            <button id="lootViewShelfBtn" type="button" onclick="setLootViewMode('shelf')" aria-pressed="true" class="px-2.5 py-1.5 rounded-lg font-bold text-xs bg-amber-500 text-slate-950 shadow-sm transition">
+              🏆 Trophy Shelf
+            </button>
+            <button id="lootViewListBtn" type="button" onclick="setLootViewMode('list')" aria-pressed="false" class="px-2.5 py-1.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition">
+              📋 List View
+            </button>
+          </div>
           <button id="clearLootBtn" type="button" onclick="clearLootVault()" class="hidden px-3 py-2 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 font-bold text-xs rounded-xl items-center gap-1 transition">
             <span aria-hidden="true">🗑️</span> Reset Spent Cash
           </button>
@@ -393,7 +484,24 @@
           </button>
         </div>
       </div>
-      <div id="lootContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5"></div>
+
+      <!-- TROPHY SHELF STATS BANNER -->
+      <div id="lootStatsBar" class="grid grid-cols-3 gap-2.5 mb-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 text-center shadow-md">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Trophies Collected</span>
+          <span id="lootStatCount" class="text-xl sm:text-2xl font-black font-comic text-amber-400 tabular-nums">0</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 text-center shadow-md">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Loot Value</span>
+          <span id="lootStatValue" class="text-xl sm:text-2xl font-black font-comic text-blue-400 tabular-nums">$0</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 text-center shadow-md">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Goals Conquered</span>
+          <span id="lootStatGoals" class="text-xl sm:text-2xl font-black font-comic text-emerald-400 tabular-nums">0</span>
+        </div>
+      </div>
+
+      <div id="lootContainer" class="trophy-grid"></div>
     </div>
 
   </main>
@@ -741,6 +849,18 @@
             <option value="Treats & Food">🍦 Treats & Food</option>
             <option value="Toys / General">🎁 Toys / General</option>
           </select>
+        </div>
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <label for="inputLootImg" class="text-xs text-slate-400">Trophy Shelf Photo (Optional)</label>
+            <button type="button" onclick="autoFindLootPhoto()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700/80 transition">
+              ✨ Auto-Find LEGO Photo
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <img id="inputLootImgPreview" src="" fetchpriority="low" width="40" height="40" onerror="this.classList.add('hidden')" class="hidden w-10 h-10 rounded-lg object-contain border border-slate-700 bg-slate-950 flex-shrink-0 p-0.5" alt="Trophy photo preview" />
+            <input id="inputLootImg" type="url" oninput="updateLootImgPreview(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-[11px] text-white focus:outline-none" placeholder="Paste photo URL or tap Auto-Find" />
+          </div>
         </div>
       </div>
 
@@ -2727,14 +2847,107 @@
       }
     }
 
-    // RENDER LOOT VAULT
+    // RENDER LOOT VAULT & TROPHY SHELF
+    var lootViewMode = 'shelf';
+
+    function setLootViewMode(mode) {
+      playSound('click');
+      lootViewMode = (mode === 'list') ? 'list' : 'shelf';
+      var applyMode = function() {
+        var shelfBtn = document.getElementById('lootViewShelfBtn');
+        var listBtn = document.getElementById('lootViewListBtn');
+        if (shelfBtn && listBtn) {
+          var isShelf = lootViewMode === 'shelf';
+          shelfBtn.setAttribute('aria-pressed', isShelf ? 'true' : 'false');
+          listBtn.setAttribute('aria-pressed', isShelf ? 'false' : 'true');
+          shelfBtn.className = isShelf
+            ? "px-2.5 py-1.5 rounded-lg font-bold text-xs bg-amber-500 text-slate-950 shadow-sm transition"
+            : "px-2.5 py-1.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
+          listBtn.className = !isShelf
+            ? "px-2.5 py-1.5 rounded-lg font-bold text-xs bg-blue-600 text-white shadow-sm transition"
+            : "px-2.5 py-1.5 rounded-lg font-bold text-xs text-slate-400 hover:text-white transition";
+        }
+        renderLoot();
+      };
+      if (document.startViewTransition) {
+        document.startViewTransition(applyMode);
+      } else {
+        applyMode();
+      }
+    }
+
+    function getCategoryEmblem(cat) {
+      var c = (cat || '').toLowerCase();
+      if (c.indexOf('lego') !== -1 || c.indexOf('goal') !== -1) return { icon: '🧱', label: 'LEGO Set' };
+      if (c.indexOf('minifig') !== -1) return { icon: '🦸', label: 'Minifigure' };
+      if (c.indexOf('comic') !== -1 || c.indexOf('book') !== -1) return { icon: '📚', label: 'Comics & Books' };
+      if (c.indexOf('game') !== -1) return { icon: '🎮', label: 'Games & Toys' };
+      if (c.indexOf('treat') !== -1 || c.indexOf('food') !== -1) return { icon: '🍦', label: 'Treats & Food' };
+      return { icon: '🏆', label: cat || 'Collected Loot' };
+    }
+
+    function resolveLootMedia(l) {
+      var img = sanitizeHttpUrl(l.image || '', '');
+      var url = sanitizeHttpUrl(l.url || '', '');
+      var desc = l.desc || '';
+
+      // 1. Check linked wishlist item
+      if (l.wishId && Array.isArray(appState.wishlist)) {
+        for (var i = 0; i < appState.wishlist.length; i++) {
+          if (appState.wishlist[i].id === l.wishId) {
+            if (!img) img = sanitizeHttpUrl(appState.wishlist[i].image || '', '');
+            if (!url) url = sanitizeHttpUrl(appState.wishlist[i].url || '', '');
+            if (!desc) desc = appState.wishlist[i].desc || '';
+            break;
+          }
+        }
+      }
+
+      // 2. Auto-match against built-in LEGO catalog by title/set number if no photo saved
+      if (!img && l.title && typeof LOCAL_LEGO_CATALOG !== 'undefined' && Array.isArray(LOCAL_LEGO_CATALOG)) {
+        var titleLower = l.title.toLowerCase();
+        var setNumMatch = titleLower.match(/\b(\d{4,6})\b/);
+        if (setNumMatch) {
+          img = "https://images.brickset.com/sets/images/" + setNumMatch[1] + "-1.jpg";
+        } else {
+          for (var c = 0; c < LOCAL_LEGO_CATALOG.length; c++) {
+            var entry = LOCAL_LEGO_CATALOG[c];
+            if (entry.match && entry.match.some(function(m) { return titleLower.indexOf(m) !== -1; })) {
+              img = sanitizeHttpUrl(entry.image || '', '');
+              if (!url) url = sanitizeHttpUrl(entry.url || '', '');
+              if (!desc) desc = entry.desc || '';
+              break;
+            }
+          }
+        }
+      }
+
+      return { image: img, url: url, desc: desc };
+    }
+
     function renderLoot() {
       var container = document.getElementById('lootContainer');
       container.textContent = "";
 
+      var items = appState.loot || [];
+
+      // Update Trophy Stats Banner
+      var totalVal = 0;
+      var goalsConquered = 0;
+      for (var s = 0; s < items.length; s++) {
+        totalVal += Number(items[s].price) || 0;
+        if (items[s].wishId) goalsConquered++;
+      }
+      var statCount = document.getElementById('lootStatCount');
+      var statValue = document.getElementById('lootStatValue');
+      var statGoals = document.getElementById('lootStatGoals');
+      if (statCount) statCount.textContent = String(items.length);
+      if (statValue) statValue.textContent = "$" + totalVal;
+      if (statGoals) statGoals.textContent = String(goalsConquered);
+
       var clearBtn = document.getElementById('clearLootBtn');
       if (clearBtn) {
-        if (isParent && (appState.loot || []).length > 0) {
+        if (isParent && items.length > 0) {
           clearBtn.classList.remove('hidden');
           clearBtn.classList.add('inline-flex');
         } else {
@@ -2743,94 +2956,243 @@
         }
       }
 
-      if (!appState.loot || appState.loot.length === 0) {
+      container.className = lootViewMode === 'shelf'
+        ? "trophy-grid"
+        : "grid grid-cols-1 sm:grid-cols-2 gap-3.5";
+
+      if (items.length === 0) {
         var emptyLootEl = document.createElement('div');
-        emptyLootEl.className = "col-span-full py-8 text-center text-slate-400 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800";
-        emptyLootEl.textContent = "No purchases logged yet. Lucas has spent $0!";
+        emptyLootEl.className = "col-span-full py-10 px-4 text-center text-slate-400 font-bold text-sm bg-slate-900/50 rounded-3xl border border-slate-800";
+        emptyLootEl.textContent = "🏆 Lucas's Trophy Shelf is ready! Mark a wishlist goal as purchased or tap \"+ I Bought Something!\" to showcase his first trophy.";
         container.appendChild(emptyLootEl);
         return;
       }
 
-      for (var idx = 0; idx < appState.loot.length; idx++) {
+      for (var idx = 0; idx < items.length; idx++) {
         (function(l) {
-          var card = document.createElement('article');
-          card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center shadow-lg gap-3";
+          var media = resolveLootMedia(l);
 
-          var left = document.createElement('div');
-          var title = document.createElement('h4');
-          title.className = "font-bold text-sm text-white";
-          title.textContent = l.title;
+          if (lootViewMode === 'shelf') {
+            var card = document.createElement('article');
+            card.className = "trophy-card" + (l.wishId ? " is-goal-trophy" : "");
 
-          var meta = document.createElement('div');
-          meta.className = "text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap";
-
-          var dateSpan = document.createElement('span');
-          dateSpan.className = "tabular-nums";
-          dateSpan.textContent = l.date || 'Recent';
-          meta.appendChild(dateSpan);
-
-          var dot1 = document.createElement('span');
-          dot1.setAttribute('aria-hidden', 'true');
-          dot1.textContent = "•";
-          meta.appendChild(dot1);
-
-          var catSpan = document.createElement('span');
-          catSpan.className = "text-blue-400 font-medium";
-          catSpan.textContent = l.category || 'General';
-          meta.appendChild(catSpan);
-
-          if (l.wishId || l.bountyId) {
-            var dot2 = document.createElement('span');
-            dot2.setAttribute('aria-hidden', 'true');
-            dot2.textContent = "•";
-            meta.appendChild(dot2);
-
-            var originBadge = document.createElement('span');
-            if (l.wishId) {
-              originBadge.className = "text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px]";
-              originBadge.textContent = "🎯 Goal Achieved";
+            // 1. MEDIA REGION (direct <img> or .media emblem)
+            if (media.image) {
+              var imgEl = document.createElement('img');
+              imgEl.src = media.image;
+              imgEl.alt = l.title || "Purchased LEGO Trophy";
+              imgEl.loading = "lazy";
+              imgEl.width = 320;
+              imgEl.height = 240;
+              imgEl.onerror = function() { handleLegoImgError(imgEl); };
+              card.appendChild(imgEl);
             } else {
-              originBadge.className = "text-purple-400 font-bold bg-purple-950/80 border border-purple-800 px-1.5 py-0.5 rounded text-[10px]";
-              originBadge.textContent = "📋 Bounty";
+              var emblem = getCategoryEmblem(l.category);
+              var mediaDiv = document.createElement('div');
+              mediaDiv.className = "media";
+              mediaDiv.setAttribute('aria-hidden', 'true');
+              var iconEl = document.createElement('span');
+              iconEl.className = "text-5xl drop-shadow-lg";
+              iconEl.textContent = emblem.icon;
+              var labelEl = document.createElement('span');
+              labelEl.className = "text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-950/70 px-2.5 py-0.5 rounded-full border border-slate-800";
+              labelEl.textContent = emblem.label;
+              mediaDiv.appendChild(iconEl);
+              mediaDiv.appendChild(labelEl);
+              card.appendChild(mediaDiv);
             }
-            meta.appendChild(originBadge);
+
+            // 2. HEADER REGION
+            var headerEl = document.createElement('header');
+            var badgeRow = document.createElement('div');
+            badgeRow.className = "flex items-center justify-between gap-2 mb-1.5 flex-wrap";
+
+            var badgeLeft = document.createElement('div');
+            badgeLeft.className = "flex items-center gap-1.5 flex-wrap";
+            if (l.wishId) {
+              var goalBadge = document.createElement('span');
+              goalBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-950/90 text-amber-300 border border-amber-700/80 uppercase tracking-wider";
+              goalBadge.textContent = "🏆 Goal Conquered";
+              badgeLeft.appendChild(goalBadge);
+            } else if (l.bountyId) {
+              var bountyBadge = document.createElement('span');
+              bountyBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-800 uppercase tracking-wider";
+              bountyBadge.textContent = "📋 Bounty Loot";
+              badgeLeft.appendChild(bountyBadge);
+            } else {
+              var catBadge = document.createElement('span');
+              catBadge.className = "text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-950 text-blue-300 border border-blue-800/80";
+              catBadge.textContent = l.category || "Collected Loot";
+              badgeLeft.appendChild(catBadge);
+            }
+
+            var priceTag = document.createElement('span');
+            priceTag.className = "text-base font-black font-comic text-emerald-400 tabular-nums";
+            priceTag.textContent = "$" + l.price;
+
+            badgeRow.appendChild(badgeLeft);
+            badgeRow.appendChild(priceTag);
+
+            var titleEl = document.createElement('h4');
+            titleEl.className = "font-black text-sm text-white leading-snug";
+            titleEl.textContent = l.title;
+
+            headerEl.appendChild(badgeRow);
+            headerEl.appendChild(titleEl);
+            card.appendChild(headerEl);
+
+            // 3. CONTENT REGION
+            var descP = document.createElement('p');
+            descP.className = "text-[11px] text-slate-400 leading-relaxed";
+            descP.textContent = media.desc
+              ? media.desc
+              : ("Added to Lucas's collection on " + (l.date || 'Recent') + " (" + (l.category || 'General') + ").");
+            card.appendChild(descP);
+
+            // 4. FOOTER REGION
+            var footerEl = document.createElement('footer');
+
+            var dateBadge = document.createElement('span');
+            dateBadge.className = "text-[10px] font-semibold text-slate-400 tabular-nums";
+            dateBadge.textContent = "📅 " + (l.date || 'Recent');
+            footerEl.appendChild(dateBadge);
+
+            var footerActions = document.createElement('div');
+            footerActions.className = "flex items-center gap-1.5";
+
+            if (media.url) {
+              var storeLink = document.createElement('a');
+              storeLink.href = media.url;
+              storeLink.target = "_blank";
+              storeLink.rel = "noopener noreferrer";
+              storeLink.className = "text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 text-blue-300 hover:text-white border border-slate-700 transition";
+              storeLink.textContent = "BrickOwl ↗";
+              storeLink.setAttribute('aria-label', "View " + l.title + " on BrickOwl");
+              footerActions.appendChild(storeLink);
+            }
+
+            if (isParent) {
+              var editShelfBtn = document.createElement('button');
+              editShelfBtn.type = "button";
+              editShelfBtn.className = "p-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition";
+              editShelfBtn.textContent = "✏️";
+              editShelfBtn.setAttribute('aria-label', "Edit trophy " + l.title);
+              editShelfBtn.title = "Edit Purchase / Photo";
+              editShelfBtn.onclick = function() { openEditLootModal(l.id); };
+              footerActions.appendChild(editShelfBtn);
+
+              var delShelfBtn = document.createElement('button');
+              delShelfBtn.type = "button";
+              delShelfBtn.className = "p-1.5 text-xs text-red-400 hover:bg-red-950/40 rounded-lg transition";
+              delShelfBtn.textContent = "✕";
+              delShelfBtn.setAttribute('aria-label', "Remove " + l.title + " and refund balance");
+              delShelfBtn.title = "Delete Purchase (Refund to Balance)";
+              delShelfBtn.onclick = function() { deleteLoot(l.id); };
+              footerActions.appendChild(delShelfBtn);
+            }
+
+            footerEl.appendChild(footerActions);
+            card.appendChild(footerEl);
+            container.appendChild(card);
+          } else {
+            // COMPACT LIST VIEW
+            var listCard = document.createElement('article');
+            listCard.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center shadow-lg gap-3";
+
+            var left = document.createElement('div');
+            left.className = "flex items-center gap-3 min-w-0";
+
+            if (media.image) {
+              var thumb = document.createElement('img');
+              thumb.src = media.image;
+              thumb.alt = l.title || "Purchased item";
+              thumb.loading = "lazy";
+              thumb.width = 44;
+              thumb.height = 44;
+              thumb.onerror = function() { handleLegoImgError(thumb); };
+              thumb.className = "w-11 h-11 object-contain rounded-xl border border-slate-700 bg-slate-950 p-0.5 flex-shrink-0";
+              left.appendChild(thumb);
+            }
+
+            var textCol = document.createElement('div');
+            textCol.className = "min-w-0";
+
+            var title = document.createElement('h4');
+            title.className = "font-bold text-sm text-white truncate";
+            title.textContent = l.title;
+
+            var meta = document.createElement('div');
+            meta.className = "text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap";
+
+            var dateSpan = document.createElement('span');
+            dateSpan.className = "tabular-nums";
+            dateSpan.textContent = l.date || 'Recent';
+            meta.appendChild(dateSpan);
+
+            var dot1 = document.createElement('span');
+            dot1.setAttribute('aria-hidden', 'true');
+            dot1.textContent = "•";
+            meta.appendChild(dot1);
+
+            var catSpan = document.createElement('span');
+            catSpan.className = "text-blue-400 font-medium";
+            catSpan.textContent = l.category || 'General';
+            meta.appendChild(catSpan);
+
+            if (l.wishId || l.bountyId) {
+              var dot2 = document.createElement('span');
+              dot2.setAttribute('aria-hidden', 'true');
+              dot2.textContent = "•";
+              meta.appendChild(dot2);
+
+              var originBadge = document.createElement('span');
+              if (l.wishId) {
+                originBadge.className = "text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px]";
+                originBadge.textContent = "🎯 Goal Achieved";
+              } else {
+                originBadge.className = "text-purple-400 font-bold bg-purple-950/80 border border-purple-800 px-1.5 py-0.5 rounded text-[10px]";
+                originBadge.textContent = "📋 Bounty";
+              }
+              meta.appendChild(originBadge);
+            }
+
+            textCol.appendChild(title);
+            textCol.appendChild(meta);
+            left.appendChild(textCol);
+
+            var rightBox = document.createElement('div');
+            rightBox.className = "flex items-center gap-2 flex-shrink-0";
+
+            var price = document.createElement('span');
+            price.className = "text-base font-black text-red-400 font-comic tabular-nums";
+            price.textContent = "-$" + l.price;
+            rightBox.appendChild(price);
+
+            if (isParent) {
+              var editLootBtn = document.createElement('button');
+              editLootBtn.type = "button";
+              editLootBtn.className = "p-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition";
+              editLootBtn.textContent = "✏️";
+              editLootBtn.setAttribute('aria-label', "Edit purchase " + l.title);
+              editLootBtn.title = "Edit Purchase";
+              editLootBtn.onclick = function() { openEditLootModal(l.id); };
+              rightBox.appendChild(editLootBtn);
+
+              var delLootBtn = document.createElement('button');
+              delLootBtn.type = "button";
+              delLootBtn.className = "p-1.5 text-xs text-red-400 hover:bg-red-950/40 rounded-lg transition";
+              delLootBtn.textContent = "✕";
+              delLootBtn.setAttribute('aria-label', "Delete purchase " + l.title + " and refund balance");
+              delLootBtn.title = "Delete Purchase (Refund to Balance)";
+              delLootBtn.onclick = function() { deleteLoot(l.id); };
+              rightBox.appendChild(delLootBtn);
+            }
+
+            listCard.appendChild(left);
+            listCard.appendChild(rightBox);
+            container.appendChild(listCard);
           }
-
-          left.appendChild(title);
-          left.appendChild(meta);
-
-          var rightBox = document.createElement('div');
-          rightBox.className = "flex items-center gap-2 flex-shrink-0";
-
-          var price = document.createElement('span');
-          price.className = "text-base font-black text-red-400 font-comic tabular-nums";
-          price.textContent = "-$" + l.price;
-          rightBox.appendChild(price);
-
-          if (isParent) {
-            var editLootBtn = document.createElement('button');
-            editLootBtn.type = "button";
-            editLootBtn.className = "p-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition";
-            editLootBtn.textContent = "✏️";
-            editLootBtn.setAttribute('aria-label', "Edit purchase " + l.title);
-            editLootBtn.title = "Edit Purchase";
-            editLootBtn.onclick = function() { openEditLootModal(l.id); };
-            rightBox.appendChild(editLootBtn);
-
-            var delLootBtn = document.createElement('button');
-            delLootBtn.type = "button";
-            delLootBtn.className = "p-1.5 text-xs text-red-400 hover:bg-red-950/40 rounded-lg transition";
-            delLootBtn.textContent = "✕";
-            delLootBtn.setAttribute('aria-label', "Delete purchase " + l.title + " and refund balance");
-            delLootBtn.title = "Delete Purchase (Refund to Balance)";
-            delLootBtn.onclick = function() { deleteLoot(l.id); };
-            rightBox.appendChild(delLootBtn);
-          }
-
-          card.appendChild(left);
-          card.appendChild(rightBox);
-          container.appendChild(card);
-        })(appState.loot[idx]);
+        })(items[idx]);
       }
     }
 
@@ -3270,7 +3632,10 @@
         wishId: w.id,
         title: w.title,
         price: pricePaid,
-        category: 'Goals & Toys',
+        category: 'LEGO Sets',
+        image: w.image || '',
+        url: w.url || '',
+        desc: w.desc || '',
         date: getIsoDate(new Date())
       };
       appState.loot.unshift(lootItem);
@@ -3455,6 +3820,51 @@
     }
 
     // LOOT ACTIONS
+    function updateLootImgPreview(url) {
+      var prev = document.getElementById('inputLootImgPreview');
+      if (!prev) return;
+      var safeUrl = sanitizeHttpUrl(url, '');
+      if (safeUrl) {
+        prev.src = safeUrl;
+        prev.classList.remove('hidden');
+      } else {
+        prev.src = '';
+        prev.classList.add('hidden');
+      }
+    }
+
+    function autoFindLootPhoto() {
+      playSound('click');
+      var titleVal = (document.getElementById('inputLootTitle').value || '').trim();
+      if (!titleVal) {
+        alert("Type the toy or LEGO set name first (e.g. 'Venom', '76178', 'Carnage'), then tap Auto-Find!");
+        return;
+      }
+      var lower = titleVal.toLowerCase();
+      var foundImg = '';
+      var setMatch = lower.match(/\b(\d{4,6})\b/);
+      var figMatch = lower.match(/\b(sh\d{3,4}|sw\d{3,4}|hp\d{3,4})\b/);
+      if (figMatch) {
+        foundImg = "https://img.bricklink.com/ItemImage/MN/0/" + figMatch[1] + ".png";
+      } else if (setMatch) {
+        foundImg = "https://images.brickset.com/sets/images/" + setMatch[1] + "-1.jpg";
+      } else if (typeof LOCAL_LEGO_CATALOG !== 'undefined' && Array.isArray(LOCAL_LEGO_CATALOG)) {
+        for (var i = 0; i < LOCAL_LEGO_CATALOG.length; i++) {
+          var entry = LOCAL_LEGO_CATALOG[i];
+          if (entry.match && entry.match.some(function(m) { return lower.indexOf(m) !== -1; })) {
+            foundImg = entry.image || '';
+            break;
+          }
+        }
+      }
+      if (foundImg) {
+        document.getElementById('inputLootImg').value = foundImg;
+        updateLootImgPreview(foundImg);
+      } else {
+        alert("No built-in photo found for \"" + titleVal + "\". Try including the LEGO set number (e.g. 76280) or paste any image URL!");
+      }
+    }
+
     function openLootModal() {
       playSound('click');
       editingLootId = null;
@@ -3464,6 +3874,8 @@
       document.getElementById('inputLootTitle').value = "";
       document.getElementById('inputLootPrice').value = "";
       document.getElementById('inputLootCat').value = "LEGO Sets";
+      document.getElementById('inputLootImg').value = "";
+      updateLootImgPreview("");
 
       document.getElementById('lootModal').classList.remove('hidden');
     }
@@ -3483,6 +3895,9 @@
       document.getElementById('inputLootTitle').value = l.title || "";
       document.getElementById('inputLootPrice').value = l.price || 0;
       document.getElementById('inputLootCat').value = l.category || "Toys / General";
+      var media = resolveLootMedia(l);
+      document.getElementById('inputLootImg').value = l.image || media.image || "";
+      updateLootImgPreview(l.image || media.image || "");
 
       document.getElementById('lootModal').classList.remove('hidden');
     }
@@ -3537,8 +3952,9 @@
 
     function saveNewLoot() {
       var title = document.getElementById('inputLootTitle').value.trim();
-      var price = parseInt(document.getElementById('inputLootPrice').value) || 0;
+      var price = parseFloat(document.getElementById('inputLootPrice').value) || 0;
       var cat = document.getElementById('inputLootCat').value;
+      var img = sanitizeHttpUrl((document.getElementById('inputLootImg').value || '').trim(), '');
 
       if (!title || price <= 0) return alert("Please specify what was bought and a positive dollar cost!");
 
@@ -3552,6 +3968,7 @@
             appState.loot[i].title = title;
             appState.loot[i].price = price;
             appState.loot[i].category = cat;
+            appState.loot[i].image = img;
             appState.balance = Math.max(0, Math.round(((Number(appState.balance) || 0) - diff) * 100) / 100);
             break;
           }
@@ -3562,6 +3979,7 @@
           title: title,
           price: price,
           category: cat,
+          image: img,
           date: new Date().toISOString().split('T')[0]
         });
         appState.balance = Math.max(0, Math.round(((Number(appState.balance) || 0) - price) * 100) / 100);
