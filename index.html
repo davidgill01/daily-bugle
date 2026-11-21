@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="color-scheme" content="dark" />
   <title>Daily Bugle Bounty Board</title>
   
   <!-- Tailwind CSS -->
@@ -18,30 +20,170 @@
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      color-scheme: dark;
+      accent-color: #3b82f6;
+      --target-size: 24px;
+      scrollbar-color: #475569 #0b1120;
+    }
+    @media (pointer: coarse) {
+      :root { --target-size: 44px; }
+    }
+
+    html {
+      scroll-padding-top: calc(4.5rem + env(safe-area-inset-top, 0px));
+      scroll-padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
     .font-comic { font-family: 'Bangers', cursive; letter-spacing: 1px; }
     .font-body { font-family: 'Inter', sans-serif; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
     body {
       background-color: #0b1120;
       background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
       background-size: 24px 24px;
       touch-action: manipulation;
+      overflow-wrap: break-word;
+      padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
     }
-    .custom-scroll::-webkit-scrollbar { width: 6px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #0b1120; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    .pulse-glow { animation: pulseGlow 2.5s infinite; }
+
+    ::selection {
+      background-color: #2563eb;
+      color: #ffffff;
+    }
+
+    /* Typography balance & legibility */
+    h1, h2, h3, h4 { text-wrap: balance; }
+    p, li { text-wrap: pretty; }
+    :where(a, code) { overflow-wrap: anywhere; }
+    img, video { max-inline-size: 100%; block-size: auto; }
+
+    /* Form factor target sizing & UI chrome selection */
+    :where(button, select, textarea, input:not([type="checkbox"], [type="radio"]), [role="button"], nav a, label:has(input[type="checkbox"], input[type="radio"])) {
+      min-block-size: var(--target-size);
+      min-inline-size: var(--target-size);
+    }
+    :where(button, .key-btn, .filter-btn) {
+      user-select: none;
+    }
+    textarea {
+      field-sizing: content;
+      resize: vertical;
+      min-block-size: 4.5rem;
+    }
+    input:not([type="range"]):user-invalid,
+    textarea:user-invalid,
+    select:user-invalid {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 1px #ef4444;
+    }
+
+    /* High-contrast accessible focus ring & natural button feedback */
+    :where(button) {
+      transition: box-shadow 150ms ease-out, scale 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out;
+    }
+    button:not(:disabled):active {
+      scale: 0.97;
+    }
+    :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+      outline: 2px solid #60a5fa !important;
+      outline-offset: 3px;
+    }
+
+    /* Skip link for keyboard navigation */
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 1rem;
+      z-index: 100;
+      padding: 0.5rem 1rem;
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.75rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      transition: top 150ms ease-out;
+    }
+    .skip-link:focus {
+      top: 0.75rem;
+    }
+
+    /* Swipeable horizontal scrollers */
+    .snap-scroller {
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+    .snap-scroller > * {
+      scroll-snap-align: start;
+    }
+
+    /* Container query support for bounty cards */
+    .bounty-card-container {
+      container: bounty-card / inline-size;
+    }
+    @container bounty-card (inline-size > 26rem) {
+      .bounty-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    /* Interactive checklist step state styling via :has(:checked) */
+    .mission-step-label:has(input:checked) {
+      border-color: rgba(16, 185, 129, 0.65);
+      background-color: rgba(6, 78, 59, 0.25);
+      color: #a7f3d0;
+    }
+    .mission-step-label:has(input:checked) .mission-step-text {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    /* Scroll containment inside modal overlays */
+    .modal-overlay {
+      overscroll-behavior: contain;
+      overflow-y: auto;
+    }
+    .modal-panel {
+      overscroll-behavior: contain;
+    }
+
+    /* Ambient glow & reduced motion compliance */
+    @media (prefers-reduced-motion: no-preference) {
+      .pulse-glow { animation: pulseGlow 2.5s infinite; }
+    }
     @keyframes pulseGlow {
       0%, 100% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
       50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
     }
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        scroll-behavior: auto !important;
+      }
+      .animate-ping, .animate-pulse, .animate-bounce {
+        animation: none !important;
+      }
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none !important;
+      }
+    }
   </style>
 </head>
-<body class="text-slate-100 font-body min-h-screen pb-28 select-none">
+<body class="text-slate-100 font-body min-h-screen">
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
 
   <!-- TOP HEADER -->
-  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-3 flex justify-between items-center shadow-2xl">
+  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-3 flex justify-between items-center shadow-2xl" style="padding-top: max(0.75rem, env(safe-area-inset-top, 0px));">
     <div class="flex items-center gap-2.5 sm:gap-3">
-      <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic flex-shrink-0">
+      <div aria-hidden="true" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic flex-shrink-0">
         🕸️
       </div>
       <div>
@@ -51,16 +193,16 @@
         </h1>
         <div class="flex items-center gap-2 mt-1 flex-wrap">
           <!-- LIVE FIREBASE SYNC BADGE -->
-          <button id="syncStatusBtn" type="button" onclick="testCloudConnection()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition">
-            <span id="syncDot" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+          <button id="syncStatusBtn" type="button" onclick="testCloudConnection()" aria-live="polite" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition">
+            <span id="syncDot" aria-hidden="true" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
             <span id="syncText">Connecting to Google Cloud...</span>
           </button>
 
           <!-- VERSION & GITHUB CHANGELOG BADGE -->
           <button id="versionBadgeBtn" type="button" onclick="openChangelogModal()" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition" title="Click to view recent updates & PR changelog from GitHub">
-            <span class="text-amber-400">⚡</span>
-            <span id="versionText">v2.5 • Updated Nov 15</span>
-            <span class="text-[9px] text-blue-400 font-extrabold">📋</span>
+            <span aria-hidden="true" class="text-amber-400">⚡</span>
+            <span id="versionText">v2.6 • Updated Nov 20</span>
+            <span aria-hidden="true" class="text-[9px] text-blue-400 font-extrabold">📋</span>
           </button>
         </div>
       </div>
@@ -69,37 +211,37 @@
     <!-- USER & PARENT MODE BUTTONS -->
     <div class="flex items-center gap-2">
       <button id="authBtn" type="button" onclick="handleAuthAction()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl font-bold text-xs border transition-all flex items-center gap-1.5 bg-white text-slate-900 border-slate-200 hover:bg-slate-100 active:scale-95 shadow-md">
-        <svg id="googleLogoSvg" class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+        <svg id="googleLogoSvg" aria-hidden="true" class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
         </svg>
-        <span id="authIcon" class="hidden"></span>
+        <span id="authIcon" aria-hidden="true" class="hidden"></span>
         <span id="authText" class="font-extrabold whitespace-nowrap">Sign in with Google</span>
       </button>
 
       <button id="lockBtn" type="button" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl font-bold text-xs sm:text-sm border transition-all flex items-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-300 border-slate-700 active:scale-95 shadow-md">
-        <span id="lockIcon">🔒</span> 
+        <span id="lockIcon" aria-hidden="true">🔒</span> 
         <span id="lockText">Parent Unlock</span>
       </button>
     </div>
   </header>
 
   <!-- MAIN CONTAINER -->
-  <main class="max-w-4xl mx-auto px-4 pt-4">
+  <main id="mainContent" tabindex="-1" class="max-w-4xl mx-auto px-4 pt-4">
 
     <!-- SIGN-IN PROMPT BANNER (Shown when not authenticated) -->
     <div id="loginPromptBanner" class="mb-4 bg-gradient-to-r from-blue-950 via-slate-900 to-blue-950 border-2 border-blue-500 rounded-2xl p-3.5 text-xs text-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xl">
       <div class="flex items-center gap-3 text-center sm:text-left">
-        <span class="text-2xl">🕸️</span>
+        <span aria-hidden="true" class="text-2xl">🕸️</span>
         <div>
           <span class="font-black text-white text-sm block">Daily Bugle Family Cloud Sync</span>
           <span class="text-slate-300">Sign in with Google to sync David & Lucas's live bounties and LEGO progress.</span>
         </div>
       </div>
       <button type="button" onclick="firebaseGoogleSignIn()" class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-black rounded-xl text-xs flex items-center gap-2 shadow-md transition whitespace-nowrap active:scale-95">
-        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+        <svg aria-hidden="true" class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -110,9 +252,9 @@
     </div>
 
     <!-- UNAUTHORIZED USER WARNING BANNER -->
-    <div id="unauthorizedBanner" class="hidden mb-4 bg-red-950/80 border-2 border-red-500 rounded-2xl p-3.5 text-xs text-red-200 flex items-center justify-between gap-3 shadow-lg">
+    <div id="unauthorizedBanner" role="alert" class="hidden mb-4 bg-red-950/80 border-2 border-red-500 rounded-2xl p-3.5 text-xs text-red-200 flex items-center justify-between gap-3 shadow-lg">
       <div class="flex items-center gap-2">
-        <span class="text-xl">⛔</span>
+        <span aria-hidden="true" class="text-xl">⛔</span>
         <div>
           <span class="font-bold text-white block">Restricted Family Access</span>
           <span id="unauthorizedMsg">Signed in as guest. Only davidgill01@gmail.com and lucasrgill01@gmail.com are permitted to sync and edit.</span>
@@ -124,10 +266,10 @@
     </div>
 
     <!-- HERO SAVINGS PROGRESS HUD -->
-    <section class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-blue-600 rounded-3xl p-4 sm:p-5 mb-5 shadow-2xl relative overflow-hidden pulse-glow">
+    <section aria-labelledby="hudGoalTitle" class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-blue-600 rounded-3xl p-4 sm:p-5 mb-5 shadow-2xl relative overflow-hidden pulse-glow">
       <div class="flex flex-col sm:flex-row items-center gap-4">
         <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0 shadow-lg">
-          <img id="hudGoalImg" src="https://images.brickset.com/sets/images/76178-1.jpg" class="w-full h-full object-cover" alt="Dream Goal">
+          <img id="hudGoalImg" src="https://images.brickset.com/sets/images/76178-1.jpg" fetchpriority="high" width="112" height="112" class="w-full h-full object-cover" alt="Current Target LEGO Goal">
           <span class="absolute bottom-0 inset-x-0 bg-red-600 text-[10px] font-black text-center text-white py-0.5 tracking-wider">
             PRIMARY TARGET
           </span>
@@ -136,9 +278,9 @@
         <div class="flex-1 w-full text-center sm:text-left">
           <div class="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-2">
             <div>
-              <div class="flex items-center gap-2 justify-center sm:justify-start">
+              <div class="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                 <span class="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
-                  <span>🎯</span> Currently Saving For
+                  <span aria-hidden="true">🎯</span> Currently Saving For
                 </span>
                 <button type="button" onclick="editCurrentTargetWish()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700 transition" title="Edit Target Toy">
                   ✏️ Edit Toy
@@ -148,15 +290,15 @@
                 </button>
               </div>
               <h2 id="hudGoalTitle" class="text-xl sm:text-2xl font-black text-white leading-tight mt-0.5">LEGO Daily Bugle (76178)</h2>
-              <div class="text-[11px] text-slate-400 font-semibold mt-1">
+              <div class="text-[11px] text-slate-400 font-semibold mt-1 tabular-nums">
                 Earned: <span id="hudEarnedAmt" class="text-green-400 font-bold">$0</span> • Spent: <span id="hudSpentAmt" class="text-red-400 font-bold">$0</span>
               </div>
             </div>
             
-            <div class="text-center sm:text-right bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
+            <div class="text-center sm:text-right bg-slate-950/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-md" aria-live="polite">
               <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">Available Balance</span>
-              <span id="hudCashTotal" onclick="adjustBalanceParent()" class="text-2xl sm:text-3xl font-black text-blue-400 font-comic tracking-wide leading-none my-0.5 cursor-pointer" title="Tap in Parent Mode to edit">$5.00</span>
-              <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1 animate-pulse">
+              <button id="hudCashTotal" type="button" onclick="adjustBalanceParent()" class="text-2xl sm:text-3xl font-black text-blue-400 hover:text-blue-300 font-comic tracking-wide leading-none my-0.5 cursor-pointer tabular-nums bg-transparent border-0 p-0" title="Tap in Parent Mode to adjust balance">$5.00</button>
+              <div id="hudPendingBadge" class="hidden text-[10px] font-extrabold text-amber-400 bg-amber-950/70 border border-amber-800/80 px-2 py-0.5 rounded-full mt-1 animate-pulse tabular-nums">
                 ⏳ <span id="hudPendingAmt">$0</span> under review
               </div>
             </div>
@@ -164,12 +306,12 @@
 
           <!-- PROGRESS BAR -->
           <div class="mt-3">
-            <div class="w-full bg-slate-950 rounded-full h-6 border border-slate-700 p-0.5 relative overflow-hidden shadow-inner">
+            <div id="hudProgressTrack" role="progressbar" aria-label="Savings goal progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="w-full bg-slate-950 rounded-full h-6 border border-slate-700 p-0.5 relative overflow-hidden shadow-inner">
               <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-500 relative" style="width: 0%;">
                 <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
-            <div class="flex justify-between items-center text-xs font-bold mt-1.5 text-slate-400 px-1">
+            <div class="flex justify-between items-center text-xs font-bold mt-1.5 text-slate-400 px-1 tabular-nums">
               <span id="hudProgressRatio">$0 of $100</span>
               <span id="hudRemainingText" class="text-slate-400 font-medium">$100 needed</span>
               <span id="hudProgressPercent" class="text-blue-400 font-black">0% Complete</span>
@@ -180,8 +322,8 @@
     </section>
 
     <!-- NAVIGATION TABS -->
-    <div class="flex gap-2 border-b border-slate-800 pb-2 mb-4 overflow-x-auto">
-      <button id="tabBounties" type="button" class="px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap">
+    <nav aria-label="Primary Views" class="flex gap-2 border-b border-slate-800 pb-2 mb-4 overflow-x-auto snap-scroller">
+      <button id="tabBounties" type="button" aria-current="page" class="px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap">
         <span>📋 Bounty Board</span>
       </button>
       <button id="tabWishlist" type="button" class="px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
@@ -190,27 +332,27 @@
       <button id="tabLoot" type="button" class="px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap">
         <span>📦 Loot & Spent</span>
       </button>
-    </div>
+    </nav>
 
     <!-- VIEW 1: BOUNTIES BOARD -->
     <div id="viewBounties">
       <!-- CATEGORY & STATUS FILTERS -->
-      <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 text-xs custom-scroll">
-        <button onclick="setFilter('all')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-blue-600 text-white border-blue-500 whitespace-nowrap" data-filter="all">All Bounties</button>
-        <button onclick="setFilter('open')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="open">★ Available</button>
-        <button onclick="setFilter('review')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="review">⏳ Under Review</button>
-        <button onclick="setFilter('completed')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="completed">✓ Completed</button>
-        <button onclick="setFilter('purchased')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="purchased">🛒 Purchased</button>
-        <button onclick="setFilter('Yard & Garden')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Yard & Garden">🌿 Yard & Garden</button>
-        <button onclick="setFilter('DIY & Repairs')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="DIY & Repairs">🔧 DIY & Repairs</button>
-        <button onclick="setFilter('Cleaning & Tidy')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Cleaning & Tidy">🧹 Cleaning & Tidy</button>
-        <button onclick="setFilter('Helping Hand')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Helping Hand">🤝 Helping Hand</button>
-        <button onclick="setFilter('Secret Project')" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Secret Project">🕵️‍♂️ Secret Project</button>
+      <div id="bountyFilters" role="toolbar" aria-label="Filter bounties by status or category" class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 text-xs custom-scroll snap-scroller">
+        <button type="button" onclick="setFilter('all')" aria-pressed="true" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-blue-600 text-white border-blue-500 whitespace-nowrap" data-filter="all">All Bounties</button>
+        <button type="button" onclick="setFilter('open')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="open">★ Available</button>
+        <button type="button" onclick="setFilter('review')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="review">⏳ Under Review</button>
+        <button type="button" onclick="setFilter('completed')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="completed">✓ Completed</button>
+        <button type="button" onclick="setFilter('purchased')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="purchased">🛒 Purchased</button>
+        <button type="button" onclick="setFilter('Yard & Garden')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Yard & Garden">🌿 Yard & Garden</button>
+        <button type="button" onclick="setFilter('DIY & Repairs')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="DIY & Repairs">🔧 DIY & Repairs</button>
+        <button type="button" onclick="setFilter('Cleaning & Tidy')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Cleaning & Tidy">🧹 Cleaning & Tidy</button>
+        <button type="button" onclick="setFilter('Helping Hand')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Helping Hand">🤝 Helping Hand</button>
+        <button type="button" onclick="setFilter('Secret Project')" aria-pressed="false" class="filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap" data-filter="Secret Project">🕵️‍♂️ Secret Project</button>
       </div>
 
       <div class="flex justify-between items-center mb-3">
         <div>
-          <h3 class="text-lg font-black text-slate-200">Bounty Tasks</h3>
+          <h3 id="headingBounties" tabindex="-1" class="text-lg font-black text-slate-200">Bounty Tasks</h3>
           <p class="text-xs text-slate-400">Tap any mission card to inspect tools, instructions, and checklist.</p>
         </div>
         <button id="newChoreBtn" type="button" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl items-center gap-1.5 shadow-lg active:scale-95 transition">
@@ -225,7 +367,7 @@
     <div id="viewWishlist" style="display:none;">
       <div class="flex justify-between items-center mb-4">
         <div>
-          <h3 class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
+          <h3 id="headingWishlist" tabindex="-1" class="text-lg font-black text-slate-200">Top 10 Dream Rewards</h3>
           <p class="text-xs text-slate-400">Rank goals using the arrows. Tap "Make Target" to power your savings progress bar!</p>
         </div>
         <button id="addWishBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-lg active:scale-95 transition">
@@ -239,12 +381,12 @@
     <div id="viewLoot" style="display:none;">
       <div class="flex justify-between items-center mb-4">
         <div>
-          <h3 class="text-lg font-black text-slate-200">Purchased Loot & Cash Spent</h3>
+          <h3 id="headingLoot" tabindex="-1" class="text-lg font-black text-slate-200">Purchased Loot & Cash Spent</h3>
           <p class="text-xs text-slate-400">All purchased sets and rewards. Automatically deducted from available earnings.</p>
         </div>
         <div class="flex gap-2">
           <button id="clearLootBtn" type="button" onclick="clearLootVault()" class="hidden px-3 py-2 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 font-bold text-xs rounded-xl items-center gap-1 transition">
-            <span>🗑️</span> Reset Spent Cash
+            <span aria-hidden="true">🗑️</span> Reset Spent Cash
           </button>
           <button id="addLootBtn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 shadow-lg active:scale-95 transition">
             <span>＋ I Bought Something!</span>
@@ -257,13 +399,13 @@
   </main>
 
   <!-- MODAL: PARENT PIN KEYPAD -->
-  <div id="pinModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
-      <div class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+  <div id="pinModal" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle" onclick="if(event.target===this)closePin()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-xs rounded-3xl p-6 text-center shadow-2xl">
+      <div aria-hidden="true" class="w-12 h-12 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
         🛡️
       </div>
-      <h3 class="text-lg font-black text-white mb-0.5">Parent Security</h3>
-      <p class="text-xs text-slate-400 mb-2">Enter PIN (Default: 1234)</p>
+      <h3 id="pinModalTitle" class="text-lg font-black text-white mb-0.5">Parent Security</h3>
+      <label for="pinDisplay" class="text-xs text-slate-400 mb-2 block">Enter PIN (Default: 1234)</label>
       
       <div class="flex flex-col items-center justify-center mb-4">
         <input id="pinDisplay" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="••••" class="w-36 text-center tracking-widest text-2xl font-black bg-slate-950 border-2 border-slate-700 focus:border-blue-500 rounded-xl py-2 text-white focus:outline-none transition shadow-inner" />
@@ -289,20 +431,20 @@
   </div>
 
   <!-- MODAL: CHANGELOG & GITHUB UPDATES -->
-  <div id="changelogModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl max-h-[85vh] flex flex-col">
+  <div id="changelogModal" role="dialog" aria-modal="true" aria-labelledby="changelogModalTitle" onclick="if(event.target===this)closeChangelogModal()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl max-h-[85vh] flex flex-col">
       <!-- HEADER -->
       <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-800 flex-shrink-0">
         <div class="flex items-center gap-2.5">
-          <div class="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-blue-500/30">
+          <div aria-hidden="true" class="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl font-bold flex-shrink-0 border border-blue-500/30">
             ⚡
           </div>
           <div>
-            <h3 class="text-base sm:text-lg font-black text-white leading-tight">Daily Bugle Updates & PRs</h3>
-            <p id="changelogStatus" class="text-[11px] text-slate-400 mt-0.5">Fetching latest changes from GitHub...</p>
+            <h3 id="changelogModalTitle" class="text-base sm:text-lg font-black text-white leading-tight">Daily Bugle Updates & PRs</h3>
+            <p id="changelogStatus" aria-live="polite" class="text-[11px] text-slate-400 mt-0.5">Fetching latest changes from GitHub...</p>
           </div>
         </div>
-        <button type="button" onclick="closeChangelogModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition">
+        <button type="button" aria-label="Close Updates Changelog" onclick="closeChangelogModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition">
           ✕
         </button>
       </div>
@@ -310,11 +452,11 @@
       <!-- ACTION BAR -->
       <div class="flex items-center justify-between gap-2 py-2.5 border-b border-slate-800/80 flex-shrink-0 text-xs">
         <button type="button" onclick="fetchGitHubChangelog(true)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 font-bold rounded-lg border border-slate-700 flex items-center gap-1 transition">
-          <span id="changelogRefreshIcon">🔄</span> Refresh
+          <span id="changelogRefreshIcon" aria-hidden="true">🔄</span> Refresh
         </button>
         <a href="https://github.com/davidgill01/daily-bugle" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 font-bold rounded-lg border border-blue-500/40 flex items-center gap-1 transition">
           <span>GitHub Repo</span>
-          <span>↗</span>
+          <span aria-hidden="true">↗</span>
         </a>
       </div>
 
@@ -333,8 +475,8 @@
   </div>
 
   <!-- MODAL: DETAILED MISSION BRIEFING (FOR LUCAS) -->
-  <div id="missionModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
+  <div id="missionModal" role="dialog" aria-modal="true" aria-labelledby="mTitle" onclick="if(event.target===this)closeMission()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto custom-scroll">
       
       <!-- HEADER -->
       <div class="flex justify-between items-start mb-3">
@@ -348,28 +490,31 @@
           <h3 id="mTitle" class="text-xl font-black text-white mt-1.5"></h3>
           <p id="mLoc" class="text-xs text-slate-400 mt-0.5"></p>
         </div>
-        <div id="mReward" class="text-2xl font-black font-comic text-blue-400 flex-shrink-0"></div>
+        <div id="mReward" class="text-2xl font-black font-comic text-blue-400 flex-shrink-0 tabular-nums"></div>
       </div>
 
       <!-- TOOLS NEEDED -->
       <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3.5 mb-4 shadow-inner">
         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <span>🧰</span> Equipment & Supplies Needed
+          <span aria-hidden="true">🧰</span> Equipment & Supplies Needed
         </h4>
         <div id="mTools" class="flex flex-wrap gap-1.5"></div>
       </div>
 
       <!-- INTERACTIVE STEPS -->
       <div class="mb-4">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <span>📋</span> Mission Checklist (Tap as you complete!)
-        </h4>
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span aria-hidden="true">📋</span> Mission Checklist (Tap as you complete!)
+          </h4>
+          <span id="mStepProgress" class="text-[10px] font-extrabold text-emerald-400 bg-emerald-950/70 border border-emerald-800/80 px-2 py-0.5 rounded-full tabular-nums"></span>
+        </div>
         <div id="mSteps" class="space-y-2"></div>
       </div>
 
       <!-- SAFETY TIP -->
       <div class="bg-red-950/40 border border-red-800/60 rounded-xl p-3 mb-5 text-xs text-red-300 flex items-start gap-2 shadow-md">
-        <span class="text-red-400 text-base">⚠️</span>
+        <span aria-hidden="true" class="text-red-400 text-base">⚠️</span>
         <div>
           <span class="font-bold text-red-300 block mb-0.5">Hero Safety Rule:</span>
           <span id="mSafety"></span>
@@ -382,10 +527,10 @@
           Back
         </button>
         <button type="button" onclick="editActiveMission()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-bold text-xs text-slate-200 rounded-xl transition flex items-center gap-1">
-          <span>✏️</span> Edit Job
+          <span aria-hidden="true">✏️</span> Edit Job
         </button>
         <button id="mMissionBuyBtn" type="button" onclick="buyActiveMission()" class="hidden px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl shadow-lg transition flex items-center gap-1" title="Mark this item as purchased and log under Loot & Spent">
-          <span>🛒</span> Mark Purchased
+          <span aria-hidden="true">🛒</span> Mark Purchased
         </button>
         <button id="finishMissionBtn" type="button" onclick="confirmMissionFinish()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg transition">
           I Finished This!
@@ -395,19 +540,19 @@
   </div>
 
   <!-- MODAL: POST OR EDIT BOUNTY WITH SMART AI GENERATOR -->
-  <div id="choreModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
+  <div id="choreModal" role="dialog" aria-modal="true" aria-labelledby="choreModalTitle" onclick="if(event.target===this)closeChoreModal()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-lg rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex justify-between items-center mb-2">
         <h3 id="choreModalTitle" class="text-lg font-black text-white">Post New Daily Bugle Bounty</h3>
-        <button type="button" onclick="closeChoreModal()" class="text-red-400 text-xl font-bold">✕</button>
+        <button type="button" aria-label="Close Bounty Form" onclick="closeChoreModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 flex items-center justify-center text-base font-bold transition">✕</button>
       </div>
       <p class="text-xs text-slate-400 mb-3">Type any chore name (e.g. <em>"wash the dog"</em>, <em>"build a shelf"</em>, <em>"clean car"</em>) and tap <strong>AI Plan</strong> to fill the steps, tools, and duration automatically!</p>
       
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Chore Name</label>
+          <label for="inputChoreTitle" class="text-xs text-slate-400 block mb-1">Chore Name</label>
           <div class="flex gap-2">
-            <input id="inputChoreTitle" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Wash the dog, build a shelf, rake yard" />
+            <input id="inputChoreTitle" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Wash the dog, build a shelf, rake yard" />
             <button id="btnAiPlan" type="button" onclick="runAiPlan()" class="px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md whitespace-nowrap active:scale-95 transition">
               ✨ AI Plan
             </button>
@@ -416,11 +561,11 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Bounty Reward ($)</label>
-            <input id="inputChoreReward" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="5" />
+            <label for="inputChoreReward" class="text-xs text-slate-400 block mb-1">Bounty Reward ($)</label>
+            <input id="inputChoreReward" type="number" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-blue-500 tabular-nums" placeholder="5" />
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Category</label>
+            <label for="inputChoreCategory" class="text-xs text-slate-400 block mb-1">Category</label>
             <select id="inputChoreCategory" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
               <option value="Yard & Garden">🌿 Yard & Garden</option>
               <option value="DIY & Repairs">🔧 DIY & Repairs</option>
@@ -430,7 +575,7 @@
             </select>
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">🔁 Recurrence</label>
+            <label for="inputChoreRecurrence" class="text-xs text-slate-400 block mb-1">🔁 Recurrence</label>
             <select id="inputChoreRecurrence" class="w-full bg-slate-950 border border-amber-600/70 rounded-xl p-2.5 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-400">
               <option value="none">🎯 One-Time Bounty</option>
               <option value="daily">🔁 Daily (Resets each morning)</option>
@@ -442,7 +587,7 @@
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Status</label>
+            <label for="inputChoreStatus" class="text-xs text-slate-400 block mb-1">Status</label>
             <select id="inputChoreStatus" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
               <option value="open">★ Open</option>
               <option value="review">⏳ In Review</option>
@@ -450,11 +595,11 @@
             </select>
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Estimated Time</label>
+            <label for="inputChoreDuration" class="text-xs text-slate-400 block mb-1">Estimated Time</label>
             <input id="inputChoreDuration" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="20 mins" />
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Difficulty</label>
+            <label for="inputChoreDifficulty" class="text-xs text-slate-400 block mb-1">Difficulty</label>
             <select id="inputChoreDifficulty" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none">
               <option value="⭐ Easy">⭐ Easy</option>
               <option value="⭐⭐ Medium">⭐⭐ Medium</option>
@@ -462,23 +607,23 @@
             </select>
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Location</label>
+            <label for="inputChoreLoc" class="text-xs text-slate-400 block mb-1">Location</label>
             <input id="inputChoreLoc" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="Backyard" />
           </div>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Tools & Supplies (Comma separated)</label>
+          <label for="inputChoreTools" class="text-xs text-slate-400 block mb-1">Tools & Supplies (Comma separated)</label>
           <input id="inputChoreTools" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="e.g. Dog shampoo, 2 dry towels, brush" />
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Step-by-Step Instructions (One per line)</label>
+          <label for="inputChoreSteps" class="text-xs text-slate-400 block mb-1">Step-by-Step Instructions (One per line)</label>
           <textarea id="inputChoreSteps" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="Brush coat gently&#10;Lather with warm water&#10;Dry thoroughly"></textarea>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Hero Safety Tip</label>
+          <label for="inputChoreSafety" class="text-xs text-slate-400 block mb-1">Hero Safety Tip</label>
           <input id="inputChoreSafety" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="Keep water warm, never hot; avoid eyes and ears." />
         </div>
       </div>
@@ -491,21 +636,21 @@
   </div>
 
   <!-- MODAL: ADD OR EDIT WISHLIST REWARD WITH BRICKOWL & MINIFIG FINDER -->
-  <div id="wishModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
+  <div id="wishModal" role="dialog" aria-modal="true" aria-labelledby="wishModalTitle" onclick="if(event.target===this)closeWishModal()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-md rounded-3xl p-5 shadow-2xl max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex justify-between items-center mb-1">
         <h3 id="wishModalTitle" class="text-lg font-black text-white">Add Dream Reward</h3>
-        <button type="button" onclick="closeWishModal()" class="text-red-400 text-lg font-bold">✕</button>
+        <button type="button" aria-label="Close Dream Reward Form" onclick="closeWishModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 flex items-center justify-center text-base font-bold transition">✕</button>
       </div>
       <p class="text-xs text-slate-400 mb-3">Search any <strong>LEGO Minifigure</strong>, <strong>Set</strong>, or ID (e.g. <em>"Carnage minifig"</em>, <em>"Daredevil"</em>, <em>"sh0723"</em>, <em>"76178"</em>) and hit <strong>Auto-Complete</strong> to fetch BrickOwl / BrickLink photos & links!</p>
 
       <!-- AI AUTO COMPLETE SEARCH INPUT -->
       <div class="mb-3 bg-slate-950 border border-slate-800 rounded-2xl p-3 shadow-inner">
-        <label class="text-xs font-bold text-slate-300 block mb-1">BrickOwl / Minifig & Set Lookup</label>
+        <label for="inputLegoSearch" class="text-xs font-bold text-slate-300 block mb-1">BrickOwl / Minifig & Set Lookup</label>
         <div class="flex gap-2">
           <input id="inputLegoSearch" onkeydown="if(event.key==='Enter'){event.preventDefault();runAiLegoFinder();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-medium" placeholder="e.g. Venom minifig, Green Goblin, sh0724, 76178" />
           <button id="btnAiLegoFetch" type="button" onclick="runAiLegoFinder()" class="px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-bold text-xs text-white rounded-xl shadow-md whitespace-nowrap active:scale-95 transition flex items-center gap-1">
-            <span>✨</span> Auto-Complete
+            <span aria-hidden="true">✨</span> Auto-Complete
           </button>
         </div>
         <!-- CANDIDATE PHOTO / ITEM PICKER -->
@@ -519,7 +664,7 @@
 
       <!-- QUICK PRESETS -->
       <div class="mb-3">
-        <label class="text-xs text-slate-400 block mb-1.5 font-bold">Quick Presets (Sets & Minifigs)</label>
+        <span class="text-xs text-slate-400 block mb-1.5 font-bold">Quick Presets (Sets & Minifigs)</span>
         <div class="flex flex-wrap gap-1.5">
           <button type="button" onclick="pickPreset('LEGO Daily Bugle (76178)', 100, 'https://images.brickset.com/sets/images/76178-1.jpg', 'https://www.brickowl.com/search/catalog?query=76178', 'Epic 3,772-piece Spider-Man tower with 25 minifigures.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Daily Bugle ($100)</button>
           <button type="button" onclick="pickPreset('Spider-Man Final Battle (76261)', 105, 'https://images.brickset.com/sets/images/76261-1.jpg', 'https://www.brickowl.com/search/catalog?query=76261', 'Statue of Liberty head 360-degree battle scene with 9 minifigures.')" class="text-[10px] bg-slate-800 hover:bg-blue-600 text-white px-2 py-1 rounded-lg border border-slate-700">Final Battle ($105)</button>
@@ -532,31 +677,31 @@
       <!-- FORM FIELDS -->
       <div class="space-y-2.5">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Reward / Toy Name</label>
-          <input id="inputWishTitle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold" placeholder="e.g. LEGO Carnage Minifigure or Daily Bugle" />
+          <label for="inputWishTitle" class="text-xs text-slate-400 block mb-1">Reward / Toy Name</label>
+          <input id="inputWishTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold" placeholder="e.g. LEGO Carnage Minifigure or Daily Bugle" />
         </div>
 
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
-            <input id="inputWishPrice" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold" placeholder="100" />
+            <label for="inputWishPrice" class="text-xs text-slate-400 block mb-1">Target Price ($)</label>
+            <input id="inputWishPrice" type="number" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-bold tabular-nums" placeholder="100" />
           </div>
           <div>
-            <label class="text-xs text-slate-400 block mb-1">Preview Image</label>
+            <label for="inputWishImg" class="text-xs text-slate-400 block mb-1">Preview Image</label>
             <div class="flex items-center gap-2">
-              <img id="inputWishImgPreview" src="https://images.brickset.com/sets/images/76178-1.jpg" onerror="handleLegoImgError(this)" class="w-10 h-10 rounded-lg object-contain border border-slate-700 bg-slate-950 flex-shrink-0 p-0.5" alt="Preview" />
-              <input id="inputWishImg" oninput="document.getElementById('inputWishImgPreview').src = this.value || 'https://images.brickset.com/sets/images/76178-1.jpg'" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-[11px] text-white focus:outline-none" placeholder="Image URL" />
+              <img id="inputWishImgPreview" src="https://images.brickset.com/sets/images/76178-1.jpg" fetchpriority="low" width="40" height="40" onerror="handleLegoImgError(this)" class="w-10 h-10 rounded-lg object-contain border border-slate-700 bg-slate-950 flex-shrink-0 p-0.5" alt="Selected reward thumbnail preview" />
+              <input id="inputWishImg" type="url" oninput="document.getElementById('inputWishImgPreview').src = this.value || 'https://images.brickset.com/sets/images/76178-1.jpg'" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-[11px] text-white focus:outline-none" placeholder="Image URL" />
             </div>
           </div>
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">BrickOwl / Store Link</label>
-          <input id="inputWishUrl" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="https://www.brickowl.com/search/catalog?query=..." />
+          <label for="inputWishUrl" class="text-xs text-slate-400 block mb-1">BrickOwl / Store Link</label>
+          <input id="inputWishUrl" type="url" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="https://www.brickowl.com/search/catalog?query=..." />
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Description / Notes</label>
+          <label for="inputWishDesc" class="text-xs text-slate-400 block mb-1">Description / Notes</label>
           <textarea id="inputWishDesc" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2 text-xs text-slate-300 focus:outline-none" placeholder="Key minifigures, piece count, or why Lucas wants this toy!"></textarea>
         </div>
       </div>
@@ -569,25 +714,25 @@
   </div>
 
   <!-- MODAL: LOG OR EDIT PURCHASE (SPENDING DEDUCTION) -->
-  <div id="lootModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+  <div id="lootModal" role="dialog" aria-modal="true" aria-labelledby="lootModalTitle" onclick="if(event.target===this)closeLootModal()" class="modal-overlay fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="modal-panel bg-slate-900 border-2 border-blue-500 w-full max-w-sm rounded-3xl p-5 shadow-2xl">
       <div class="flex justify-between items-center mb-2">
         <h3 id="lootModalTitle" class="text-lg font-black text-white">Log Spent Money</h3>
-        <button type="button" onclick="closeLootModal()" class="text-red-400 text-lg font-bold">✕</button>
+        <button type="button" aria-label="Close Log Spent Money Form" onclick="closeLootModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-red-400 hover:text-red-300 flex items-center justify-center text-base font-bold transition">✕</button>
       </div>
       <p class="text-xs text-slate-400 mb-3">Record or edit what was purchased. This keeps his savings bank balance accurate.</p>
 
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-slate-400 block mb-1">What did he buy?</label>
-          <input id="inputLootTitle" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="e.g. Venom LEGO Set, Minifigures pack" />
+          <label for="inputLootTitle" class="text-xs text-slate-400 block mb-1">What did he buy?</label>
+          <input id="inputLootTitle" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="e.g. Venom LEGO Set, Minifigures pack" />
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Cost ($)</label>
-          <input id="inputLootPrice" type="number" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none" placeholder="20" />
+          <label for="inputLootPrice" class="text-xs text-slate-400 block mb-1">Cost ($)</label>
+          <input id="inputLootPrice" type="number" min="1" required class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none tabular-nums" placeholder="20" />
         </div>
         <div>
-          <label class="text-xs text-slate-400 block mb-1">Category</label>
+          <label for="inputLootCat" class="text-xs text-slate-400 block mb-1">Category</label>
           <select id="inputLootCat" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none">
             <option value="LEGO Sets">🧱 LEGO Sets</option>
             <option value="Minifigures">🦸 Minifigures</option>
@@ -903,6 +1048,7 @@
 
           if (shouldReset) {
             b.status = 'open';
+            b.checkedSteps = [];
             changed = true;
           }
         }
@@ -915,6 +1061,7 @@
       for (var i = 0; i < appState.bounties.length; i++) {
         if (appState.bounties[i].id === id) {
           appState.bounties[i].status = 'open';
+          appState.bounties[i].checkedSteps = [];
           break;
         }
       }
@@ -2014,8 +2161,60 @@
     }
 
     // -------------------------------------------------------------
-    // 6. MAIN RENDER ENGINE
+    // 6. MAIN RENDER ENGINE & SECURITY HELPERS
     // -------------------------------------------------------------
+    function formatCurrency(val) {
+      var n = Number(val) || 0;
+      return (n % 1 === 0) ? ("$" + n + ".00") : ("$" + n.toFixed(2));
+    }
+
+    function sanitizeHttpUrl(rawUrl, fallbackUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return fallbackUrl || '';
+      try {
+        var parsed = new URL(rawUrl.trim(), window.location.origin);
+        if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+          return parsed.href;
+        }
+      } catch (e) {}
+      return fallbackUrl || '';
+    }
+
+    function updateFilterCounts() {
+      var counts = { all: 0, open: 0, review: 0, completed: 0, purchased: 0 };
+      var bounties = appState.bounties || [];
+      counts.all = bounties.length;
+      for (var i = 0; i < bounties.length; i++) {
+        var st = bounties[i].status;
+        if (st === 'open' || st === 'review') counts.open++;
+        if (st === 'review') counts.review++;
+        if (st === 'completed') counts.completed++;
+        if (st === 'purchased') counts.purchased++;
+      }
+      var labels = {
+        all: "All Bounties (" + counts.all + ")",
+        open: "★ Available (" + counts.open + ")",
+        review: "⏳ Under Review" + (counts.review > 0 ? " (" + counts.review + ")" : ""),
+        completed: "✓ Completed (" + counts.completed + ")",
+        purchased: "🛒 Purchased" + (counts.purchased > 0 ? " (" + counts.purchased + ")" : "")
+      };
+      var btns = document.querySelectorAll('.filter-btn');
+      for (var j = 0; j < btns.length; j++) {
+        var f = btns[j].getAttribute('data-filter');
+        if (labels[f]) {
+          btns[j].textContent = labels[f];
+        }
+        var isActive = f === currentFilter;
+        btns[j].setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        if (isActive) {
+          btns[j].className = "filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-blue-600 text-white border-blue-500 whitespace-nowrap shadow-sm";
+        } else if (f === 'review' && counts.review > 0) {
+          btns[j].className = "filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-amber-950/80 text-amber-300 border-amber-600/80 hover:text-white whitespace-nowrap";
+        } else {
+          btns[j].className = "filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap";
+        }
+      }
+    }
+
     function renderAll() {
       var totalEarned = 0;
       var totalPending = 0;
@@ -2047,11 +2246,11 @@
         }
       }
 
-      var goalCost = activeGoal ? activeGoal.price : 100;
-      var pct = Math.min(100, Math.round((availableBalance / goalCost) * 100));
-      var needed = Math.max(0, goalCost - availableBalance);
+      var goalCost = activeGoal ? (Number(activeGoal.price) || 100) : 100;
+      var pct = Math.min(100, Math.max(0, Math.round((availableBalance / goalCost) * 100)));
+      var needed = Math.max(0, Math.round((goalCost - availableBalance) * 100) / 100);
 
-      document.getElementById('hudCashTotal').textContent = "$" + availableBalance + ".00";
+      document.getElementById('hudCashTotal').textContent = formatCurrency(availableBalance);
       document.getElementById('hudEarnedAmt').textContent = "$" + totalEarned;
       document.getElementById('hudSpentAmt').textContent = "$" + totalSpent;
 
@@ -2059,17 +2258,23 @@
       if (pBadge) {
         if (totalPending > 0) {
           pBadge.classList.remove('hidden');
-          document.getElementById('hudPendingAmt').textContent = "$" + totalPending + ".00";
+          document.getElementById('hudPendingAmt').textContent = formatCurrency(totalPending);
         } else {
           pBadge.classList.add('hidden');
         }
       }
 
+      var progressTrack = document.getElementById('hudProgressTrack');
+      if (progressTrack) {
+        progressTrack.setAttribute('aria-valuenow', String(pct));
+      }
+
       if (activeGoal) {
         document.getElementById('hudGoalTitle').textContent = activeGoal.title;
-        if (activeGoal.image) document.getElementById('hudGoalImg').src = activeGoal.image;
+        var safeGoalImg = sanitizeHttpUrl(activeGoal.image, "https://images.brickset.com/sets/images/76178-1.jpg");
+        if (safeGoalImg) document.getElementById('hudGoalImg').src = safeGoalImg;
         document.getElementById('hudProgressRatio').textContent = "$" + availableBalance + " of $" + goalCost;
-        document.getElementById('hudRemainingText').textContent = "$" + needed + " needed";
+        document.getElementById('hudRemainingText').textContent = needed > 0 ? ("$" + needed + " needed") : "Ready to buy!";
         document.getElementById('hudProgressPercent').textContent = pct + "% Complete";
         document.getElementById('hudProgressBar').style.width = pct + "%";
 
@@ -2077,17 +2282,17 @@
         if (hudBuyBtn) {
           if (activeGoal.status === 'purchased') {
             hudBuyBtn.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800 transition flex items-center gap-1";
-            hudBuyBtn.innerHTML = "✓ Purchased!";
+            hudBuyBtn.textContent = "✓ Purchased!";
             hudBuyBtn.title = "Goal already purchased! View in Loot & Spent";
             hudBuyBtn.onclick = function() { switchTab('loot'); };
           } else {
             if (availableBalance >= goalCost && goalCost > 0) {
               hudBuyBtn.className = "text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black shadow-lg animate-pulse transition flex items-center gap-1 active:scale-95";
-              hudBuyBtn.innerHTML = "🎉 Goal Reached! Buy";
+              hudBuyBtn.textContent = "🎉 Goal Reached! Buy";
               hudBuyBtn.title = "Lucas has saved enough money! Mark as purchased!";
             } else {
               hudBuyBtn.className = "text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-1 active:scale-95";
-              hudBuyBtn.innerHTML = "🛒 Mark Purchased";
+              hudBuyBtn.textContent = "🛒 Mark Purchased";
               hudBuyBtn.title = "Mark this goal as purchased and log to Loot & Spent";
             }
             hudBuyBtn.onclick = function() { buyCurrentTargetWish(); };
@@ -2095,6 +2300,7 @@
         }
       }
 
+      updateFilterCounts();
       renderBounties();
       renderWishlist();
       renderLoot();
@@ -2103,18 +2309,22 @@
     // RENDER BOUNTIES BOARD
     function renderBounties() {
       var container = document.getElementById('choreList');
-      container.innerHTML = "";
+      container.textContent = "";
 
       var filtered = appState.bounties.filter(function(b) {
         if (currentFilter === 'all') return true;
         if (currentFilter === 'open') return b.status === 'open' || b.status === 'review';
+        if (currentFilter === 'review') return b.status === 'review';
         if (currentFilter === 'completed') return b.status === 'completed';
         if (currentFilter === 'purchased') return b.status === 'purchased';
         return b.category === currentFilter;
       });
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="col-span-full py-8 text-center text-slate-500 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800">No bounties found in this category.</div>';
+        var emptyEl = document.createElement('div');
+        emptyEl.className = "col-span-full py-8 text-center text-slate-400 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800";
+        emptyEl.textContent = "No bounties found in this category.";
+        container.appendChild(emptyEl);
         return;
       }
 
@@ -2124,8 +2334,8 @@
           var isReview = b.status === 'review';
           var isPurchased = b.status === 'purchased';
 
-          var card = document.createElement('div');
-          card.className = "bg-slate-900 border-2 " + 
+          var card = document.createElement('article');
+          card.className = "bounty-card-container bg-slate-900 border-2 " + 
             (isPurchased ? "border-emerald-700/60 bg-emerald-950/20" : isDone ? "border-slate-800 bg-slate-900/50" : isReview ? "border-amber-500/80 shadow-amber-900/20 shadow-lg" : "border-slate-800 hover:border-blue-500") + 
             " rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-xl transition-all";
 
@@ -2134,7 +2344,7 @@
           topWrapper.onclick = function() { openMissionModal(b.id); };
 
           var badgeRow = document.createElement('div');
-          badgeRow.className = "flex justify-between items-start mb-2.5";
+          badgeRow.className = "flex justify-between items-start gap-2 mb-2.5";
 
           var leftBadges = document.createElement('div');
           leftBadges.className = "flex flex-wrap gap-1.5 items-center";
@@ -2178,16 +2388,18 @@
             leftBadges.appendChild(durTag);
           }
 
-          var rewardEl = document.createElement('div');
-          rewardEl.className = "text-2xl font-black font-comic " + (isDone || isPurchased ? "text-slate-500" : "text-blue-400") + (isParent ? " cursor-pointer hover:text-amber-400 transition" : "");
-          rewardEl.textContent = "+$" + b.reward;
+          var rewardEl = document.createElement(isParent ? 'button' : 'div');
           if (isParent) {
+            rewardEl.type = "button";
+            rewardEl.setAttribute('aria-label', "Adjust reward for " + b.title + " (currently $" + b.reward + ")");
             rewardEl.title = "Tap in Parent Mode to adjust reward (e.g. from $5 to $8, $9, $10)";
             rewardEl.onclick = function(e) {
               e.stopPropagation();
               promptAdjustReward(b.id);
             };
           }
+          rewardEl.className = "text-2xl font-black font-comic tabular-nums bg-transparent border-0 p-0 " + (isDone || isPurchased ? "text-slate-500" : "text-blue-400") + (isParent ? " cursor-pointer hover:text-amber-400 transition" : "");
+          rewardEl.textContent = "+$" + b.reward;
 
           badgeRow.appendChild(leftBadges);
           badgeRow.appendChild(rewardEl);
@@ -2197,20 +2409,37 @@
           titleEl.textContent = b.title;
 
           var locEl = document.createElement('p');
-          locEl.className = "text-xs text-slate-400 mt-1 flex items-center gap-1";
-          locEl.innerHTML = '<span class="text-red-500">📍</span> ' + (b.location || "Home");
+          locEl.className = "text-xs text-slate-400 mt-1 flex items-center gap-1 flex-wrap";
+          var pinSpan = document.createElement('span');
+          pinSpan.className = "text-red-500";
+          pinSpan.setAttribute('aria-hidden', 'true');
+          pinSpan.textContent = "📍";
+          locEl.appendChild(pinSpan);
+          locEl.appendChild(document.createTextNode(" " + (b.location || "Home")));
 
           if (b.category) {
             var catEl = document.createElement('span');
-            catEl.className = "inline-block text-[10px] font-bold text-blue-400 mt-1.5";
+            catEl.className = "inline-block text-[10px] font-bold text-blue-400";
             catEl.textContent = b.category;
             locEl.appendChild(document.createTextNode(" • "));
             locEl.appendChild(catEl);
           }
 
-          var ctaEl = document.createElement('div');
-          ctaEl.className = "mt-3 text-[11px] font-bold text-blue-400 flex items-center gap-1";
-          ctaEl.innerHTML = '<span>👉</span> Inspect Mission Checklist & Equipment';
+          var ctaEl = document.createElement('button');
+          ctaEl.type = "button";
+          ctaEl.className = "mt-3 text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-transparent border-0 p-0 text-left";
+          var ctaIcon = document.createElement('span');
+          ctaIcon.setAttribute('aria-hidden', 'true');
+          ctaIcon.textContent = "👉";
+          ctaEl.appendChild(ctaIcon);
+          var checkedCount = Array.isArray(b.checkedSteps) ? b.checkedSteps.filter(Boolean).length : 0;
+          var totalSteps = Array.isArray(b.steps) ? b.steps.length : 0;
+          var stepHint = (checkedCount > 0 && totalSteps > 0 && !isDone) ? (" (" + checkedCount + "/" + totalSteps + " steps done)") : "";
+          ctaEl.appendChild(document.createTextNode(" Inspect Mission Checklist & Equipment" + stepHint));
+          ctaEl.onclick = function(e) {
+            e.stopPropagation();
+            openMissionModal(b.id);
+          };
 
           topWrapper.appendChild(badgeRow);
           topWrapper.appendChild(titleEl);
@@ -2218,7 +2447,7 @@
           topWrapper.appendChild(ctaEl);
 
           var actionRow = document.createElement('div');
-          actionRow.className = "mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2";
+          actionRow.className = "mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-2 flex-wrap";
 
           if (!isDone && !isReview && !isPurchased) {
             var finishBtn = document.createElement('button');
@@ -2233,7 +2462,7 @@
             var inLootBtn = document.createElement('button');
             inLootBtn.className = "flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1";
             inLootBtn.type = "button";
-            inLootBtn.innerHTML = '<span>📦</span> View in Loot & Spent';
+            inLootBtn.textContent = "📦 View in Loot & Spent";
             inLootBtn.onclick = function() { switchTab('loot'); };
             actionRow.appendChild(inLootBtn);
 
@@ -2250,16 +2479,17 @@
 
           if (isReview && isParent) {
             var approveBtn = document.createElement('button');
-            approveBtn.className = "flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-1";
+            approveBtn.className = "flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg active:scale-95 transition flex items-center justify-center gap-1 tabular-nums";
             approveBtn.type = "button";
-            approveBtn.innerHTML = '<span>✓</span> Pay +$' + b.reward;
+            approveBtn.textContent = "✓ Pay +$" + b.reward;
             approveBtn.onclick = function() { approveChore(b.id); };
             actionRow.appendChild(approveBtn);
 
             var adjustRewardBtn = document.createElement('button');
-            adjustRewardBtn.className = "px-2.5 py-2.5 bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700/80 rounded-xl text-xs font-bold transition flex items-center gap-1";
+            adjustRewardBtn.className = "px-2.5 py-2.5 bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-700/80 rounded-xl text-xs font-bold transition flex items-center gap-1 tabular-nums";
             adjustRewardBtn.type = "button";
-            adjustRewardBtn.innerHTML = '<span>✏️</span> $' + b.reward;
+            adjustRewardBtn.textContent = "✏️ $" + b.reward;
+            adjustRewardBtn.setAttribute('aria-label', "Adjust payout amount for " + b.title);
             adjustRewardBtn.title = "Adjust payout amount before approving (e.g. $8, $9, $10 for extra cans)";
             adjustRewardBtn.onclick = function() { promptAdjustReward(b.id); };
             actionRow.appendChild(adjustRewardBtn);
@@ -2277,7 +2507,7 @@
               var resetBtn = document.createElement('button');
               resetBtn.className = "px-3 py-2.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm";
               resetBtn.type = "button";
-              resetBtn.innerHTML = '<span>🔄</span> Reset for ' + (b.recurrence === 'daily' ? 'Today' : b.recurrence === 'monthly' ? 'New Month' : 'New Week');
+              resetBtn.textContent = "🔄 Reset for " + (b.recurrence === 'daily' ? 'Today' : b.recurrence === 'monthly' ? 'New Month' : 'New Week');
               resetBtn.title = "Reset this recurring bounty to Open now";
               resetBtn.onclick = function() { resetRecurringBountyNow(b.id); };
               actionRow.appendChild(resetBtn);
@@ -2285,9 +2515,10 @@
 
             if (isDone) {
               var adjustPaidBtn = document.createElement('button');
-              adjustPaidBtn.className = "px-2.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1";
+              adjustPaidBtn.className = "px-2.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 rounded-xl text-xs font-bold transition flex items-center gap-1 tabular-nums";
               adjustPaidBtn.type = "button";
-              adjustPaidBtn.innerHTML = '<span>💵</span> $' + b.reward;
+              adjustPaidBtn.textContent = "💵 $" + b.reward;
+              adjustPaidBtn.setAttribute('aria-label', "Update payout for completed chore " + b.title);
               adjustPaidBtn.title = "Update payout for this completed chore (adjusts balance)";
               adjustPaidBtn.onclick = function() { promptAdjustReward(b.id); };
               actionRow.appendChild(adjustPaidBtn);
@@ -2297,7 +2528,8 @@
               var buyBountyBtn = document.createElement('button');
               buyBountyBtn.className = "px-2.5 py-2.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700/80 rounded-xl text-xs font-bold transition flex items-center gap-1";
               buyBountyBtn.type = "button";
-              buyBountyBtn.innerHTML = '<span>🛒</span> Buy';
+              buyBountyBtn.textContent = "🛒 Buy";
+              buyBountyBtn.setAttribute('aria-label', "Mark " + b.title + " as purchased");
               buyBountyBtn.title = "Mark as purchased by Lucas and log into Loot & Spent";
               buyBountyBtn.onclick = function() { markBountyPurchased(b.id); };
               actionRow.appendChild(buyBountyBtn);
@@ -2306,7 +2538,8 @@
             var editBtn = document.createElement('button');
             editBtn.className = "px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1";
             editBtn.type = "button";
-            editBtn.innerHTML = '<span>✏️</span> Edit';
+            editBtn.textContent = "✏️ Edit";
+            editBtn.setAttribute('aria-label', "Edit " + b.title);
             editBtn.title = "Edit Bounty";
             editBtn.onclick = function() { openEditChoreModal(b.id); };
             actionRow.appendChild(editBtn);
@@ -2315,6 +2548,7 @@
             delBtn.className = "px-3 py-2.5 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-xl text-xs font-bold transition";
             delBtn.type = "button";
             delBtn.textContent = "✕";
+            delBtn.setAttribute('aria-label', "Delete " + b.title);
             delBtn.title = "Delete Bounty";
             delBtn.onclick = function() { deleteChore(b.id); };
             actionRow.appendChild(delBtn);
@@ -2330,14 +2564,14 @@
     // RENDER TOP 10 WISHLIST
     function renderWishlist() {
       var container = document.getElementById('wishlistContainer');
-      container.innerHTML = "";
+      container.textContent = "";
 
       for (var idx = 0; idx < appState.wishlist.length; idx++) {
         (function(w, rank) {
           var isTarget = w.id === appState.targetId;
           var isPurchased = w.status === 'purchased';
 
-          var item = document.createElement('div');
+          var item = document.createElement('article');
           item.className = "bg-slate-900 border " + 
             (isPurchased ? "border-emerald-700/60 bg-emerald-950/20" : isTarget ? "border-blue-500 bg-slate-900/90 shadow-lg" : "border-slate-800") + 
             " rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md transition-all";
@@ -2352,17 +2586,19 @@
           upBtn.type = "button";
           upBtn.className = "text-xs font-bold text-blue-400 hover:text-white disabled:opacity-20 px-1";
           upBtn.textContent = "▲";
+          upBtn.setAttribute('aria-label', "Move " + w.title + " up");
           upBtn.disabled = rank === 0 || isPurchased;
           upBtn.onclick = function() { moveWish(rank, -1); };
 
           var rankNum = document.createElement('span');
-          rankNum.className = "text-xs font-black font-comic text-slate-500";
+          rankNum.className = "text-xs font-black font-comic text-slate-500 tabular-nums";
           rankNum.textContent = "#" + (rank + 1);
 
           var dnBtn = document.createElement('button');
           dnBtn.type = "button";
           dnBtn.className = "text-xs font-bold text-blue-400 hover:text-white disabled:opacity-20 px-1";
           dnBtn.textContent = "▼";
+          dnBtn.setAttribute('aria-label', "Move " + w.title + " down");
           dnBtn.disabled = rank === appState.wishlist.length - 1 || isPurchased;
           dnBtn.onclick = function() { moveWish(rank, 1); };
 
@@ -2371,7 +2607,11 @@
           arrowBox.appendChild(dnBtn);
 
           var img = document.createElement('img');
-          img.src = w.image || "https://images.brickset.com/sets/images/76178-1.jpg";
+          img.src = sanitizeHttpUrl(w.image, "https://images.brickset.com/sets/images/76178-1.jpg");
+          img.alt = w.title || "Wishlist LEGO reward";
+          img.loading = "lazy";
+          img.width = 56;
+          img.height = 56;
           img.className = "w-14 h-14 object-cover rounded-xl border border-slate-700 bg-slate-950 flex-shrink-0";
 
           var info = document.createElement('div');
@@ -2380,20 +2620,20 @@
           var titleRow = document.createElement('div');
           titleRow.className = "flex items-center gap-2 flex-wrap";
 
-          var title = document.createElement('h5');
-          title.className = "font-bold text-sm text-white " + (isPurchased ? "line-through text-slate-400" : "truncate");
+          var title = document.createElement('h4');
+          title.className = "font-bold text-sm text-white " + (isPurchased ? "line-through text-slate-400" : "");
           title.textContent = w.title;
           titleRow.appendChild(title);
 
           if (isPurchased) {
             var pBadge = document.createElement('span');
-            pBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase";
+            pBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase tabular-nums";
             pBadge.textContent = "✓ Purchased" + (w.actualPrice ? " ($" + w.actualPrice + ")" : "");
             titleRow.appendChild(pBadge);
           }
 
           var price = document.createElement('span');
-          price.className = "text-xs font-extrabold text-blue-400 block mt-0.5";
+          price.className = "text-xs font-extrabold text-blue-400 block mt-0.5 tabular-nums";
           price.textContent = "$" + w.price;
 
           info.appendChild(titleRow);
@@ -2406,12 +2646,15 @@
             info.appendChild(descEl);
           }
 
-          if (w.url) {
+          var safeStoreUrl = sanitizeHttpUrl(w.url, "");
+          if (safeStoreUrl) {
             var link = document.createElement('a');
-            link.href = w.url;
+            link.href = safeStoreUrl;
             link.target = "_blank";
+            link.rel = "noopener noreferrer";
             link.className = "text-[10px] text-slate-400 hover:text-blue-300 underline block mt-0.5";
             link.textContent = "View in Store ↗";
+            link.setAttribute('aria-label', "View " + w.title + " in Store");
             info.appendChild(link);
           }
 
@@ -2426,7 +2669,7 @@
             var buyBtn = document.createElement('button');
             buyBtn.type = "button";
             buyBtn.className = "px-3 py-1.5 text-xs font-black bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl shadow-md transition flex items-center gap-1 active:scale-95";
-            buyBtn.innerHTML = '<span>🛒</span> Mark Purchased';
+            buyBtn.textContent = "🛒 Mark Purchased";
             buyBtn.title = "Mark as bought by Lucas and log into Loot & Spent";
             buyBtn.onclick = function() { markWishPurchased(w.id); };
             right.appendChild(buyBtn);
@@ -2436,13 +2679,14 @@
             targetBtn.className = "px-3 py-1.5 text-xs font-bold rounded-xl transition " + 
               (isTarget ? "bg-blue-600 text-white shadow-md" : "bg-slate-800 text-slate-300 hover:bg-slate-700");
             targetBtn.textContent = isTarget ? "★ Target Set" : "Make Target";
+            targetBtn.setAttribute('aria-pressed', isTarget ? 'true' : 'false');
             targetBtn.onclick = function() { setGoalTarget(w.id); };
             right.appendChild(targetBtn);
           } else {
             var inLootBtn = document.createElement('button');
             inLootBtn.type = "button";
             inLootBtn.className = "px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition flex items-center gap-1";
-            inLootBtn.innerHTML = '<span>📦</span> In Loot & Spent';
+            inLootBtn.textContent = "📦 In Loot & Spent";
             inLootBtn.onclick = function() { switchTab('loot'); };
             right.appendChild(inLootBtn);
 
@@ -2451,6 +2695,7 @@
               unmarkBtn.type = "button";
               unmarkBtn.className = "px-2.5 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-amber-950/60 text-slate-400 hover:text-amber-300 border border-slate-700 transition";
               unmarkBtn.textContent = "↩️ Undo";
+              unmarkBtn.setAttribute('aria-label', "Undo purchase of " + w.title);
               unmarkBtn.title = "Unmark as purchased and refund cash";
               unmarkBtn.onclick = function() { unmarkWishPurchased(w.id); };
               right.appendChild(unmarkBtn);
@@ -2460,7 +2705,8 @@
           var editBtn = document.createElement('button');
           editBtn.type = "button";
           editBtn.className = "p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition";
-          editBtn.innerHTML = "✏️";
+          editBtn.textContent = "✏️";
+          editBtn.setAttribute('aria-label', "Edit " + w.title);
           editBtn.title = "Edit Goal / Toy";
           editBtn.onclick = function() { openEditWishModal(w.id); };
           right.appendChild(editBtn);
@@ -2469,6 +2715,8 @@
           delBtn.type = "button";
           delBtn.className = "p-2 text-red-400 hover:bg-red-950/40 rounded-xl transition";
           delBtn.textContent = "✕";
+          delBtn.setAttribute('aria-label', "Delete " + w.title);
+          delBtn.title = "Delete Goal / Toy";
           delBtn.onclick = function() { deleteWish(w.id); };
           right.appendChild(delBtn);
 
@@ -2482,7 +2730,7 @@
     // RENDER LOOT VAULT
     function renderLoot() {
       var container = document.getElementById('lootContainer');
-      container.innerHTML = "";
+      container.textContent = "";
 
       var clearBtn = document.getElementById('clearLootBtn');
       if (clearBtn) {
@@ -2496,29 +2744,57 @@
       }
 
       if (!appState.loot || appState.loot.length === 0) {
-        container.innerHTML = '<div class="col-span-full py-8 text-center text-slate-500 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800">No purchases logged yet. Lucas has spent $0!</div>';
+        var emptyLootEl = document.createElement('div');
+        emptyLootEl.className = "col-span-full py-8 text-center text-slate-400 font-bold text-sm bg-slate-900/50 rounded-2xl border border-slate-800";
+        emptyLootEl.textContent = "No purchases logged yet. Lucas has spent $0!";
+        container.appendChild(emptyLootEl);
         return;
       }
 
       for (var idx = 0; idx < appState.loot.length; idx++) {
         (function(l) {
-          var card = document.createElement('div');
-          card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center shadow-lg";
+          var card = document.createElement('article');
+          card.className = "bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center shadow-lg gap-3";
 
           var left = document.createElement('div');
-          var title = document.createElement('h5');
+          var title = document.createElement('h4');
           title.className = "font-bold text-sm text-white";
           title.textContent = l.title;
 
           var meta = document.createElement('div');
           meta.className = "text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap";
-          var tagHtml = '';
-          if (l.wishId) {
-            tagHtml = '<span>•</span><span class="text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px]">🎯 Goal Achieved</span>';
-          } else if (l.bountyId) {
-            tagHtml = '<span>•</span><span class="text-purple-400 font-bold bg-purple-950/80 border border-purple-800 px-1.5 py-0.5 rounded text-[10px]">📋 Bounty</span>';
+
+          var dateSpan = document.createElement('span');
+          dateSpan.className = "tabular-nums";
+          dateSpan.textContent = l.date || 'Recent';
+          meta.appendChild(dateSpan);
+
+          var dot1 = document.createElement('span');
+          dot1.setAttribute('aria-hidden', 'true');
+          dot1.textContent = "•";
+          meta.appendChild(dot1);
+
+          var catSpan = document.createElement('span');
+          catSpan.className = "text-blue-400 font-medium";
+          catSpan.textContent = l.category || 'General';
+          meta.appendChild(catSpan);
+
+          if (l.wishId || l.bountyId) {
+            var dot2 = document.createElement('span');
+            dot2.setAttribute('aria-hidden', 'true');
+            dot2.textContent = "•";
+            meta.appendChild(dot2);
+
+            var originBadge = document.createElement('span');
+            if (l.wishId) {
+              originBadge.className = "text-emerald-400 font-bold bg-emerald-950/80 border border-emerald-800 px-1.5 py-0.5 rounded text-[10px]";
+              originBadge.textContent = "🎯 Goal Achieved";
+            } else {
+              originBadge.className = "text-purple-400 font-bold bg-purple-950/80 border border-purple-800 px-1.5 py-0.5 rounded text-[10px]";
+              originBadge.textContent = "📋 Bounty";
+            }
+            meta.appendChild(originBadge);
           }
-          meta.innerHTML = '<span>' + (l.date || 'Recent') + '</span><span>•</span><span class="text-blue-400 font-medium">' + (l.category || 'General') + '</span>' + tagHtml;
 
           left.appendChild(title);
           left.appendChild(meta);
@@ -2527,7 +2803,7 @@
           rightBox.className = "flex items-center gap-2 flex-shrink-0";
 
           var price = document.createElement('span');
-          price.className = "text-base font-black text-red-400 font-comic";
+          price.className = "text-base font-black text-red-400 font-comic tabular-nums";
           price.textContent = "-$" + l.price;
           rightBox.appendChild(price);
 
@@ -2535,7 +2811,8 @@
             var editLootBtn = document.createElement('button');
             editLootBtn.type = "button";
             editLootBtn.className = "p-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition";
-            editLootBtn.innerHTML = "✏️";
+            editLootBtn.textContent = "✏️";
+            editLootBtn.setAttribute('aria-label', "Edit purchase " + l.title);
             editLootBtn.title = "Edit Purchase";
             editLootBtn.onclick = function() { openEditLootModal(l.id); };
             rightBox.appendChild(editLootBtn);
@@ -2544,6 +2821,7 @@
             delLootBtn.type = "button";
             delLootBtn.className = "p-1.5 text-xs text-red-400 hover:bg-red-950/40 rounded-lg transition";
             delLootBtn.textContent = "✕";
+            delLootBtn.setAttribute('aria-label', "Delete purchase " + l.title + " and refund balance");
             delLootBtn.title = "Delete Purchase (Refund to Balance)";
             delLootBtn.onclick = function() { deleteLoot(l.id); };
             rightBox.appendChild(delLootBtn);
@@ -2559,6 +2837,18 @@
     // -------------------------------------------------------------
     // 7. MODALS & INTERACTIONS
     // -------------------------------------------------------------
+    function updateMissionStepProgress(b) {
+      var progEl = document.getElementById('mStepProgress');
+      if (!progEl || !b) return;
+      var steps = b.steps || ["Complete task carefully", "Have Dad inspect"];
+      var checked = Array.isArray(b.checkedSteps) ? b.checkedSteps : [];
+      var doneCount = 0;
+      for (var i = 0; i < steps.length; i++) {
+        if (checked[i]) doneCount++;
+      }
+      progEl.textContent = doneCount + " / " + steps.length + " Done";
+    }
+
     function openMissionModal(id) {
       playSound('click');
       var b = null;
@@ -2586,7 +2876,7 @@
       }
 
       var toolsBox = document.getElementById('mTools');
-      toolsBox.innerHTML = "";
+      toolsBox.textContent = "";
       var tools = b.tools || ["Standard supplies"];
       for (var t = 0; t < tools.length; t++) {
         var sp = document.createElement('span');
@@ -2596,14 +2886,38 @@
       }
 
       var stepsBox = document.getElementById('mSteps');
-      stepsBox.innerHTML = "";
+      stepsBox.textContent = "";
       var steps = b.steps || ["Complete task carefully", "Have Dad inspect"];
-      for (var s = 0; s < steps.length; s++) {
-        var lbl = document.createElement('label');
-        lbl.className = "flex items-start gap-3 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 cursor-pointer active:bg-slate-900 transition";
-        lbl.innerHTML = '<input type="checkbox" class="w-4 h-4 mt-0.5 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0" /> <span>' + steps[s] + '</span>';
-        stepsBox.appendChild(lbl);
+      if (!Array.isArray(b.checkedSteps)) {
+        b.checkedSteps = [];
       }
+      for (var s = 0; s < steps.length; s++) {
+        (function(stepIdx, stepText) {
+          var lbl = document.createElement('label');
+          lbl.className = "mission-step-label flex items-start gap-3 p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 cursor-pointer active:bg-slate-900 transition";
+
+          var cb = document.createElement('input');
+          cb.type = "checkbox";
+          cb.checked = Boolean(b.checkedSteps[stepIdx]);
+          cb.className = "w-4 h-4 mt-0.5 rounded text-blue-600 bg-slate-900 border-slate-700";
+          cb.onchange = function() {
+            playSound('click');
+            if (!Array.isArray(b.checkedSteps)) b.checkedSteps = [];
+            b.checkedSteps[stepIdx] = cb.checked;
+            updateMissionStepProgress(b);
+            persist();
+          };
+
+          var txtSpan = document.createElement('span');
+          txtSpan.className = "mission-step-text flex-1";
+          txtSpan.textContent = stepText;
+
+          lbl.appendChild(cb);
+          lbl.appendChild(txtSpan);
+          stepsBox.appendChild(lbl);
+        })(s, steps[s]);
+      }
+      updateMissionStepProgress(b);
 
       document.getElementById('mSafety').textContent = b.safety || "Work safely, take your time, and ask Dad if you need help!";
 
@@ -2620,12 +2934,12 @@
         if (b.status === 'purchased') {
           missionBuyBtn.classList.remove('hidden');
           missionBuyBtn.className = "px-4 py-2.5 bg-slate-800 text-emerald-400 font-bold text-xs rounded-xl border border-slate-700 flex items-center gap-1";
-          missionBuyBtn.innerHTML = "<span>📦</span> In Loot & Spent";
+          missionBuyBtn.textContent = "📦 In Loot & Spent";
           missionBuyBtn.onclick = function() { closeMission(); switchTab('loot'); };
         } else if (isParent) {
           missionBuyBtn.classList.remove('hidden');
           missionBuyBtn.className = "px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 font-bold text-xs text-white rounded-xl shadow-lg transition flex items-center gap-1";
-          missionBuyBtn.innerHTML = "<span>🛒</span> Mark Purchased";
+          missionBuyBtn.textContent = "🛒 Mark Purchased";
           missionBuyBtn.onclick = function() { buyActiveMission(); };
         } else {
           missionBuyBtn.classList.add('hidden');
@@ -3261,16 +3575,15 @@
     function setFilter(filt) {
       playSound('click');
       currentFilter = filt;
-      var btns = document.querySelectorAll('.filter-btn');
-      for (var i = 0; i < btns.length; i++) {
-        var f = btns[i].getAttribute('data-filter');
-        if (f === filt) {
-          btns[i].className = "filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-blue-600 text-white border-blue-500 whitespace-nowrap";
-        } else {
-          btns[i].className = "filter-btn px-3 py-1.5 rounded-xl font-bold border transition bg-slate-900 text-slate-400 border-slate-800 hover:text-white whitespace-nowrap";
-        }
+      var applyFilterUpdate = function() {
+        updateFilterCounts();
+        renderBounties();
+      };
+      if (document.startViewTransition) {
+        document.startViewTransition(applyFilterUpdate);
+      } else {
+        applyFilterUpdate();
       }
-      renderBounties();
     }
 
     // INTELLIGENT AI MISSION BRIEFING PLAN GENERATOR
@@ -3778,6 +4091,45 @@
       }
 
       window.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          var pinModal = document.getElementById('pinModal');
+          if (pinModal && !pinModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closePin();
+            return;
+          }
+          var changelogModal = document.getElementById('changelogModal');
+          if (changelogModal && !changelogModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeChangelogModal();
+            return;
+          }
+          var missionModal = document.getElementById('missionModal');
+          if (missionModal && !missionModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeMission();
+            return;
+          }
+          var choreModal = document.getElementById('choreModal');
+          if (choreModal && !choreModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeChoreModal();
+            return;
+          }
+          var wishModal = document.getElementById('wishModal');
+          if (wishModal && !wishModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeWishModal();
+            return;
+          }
+          var lootModal = document.getElementById('lootModal');
+          if (lootModal && !lootModal.classList.contains('hidden')) {
+            e.preventDefault();
+            closeLootModal();
+            return;
+          }
+        }
+
         var modal = document.getElementById('pinModal');
         if (!modal || modal.classList.contains('hidden')) return;
 
@@ -3785,10 +4137,7 @@
           return;
         }
 
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          closePin();
-        } else if (e.key === 'Enter') {
+        if (e.key === 'Enter') {
           e.preventDefault();
           kSubmit();
         } else if (e.key === 'Backspace') {
@@ -3807,6 +4156,13 @@
 
     // GITHUB CHANGELOG & VERSION
     var FALLBACK_COMMITS = [
+      {
+        sha: "118c1b5",
+        date: "2026-11-15T10:12:57-08:00",
+        author: "davidgill01",
+        message: "Re-add $5 weekly recurring Feed and Walk Millie task and enforce startup & cloud migration",
+        url: "https://github.com/davidgill01/daily-bugle/commit/118c1b5"
+      },
       {
         sha: "cde159f",
         date: "2026-11-15T09:40:15-08:00",
@@ -3885,10 +4241,13 @@
     function renderCommitsList(commits) {
       var container = document.getElementById('changelogList');
       if (!container) return;
-      container.innerHTML = "";
+      container.textContent = "";
 
       if (!commits || commits.length === 0) {
-        container.innerHTML = '<div class="text-center py-6 text-slate-500">No recent updates found.</div>';
+        var emptyEl = document.createElement('div');
+        emptyEl.className = "text-center py-6 text-slate-400";
+        emptyEl.textContent = "No recent updates found.";
+        container.appendChild(emptyEl);
         return;
       }
 
@@ -3900,15 +4259,12 @@
         var body = msgLines.slice(1).join('\n').trim();
         var dateStr = (item.commit && item.commit.author ? item.commit.author.date : item.date);
         var authorName = (item.commit && item.commit.author ? item.commit.author.name : item.author) || 'davidgill01';
-        var commitUrl = item.html_url || item.url || ("https://github.com/davidgill01/daily-bugle/commit/" + sha);
+        var rawCommitUrl = item.html_url || item.url || ("https://github.com/davidgill01/daily-bugle/commit/" + encodeURIComponent(sha));
+        var safeCommitUrl = sanitizeHttpUrl(rawCommitUrl, "https://github.com/davidgill01/daily-bugle");
 
         var prMatch = title.match(/Merge pull request #(\d+)/i) || title.match(/\(#(\d+)\)/);
-        var prBadge = '';
-        if (prMatch) {
-          prBadge = '<span class="px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-bold">🔀 PR #' + prMatch[1] + '</span>';
-        }
 
-        var card = document.createElement('div');
+        var card = document.createElement('article');
         card.className = "p-3 bg-slate-950/70 border border-slate-800 hover:border-blue-500/60 rounded-2xl transition group";
 
         var headerRow = document.createElement('div');
@@ -3916,7 +4272,27 @@
 
         var badgeWrapper = document.createElement('div');
         badgeWrapper.className = "flex items-center gap-1.5 flex-wrap";
-        badgeWrapper.innerHTML = '<a href="' + commitUrl + '" target="_blank" rel="noopener noreferrer" class="font-mono text-[10px] font-bold text-blue-400 bg-blue-950/70 hover:bg-blue-900 border border-blue-800/80 px-2 py-0.5 rounded-lg transition" title="View commit on GitHub">' + sha + ' ↗</a>' + prBadge + '<span class="text-[10px] text-slate-500 font-semibold">' + formatRelativeTime(dateStr) + '</span>';
+
+        var commitLink = document.createElement('a');
+        commitLink.href = safeCommitUrl;
+        commitLink.target = "_blank";
+        commitLink.rel = "noopener noreferrer";
+        commitLink.className = "font-mono text-[10px] font-bold text-blue-400 bg-blue-950/70 hover:bg-blue-900 border border-blue-800/80 px-2 py-0.5 rounded-lg transition";
+        commitLink.title = "View commit on GitHub";
+        commitLink.textContent = sha + " ↗";
+        badgeWrapper.appendChild(commitLink);
+
+        if (prMatch) {
+          var prSpan = document.createElement('span');
+          prSpan.className = "px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-bold";
+          prSpan.textContent = "🔀 PR #" + prMatch[1];
+          badgeWrapper.appendChild(prSpan);
+        }
+
+        var timeSpan = document.createElement('span');
+        timeSpan.className = "text-[10px] text-slate-400 font-semibold tabular-nums";
+        timeSpan.textContent = formatRelativeTime(dateStr);
+        badgeWrapper.appendChild(timeSpan);
 
         var authorEl = document.createElement('span');
         authorEl.className = "text-[10px] text-slate-400 font-medium";
@@ -3965,7 +4341,7 @@
               var formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               var versionTextEl = document.getElementById('versionText');
               if (versionTextEl) {
-                versionTextEl.textContent = "v2.5 • " + formattedDate + " (" + commits[0].sha.slice(0, 7) + ")";
+                versionTextEl.textContent = "v2.6 • " + formattedDate + " (" + commits[0].sha.slice(0, 7) + ")";
               }
             }
           } else {
@@ -3990,27 +4366,55 @@
       document.getElementById('changelogModal').classList.add('hidden');
     }
 
-    // TAB NAVIGATION
+    // TAB NAVIGATION (WITH VIEW TRANSITIONS & FOCUS ROUTING)
     function switchTab(viewId) {
       playSound('click');
-      document.getElementById('viewBounties').style.display = 'none';
-      document.getElementById('viewWishlist').style.display = 'none';
-      document.getElementById('viewLoot').style.display = 'none';
+      var headingId = viewId === 'wishlist' ? 'headingWishlist' : viewId === 'loot' ? 'headingLoot' : 'headingBounties';
 
-      document.getElementById('tabBounties').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
-      document.getElementById('tabWishlist').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
-      document.getElementById('tabLoot').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
+      var applyTabDOM = function() {
+        document.getElementById('viewBounties').style.display = 'none';
+        document.getElementById('viewWishlist').style.display = 'none';
+        document.getElementById('viewLoot').style.display = 'none';
 
-      if (viewId === 'bounties') {
-        document.getElementById('viewBounties').style.display = 'block';
-        document.getElementById('tabBounties').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
-      } else if (viewId === 'wishlist') {
-        document.getElementById('viewWishlist').style.display = 'block';
-        document.getElementById('tabWishlist').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
-      } else if (viewId === 'loot') {
-        document.getElementById('viewLoot').style.display = 'block';
-        document.getElementById('tabLoot').className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
+        var tabB = document.getElementById('tabBounties');
+        var tabW = document.getElementById('tabWishlist');
+        var tabL = document.getElementById('tabLoot');
+
+        tabB.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
+        tabW.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
+        tabL.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-slate-800 text-slate-400 hover:text-white flex items-center gap-2 transition whitespace-nowrap';
+
+        tabB.removeAttribute('aria-current');
+        tabW.removeAttribute('aria-current');
+        tabL.removeAttribute('aria-current');
+
+        if (viewId === 'bounties') {
+          document.getElementById('viewBounties').style.display = 'block';
+          tabB.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
+          tabB.setAttribute('aria-current', 'page');
+        } else if (viewId === 'wishlist') {
+          document.getElementById('viewWishlist').style.display = 'block';
+          tabW.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
+          tabW.setAttribute('aria-current', 'page');
+        } else if (viewId === 'loot') {
+          document.getElementById('viewLoot').style.display = 'block';
+          tabL.className = 'px-4 py-2.5 rounded-2xl font-bold text-sm bg-blue-600 text-white flex items-center gap-2 shadow-lg transition whitespace-nowrap';
+          tabL.setAttribute('aria-current', 'page');
+        }
+      };
+
+      var routeHeadingFocus = function() {
+        var h = document.getElementById(headingId);
+        if (h) h.focus({ preventScroll: true });
+      };
+
+      if (!document.startViewTransition) {
+        applyTabDOM();
+        routeHeadingFocus();
+        return;
       }
+      var transition = document.startViewTransition(applyTabDOM);
+      transition.finished.finally(routeHeadingFocus);
     }
 
     // INITIALIZATION & EVENT BINDINGS
