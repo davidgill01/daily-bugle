@@ -9,6 +9,62 @@
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    if (window.tailwind) {
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              blue: {
+                50: 'rgb(var(--c-primary-50) / <alpha-value>)',
+                100: 'rgb(var(--c-primary-100) / <alpha-value>)',
+                200: 'rgb(var(--c-primary-200) / <alpha-value>)',
+                300: 'rgb(var(--c-primary-300) / <alpha-value>)',
+                400: 'rgb(var(--c-primary-400) / <alpha-value>)',
+                500: 'rgb(var(--c-primary-500) / <alpha-value>)',
+                600: 'rgb(var(--c-primary-600) / <alpha-value>)',
+                700: 'rgb(var(--c-primary-700) / <alpha-value>)',
+                800: 'rgb(var(--c-primary-800) / <alpha-value>)',
+                900: 'rgb(var(--c-primary-900) / <alpha-value>)',
+                950: 'rgb(var(--c-primary-950) / <alpha-value>)'
+              },
+              indigo: {
+                400: 'rgb(var(--c-primary-alt-400) / <alpha-value>)',
+                500: 'rgb(var(--c-primary-alt-500) / <alpha-value>)',
+                600: 'rgb(var(--c-primary-alt-600) / <alpha-value>)',
+                700: 'rgb(var(--c-primary-alt-700) / <alpha-value>)'
+              },
+              slate: {
+                50: 'rgb(var(--c-surface-50) / <alpha-value>)',
+                100: 'rgb(var(--c-surface-100) / <alpha-value>)',
+                200: 'rgb(var(--c-surface-200) / <alpha-value>)',
+                300: 'rgb(var(--c-surface-300) / <alpha-value>)',
+                400: 'rgb(var(--c-surface-400) / <alpha-value>)',
+                500: 'rgb(var(--c-surface-500) / <alpha-value>)',
+                600: 'rgb(var(--c-surface-600) / <alpha-value>)',
+                700: 'rgb(var(--c-surface-700) / <alpha-value>)',
+                800: 'rgb(var(--c-surface-800) / <alpha-value>)',
+                900: 'rgb(var(--c-surface-900) / <alpha-value>)',
+                950: 'rgb(var(--c-surface-950) / <alpha-value>)'
+              }
+            }
+          }
+        }
+      };
+    }
+    (function() {
+      try {
+        var saved = localStorage.getItem('gill_daily_bugle_hero_theme');
+        if (saved === 'gwen' || saved === 'miles' || saved === 'peter') {
+          document.documentElement.dataset.theme = saved;
+        } else {
+          document.documentElement.dataset.theme = 'peter';
+        }
+      } catch (e) {
+        document.documentElement.dataset.theme = 'peter';
+      }
+    })();
+  </script>
 
   <!-- Firebase App, Auth & Firestore -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -21,12 +77,205 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    :root {
+    /* ============================================================
+       SPIDER-VERSE HERO COLOR SCHEMES
+       1. peter (default): Peter Parker — Classic Red & Royal Blue
+       2. gwen:            Gwen Stacy   — Ghost-Spider White, Hot Pink & Teal
+       3. miles:           Miles Morales — Brooklyn Obsidian, Crimson & Venom Gold
+       ============================================================ */
+    :root,
+    html[data-theme="peter"] {
       color-scheme: dark;
-      accent-color: #3b82f6;
       --target-size: 24px;
-      scrollbar-color: #475569 #0b1120;
+
+      /* Surfaces (Classic Midnight Navy Slate) */
+      --c-surface-50: 248 250 252;
+      --c-surface-100: 241 245 249;
+      --c-surface-200: 226 232 240;
+      --c-surface-300: 203 213 225;
+      --c-surface-400: 148 163 184;
+      --c-surface-500: 100 116 139;
+      --c-surface-600: 71 85 105;
+      --c-surface-700: 51 65 85;
+      --c-surface-800: 30 41 59;
+      --c-surface-900: 15 23 42;
+      --c-surface-950: 2 6 23;
+
+      /* Primary Accent (Spider-Man Royal Blue) */
+      --c-primary-50: 239 246 255;
+      --c-primary-100: 219 234 254;
+      --c-primary-200: 191 219 254;
+      --c-primary-300: 147 197 253;
+      --c-primary-400: 96 165 250;
+      --c-primary-500: 59 130 246;
+      --c-primary-600: 37 99 235;
+      --c-primary-700: 29 78 216;
+      --c-primary-800: 30 64 175;
+      --c-primary-900: 30 58 138;
+      --c-primary-950: 23 37 84;
+
+      /* Secondary Gradient Companion (Indigo) */
+      --c-primary-alt-400: 129 140 248;
+      --c-primary-alt-500: 99 102 241;
+      --c-primary-alt-600: 79 70 229;
+      --c-primary-alt-700: 67 56 202;
+
+      /* Page & Hero Chrome Tokens */
+      --theme-body-bg: #0b1120;
+      --theme-dot-color: #1e293b;
+      --theme-accent-color: #3b82f6;
+      --theme-scrollbar-thumb: #475569;
+      --theme-scrollbar-track: #0b1120;
+      --theme-selection-bg: #2563eb;
+      --theme-focus-ring: #60a5fa;
+
+      --theme-header-border: #dc2626;
+      --theme-web-bg: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      --theme-web-border: #f87171;
+      --theme-web-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+      --theme-web-icon-filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+
+      --theme-title-1: #ef4444;
+      --theme-title-2: #3b82f6;
+      --theme-target-frame: #ef4444;
+      --theme-target-ribbon-bg: #dc2626;
+      --theme-target-ribbon-text: #ffffff;
+      --theme-saving-label: #f87171;
+      --theme-pin-accent: #ef4444;
+      --theme-progress-bg: linear-gradient(90deg, #dc2626 0%, #2563eb 55%, #60a5fa 100%);
+      --theme-glow-a: rgba(37, 99, 235, 0.4);
+      --theme-glow-b: rgba(239, 68, 68, 0.5);
+
+      accent-color: var(--theme-accent-color);
+      scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
     }
+
+    html[data-theme="gwen"] {
+      /* Surfaces (Ghost-Spider Crisp Ink Charcoal) */
+      --c-surface-50: 253 242 248;
+      --c-surface-100: 248 250 252;
+      --c-surface-200: 241 245 249;
+      --c-surface-300: 226 232 240;
+      --c-surface-400: 156 175 196;
+      --c-surface-500: 113 134 158;
+      --c-surface-600: 77 96 118;
+      --c-surface-700: 56 72 94;
+      --c-surface-800: 31 41 56;
+      --c-surface-900: 19 26 38;
+      --c-surface-950: 10 14 22;
+
+      /* Primary Accent (Ghost-Spider Hot Pink / Magenta) */
+      --c-primary-50: 253 242 248;
+      --c-primary-100: 252 231 243;
+      --c-primary-200: 251 207 232;
+      --c-primary-300: 249 168 212;
+      --c-primary-400: 244 114 182;
+      --c-primary-500: 236 72 153;
+      --c-primary-600: 219 39 119;
+      --c-primary-700: 190 24 93;
+      --c-primary-800: 157 23 77;
+      --c-primary-900: 131 24 67;
+      --c-primary-950: 80 7 36;
+
+      /* Secondary Gradient Companion (Electric Teal / Cyan) */
+      --c-primary-alt-400: 34 211 238;
+      --c-primary-alt-500: 6 182 212;
+      --c-primary-alt-600: 8 145 178;
+      --c-primary-alt-700: 14 116 144;
+
+      /* Page & Hero Chrome Tokens */
+      --theme-body-bg: #0b1018;
+      --theme-dot-color: #1e3446;
+      --theme-accent-color: #ec4899;
+      --theme-scrollbar-thumb: #db2777;
+      --theme-scrollbar-track: #0b1018;
+      --theme-selection-bg: #db2777;
+      --theme-focus-ring: #22d3ee;
+
+      --theme-header-border: #22d3ee;
+      --theme-web-bg: linear-gradient(135deg, #ffffff 0%, #fce7f3 52%, #f472b6 100%);
+      --theme-web-border: #22d3ee;
+      --theme-web-shadow: 0 6px 20px rgba(236, 72, 153, 0.4), 0 0 0 1px rgba(34, 211, 238, 0.35);
+      --theme-web-icon-filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.75)) contrast(1.15);
+
+      --theme-title-1: #f472b6;
+      --theme-title-2: #22d3ee;
+      --theme-target-frame: #22d3ee;
+      --theme-target-ribbon-bg: #0891b2;
+      --theme-target-ribbon-text: #ffffff;
+      --theme-saving-label: #67e8f9;
+      --theme-pin-accent: #22d3ee;
+      --theme-progress-bg: linear-gradient(90deg, #ec4899 0%, #f472b6 45%, #22d3ee 100%);
+      --theme-glow-a: rgba(236, 72, 153, 0.42);
+      --theme-glow-b: rgba(34, 211, 238, 0.48);
+
+      accent-color: var(--theme-accent-color);
+      scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
+    }
+
+    html[data-theme="miles"] {
+      /* Surfaces (Brooklyn Obsidian Carbon Black) */
+      --c-surface-50: 250 250 250;
+      --c-surface-100: 244 244 245;
+      --c-surface-200: 228 228 231;
+      --c-surface-300: 212 212 216;
+      --c-surface-400: 161 161 170;
+      --c-surface-500: 113 113 122;
+      --c-surface-600: 82 82 91;
+      --c-surface-700: 63 63 70;
+      --c-surface-800: 32 32 38;
+      --c-surface-900: 18 18 22;
+      --c-surface-950: 8 8 11;
+
+      /* Primary Accent (Brooklyn Graffiti Crimson Red) */
+      --c-primary-50: 254 242 242;
+      --c-primary-100: 254 226 226;
+      --c-primary-200: 254 202 202;
+      --c-primary-300: 252 165 165;
+      --c-primary-400: 248 113 113;
+      --c-primary-500: 239 68 68;
+      --c-primary-600: 220 38 38;
+      --c-primary-700: 185 28 28;
+      --c-primary-800: 153 27 27;
+      --c-primary-900: 127 29 29;
+      --c-primary-950: 69 10 10;
+
+      /* Secondary Gradient Companion (Venom-Strike Flame Orange) */
+      --c-primary-alt-400: 251 146 60;
+      --c-primary-alt-500: 249 115 22;
+      --c-primary-alt-600: 234 88 12;
+      --c-primary-alt-700: 194 65 12;
+
+      /* Page & Hero Chrome Tokens */
+      --theme-body-bg: #070709;
+      --theme-dot-color: #2f1216;
+      --theme-accent-color: #ef4444;
+      --theme-scrollbar-thumb: #dc2626;
+      --theme-scrollbar-track: #070709;
+      --theme-selection-bg: #dc2626;
+      --theme-focus-ring: #facc15;
+
+      --theme-header-border: #dc2626;
+      --theme-web-bg: linear-gradient(135deg, #18181b 0%, #27272a 48%, #dc2626 100%);
+      --theme-web-border: #ef4444;
+      --theme-web-shadow: 0 6px 20px rgba(220, 38, 38, 0.45), 0 0 0 1px rgba(250, 204, 21, 0.25);
+      --theme-web-icon-filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
+
+      --theme-title-1: #ef4444;
+      --theme-title-2: #facc15;
+      --theme-target-frame: #facc15;
+      --theme-target-ribbon-bg: #dc2626;
+      --theme-target-ribbon-text: #ffffff;
+      --theme-saving-label: #facc15;
+      --theme-pin-accent: #facc15;
+      --theme-progress-bg: linear-gradient(90deg, #991b1b 0%, #ef4444 60%, #facc15 100%);
+      --theme-glow-a: rgba(220, 38, 38, 0.45);
+      --theme-glow-b: rgba(250, 204, 21, 0.42);
+
+      accent-color: var(--theme-accent-color);
+      scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
+    }
+
     @media (pointer: coarse) {
       :root { --target-size: 44px; }
     }
@@ -41,18 +290,92 @@
     .tabular-nums { font-variant-numeric: tabular-nums; }
 
     body {
-      background-color: #0b1120;
-      background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
+      background-color: var(--theme-body-bg);
+      background-image: radial-gradient(var(--theme-dot-color) 1.5px, transparent 1.5px);
       background-size: 24px 24px;
       touch-action: manipulation;
       overflow-wrap: break-word;
       padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
       padding-left: env(safe-area-inset-left, 0px);
       padding-right: env(safe-area-inset-right, 0px);
+      transition: background-color 220ms ease-out;
+    }
+
+    /* Hero Theme Accent Classes */
+    .theme-header {
+      border-bottom-color: var(--theme-header-border);
+      transition: border-color 220ms ease-out, background-color 220ms ease-out;
+    }
+    .theme-web-btn {
+      background: var(--theme-web-bg);
+      border: 1.5px solid var(--theme-web-border);
+      box-shadow: var(--theme-web-shadow);
+      cursor: pointer;
+      position: relative;
+      transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease-out, border-color 220ms ease-out;
+    }
+    .theme-web-btn:hover {
+      transform: scale(1.06) rotate(-6deg);
+    }
+    .theme-web-btn:active {
+      transform: scale(0.94);
+    }
+    .theme-web-icon {
+      display: inline-block;
+      filter: var(--theme-web-icon-filter);
+      line-height: 1;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .theme-web-btn.is-switching .theme-web-icon {
+        animation: webSpinPop 420ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+    }
+    @keyframes webSpinPop {
+      0% { transform: scale(1) rotate(0deg); }
+      45% { transform: scale(1.25) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+    .theme-title-1 { color: var(--theme-title-1); transition: color 200ms ease-out; }
+    .theme-title-2 { color: var(--theme-title-2); transition: color 200ms ease-out; }
+    .theme-target-frame { border-color: var(--theme-target-frame); transition: border-color 200ms ease-out; }
+    .theme-target-ribbon {
+      background-color: var(--theme-target-ribbon-bg);
+      color: var(--theme-target-ribbon-text);
+      transition: background-color 200ms ease-out, color 200ms ease-out;
+    }
+    .theme-saving-label { color: var(--theme-saving-label); transition: color 200ms ease-out; }
+    .theme-pin-accent { color: var(--theme-pin-accent); }
+    .theme-progress-bar { background: var(--theme-progress-bg); }
+
+    /* Keep modal Cancel/Back buttons clearly distinct from crimson primary actions in Miles theme */
+    html[data-theme="miles"] .theme-cancel-btn {
+      background-color: #27272a !important;
+      color: #e4e4e7 !important;
+      border: 1px solid #3f3f46;
+    }
+    html[data-theme="miles"] .theme-cancel-btn:hover {
+      background-color: #3f3f46 !important;
+      color: #ffffff !important;
+    }
+
+    /* Spider-Verse Theme Switch Toast */
+    .theme-toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(1.25rem, calc(0.75rem + env(safe-area-inset-bottom, 0px)));
+      transform: translate(-50%, 16px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 60;
+      transition: opacity 200ms ease-out, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .theme-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
     }
 
     ::selection {
-      background-color: #2563eb;
+      background-color: var(--theme-selection-bg);
       color: #ffffff;
     }
 
@@ -90,7 +413,7 @@
       scale: 0.97;
     }
     :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-      outline: 2px solid #60a5fa !important;
+      outline: 2px solid var(--theme-focus-ring) !important;
       outline-offset: 3px;
     }
 
@@ -101,7 +424,7 @@
       left: 1rem;
       z-index: 100;
       padding: 0.5rem 1rem;
-      background: #2563eb;
+      background: rgb(var(--c-primary-600));
       color: #ffffff;
       font-weight: 800;
       font-size: 0.75rem;
@@ -155,8 +478,8 @@
       container-type: inline-size;
       display: grid;
       grid-template-rows: auto auto 1fr auto;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(15, 23, 42, 0.88) 100%);
-      border: 2px solid #1e293b;
+      background: linear-gradient(180deg, rgb(var(--c-surface-900) / 0.96) 0%, rgb(var(--c-surface-900) / 0.88) 100%);
+      border: 2px solid rgb(var(--c-surface-800));
       border-radius: 1.5rem;
       overflow: hidden;
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
@@ -176,8 +499,8 @@
     @media (prefers-reduced-motion: no-preference) {
       .trophy-card:hover {
         transform: translateY(-3px);
-        border-color: rgba(59, 130, 246, 0.75);
-        box-shadow: 0 16px 34px rgba(37, 99, 235, 0.22);
+        border-color: rgb(var(--c-primary-500) / 0.75);
+        box-shadow: 0 16px 34px rgb(var(--c-primary-600) / 0.22);
       }
       .trophy-card.is-goal-trophy:hover {
         border-color: rgba(251, 191, 36, 0.9);
@@ -190,12 +513,12 @@
       object-fit: contain;
       padding: 0.85rem;
       background:
-        radial-gradient(circle at 50% 42%, rgba(59, 130, 246, 0.22), rgba(2, 6, 23, 0.96) 76%);
-      border-bottom: 3px solid rgba(51, 65, 85, 0.9);
+        radial-gradient(circle at 50% 42%, rgb(var(--c-primary-500) / 0.22), rgb(var(--c-surface-950) / 0.96) 76%);
+      border-bottom: 3px solid rgb(var(--c-surface-700) / 0.9);
     }
     .trophy-card.is-goal-trophy > img {
       background:
-        radial-gradient(circle at 50% 42%, rgba(245, 158, 11, 0.24), rgba(2, 6, 23, 0.96) 76%);
+        radial-gradient(circle at 50% 42%, rgba(245, 158, 11, 0.24), rgb(var(--c-surface-950) / 0.96) 76%);
       border-bottom-color: rgba(245, 158, 11, 0.55);
     }
     .trophy-card > .media {
@@ -207,8 +530,8 @@
       justify-content: center;
       gap: 0.35rem;
       background:
-        radial-gradient(circle at 50% 42%, rgba(99, 102, 241, 0.22), rgba(2, 6, 23, 0.96) 76%);
-      border-bottom: 3px solid rgba(51, 65, 85, 0.9);
+        radial-gradient(circle at 50% 42%, rgb(var(--c-primary-alt-500) / 0.22), rgb(var(--c-surface-950) / 0.96) 76%);
+      border-bottom: 3px solid rgb(var(--c-surface-700) / 0.9);
     }
     .trophy-card > header {
       padding: 0.85rem 1rem 0.25rem;
@@ -218,7 +541,7 @@
     }
     .trophy-card > footer {
       padding: 0.65rem 1rem 0.85rem;
-      border-top: 1px solid rgba(30, 41, 59, 0.85);
+      border-top: 1px solid rgb(var(--c-surface-800) / 0.85);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -240,8 +563,8 @@
       .pulse-glow { animation: pulseGlow 2.5s infinite; }
     }
     @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
-      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.5); }
+      0%, 100% { box-shadow: 0 0 15px var(--theme-glow-a); }
+      50% { box-shadow: 0 0 25px var(--theme-glow-b); }
     }
     @media (prefers-reduced-motion: reduce) {
       *, ::before, ::after {
@@ -262,21 +585,27 @@
   <a href="#mainContent" class="skip-link">Skip to main content</a>
 
   <!-- TOP HEADER -->
-  <header class="bg-slate-900/95 border-b-4 border-red-600 sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-3 flex justify-between items-center shadow-2xl" style="padding-top: max(0.75rem, env(safe-area-inset-top, 0px));">
+  <header class="theme-header bg-slate-900/95 border-b-4 sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-3 flex justify-between items-center shadow-2xl" style="padding-top: max(0.75rem, env(safe-area-inset-top, 0px));">
     <div class="flex items-center gap-2.5 sm:gap-3">
-      <div aria-hidden="true" class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center text-white text-xl shadow-lg border border-red-400 font-black font-comic flex-shrink-0">
-        🕸️
-      </div>
+      <button id="themeToggleBtn" type="button" onclick="cycleHeroTheme()" aria-label="Switch Spider-Verse theme (Current: Peter Parker)" title="Tap to switch color scheme: Peter Parker → Gwen Stacy → Miles Morales" class="theme-web-btn w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center text-white text-xl font-black font-comic flex-shrink-0">
+        <span aria-hidden="true" class="theme-web-icon">🕸️</span>
+      </button>
       <div>
         <h1 class="text-xl sm:text-2xl font-comic tracking-wide leading-none">
-          <span class="text-red-500 font-black">DAILY BUGLE</span> 
-          <span class="text-blue-500 font-black">BOUNTY BOARD</span>
+          <span class="theme-title-1 font-black">DAILY BUGLE</span> 
+          <span class="theme-title-2 font-black">BOUNTY BOARD</span>
         </h1>
-        <div class="flex items-center gap-2 mt-1 flex-wrap">
+        <div class="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
           <!-- LIVE FIREBASE SYNC BADGE -->
           <button id="syncStatusBtn" type="button" onclick="testCloudConnection()" aria-live="polite" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-800 text-blue-400 border border-slate-700 flex items-center gap-1.5 shadow-sm active:scale-95 transition">
             <span id="syncDot" aria-hidden="true" class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
             <span id="syncText">Connecting to Google Cloud...</span>
+          </button>
+
+          <!-- ACTIVE SPIDER-VERSE THEME PILL -->
+          <button id="themeBadgeBtn" type="button" onclick="cycleHeroTheme()" class="hidden sm:flex text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-blue-300 hover:text-white border border-slate-700 items-center gap-1 shadow-sm active:scale-95 transition whitespace-nowrap" title="Tap the spider web or this badge to toggle Peter Parker, Gwen Stacy, and Miles Morales themes">
+            <span id="themeBadgeIcon" aria-hidden="true">🕷️</span>
+            <span id="themeBadgeText">Peter Parker</span>
           </button>
 
           <!-- VERSION & GITHUB CHANGELOG BADGE -->
@@ -349,9 +678,9 @@
     <!-- HERO SAVINGS PROGRESS HUD -->
     <section aria-labelledby="hudGoalTitle" class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-blue-600 rounded-3xl p-4 sm:p-5 mb-5 shadow-2xl relative overflow-hidden pulse-glow">
       <div class="flex flex-col sm:flex-row items-center gap-4">
-        <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-red-500 bg-slate-950 flex-shrink-0 shadow-lg">
+        <div class="theme-target-frame relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 bg-slate-950 flex-shrink-0 shadow-lg">
           <img id="hudGoalImg" src="https://images.brickset.com/sets/images/76178-1.jpg" fetchpriority="high" width="112" height="112" class="w-full h-full object-cover" alt="Current Target LEGO Goal">
-          <span class="absolute bottom-0 inset-x-0 bg-red-600 text-[10px] font-black text-center text-white py-0.5 tracking-wider">
+          <span class="theme-target-ribbon absolute bottom-0 inset-x-0 text-[10px] font-black text-center py-0.5 tracking-wider">
             PRIMARY TARGET
           </span>
         </div>
@@ -360,7 +689,7 @@
           <div class="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-2">
             <div>
               <div class="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                <span class="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
+                <span class="theme-saving-label text-xs font-bold uppercase tracking-widest flex items-center gap-1">
                   <span aria-hidden="true">🎯</span> Currently Saving For
                 </span>
                 <button type="button" onclick="editCurrentTargetWish()" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700 transition" title="Edit Target Toy">
@@ -388,7 +717,7 @@
           <!-- PROGRESS BAR -->
           <div class="mt-3">
             <div id="hudProgressTrack" role="progressbar" aria-label="Savings goal progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" class="w-full bg-slate-950 rounded-full h-6 border border-slate-700 p-0.5 relative overflow-hidden shadow-inner">
-              <div id="hudProgressBar" class="bg-gradient-to-r from-red-600 via-blue-600 to-blue-400 h-full rounded-full transition-all duration-500 relative" style="width: 0%;">
+              <div id="hudProgressBar" class="theme-progress-bar h-full rounded-full transition-all duration-500 relative" style="width: 0%;">
                 <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
               </div>
             </div>
@@ -631,7 +960,7 @@
 
       <!-- ACTION BUTTONS -->
       <div class="flex flex-wrap gap-2">
-        <button type="button" onclick="closeMission()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl transition">
+        <button type="button" onclick="closeMission()" class="theme-cancel-btn px-4 py-2.5 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl transition">
           Back
         </button>
         <button type="button" onclick="editActiveMission()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-bold text-xs text-slate-200 rounded-xl transition flex items-center gap-1">
@@ -737,7 +1066,7 @@
       </div>
 
       <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
-        <button type="button" onclick="closeChoreModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl transition">Cancel</button>
+        <button type="button" onclick="closeChoreModal()" class="theme-cancel-btn px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl transition">Cancel</button>
         <button id="choreModalSubmitBtn" type="button" onclick="saveNewChore()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg transition">Post Bounty</button>
       </div>
     </div>
@@ -815,7 +1144,7 @@
       </div>
 
       <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
-        <button type="button" onclick="closeWishModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button type="button" onclick="closeWishModal()" class="theme-cancel-btn px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
         <button id="wishModalSubmitBtn" type="button" onclick="saveNewWish()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl shadow-lg">Save Goal</button>
       </div>
     </div>
@@ -865,10 +1194,20 @@
       </div>
 
       <div class="flex justify-end gap-2 mt-4">
-        <button type="button" onclick="closeLootModal()" class="px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
+        <button type="button" onclick="closeLootModal()" class="theme-cancel-btn px-4 py-2 bg-red-600 hover:bg-red-500 font-bold text-xs text-white rounded-xl">Cancel</button>
         <button id="lootModalSubmitBtn" type="button" onclick="saveNewLoot()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 font-bold text-xs text-white rounded-xl">Confirm & Deduct</button>
       </div>
     </div>
+  </div>
+
+  <!-- SPIDER-VERSE THEME SWITCH TOAST -->
+  <div id="themeToast" role="status" aria-live="polite" class="theme-toast bg-slate-900/95 border-2 border-blue-500/80 text-white px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-2.5 whitespace-nowrap">
+    <span id="themeToastIcon" aria-hidden="true" class="text-lg leading-none">🕷️</span>
+    <div class="leading-tight">
+      <div id="themeToastTitle" class="text-xs font-black tracking-wide">Peter Parker</div>
+      <div id="themeToastSub" class="text-[10px] font-semibold text-slate-400">Classic Red &amp; Blue</div>
+    </div>
+    <span id="themeToastSwatches" aria-hidden="true" class="flex items-center gap-1 ml-1"></span>
   </div>
 
   <!-- CANVAS FOR ZERO-DEPENDENCY CONFETTI -->
@@ -1721,6 +2060,19 @@
           gain2.connect(ctx.destination);
           osc2.start(now);
           osc2.stop(now + 0.08);
+        } else if (type === 'web') {
+          var osc3 = ctx.createOscillator();
+          var gain3 = ctx.createGain();
+          osc3.type = 'triangle';
+          osc3.frequency.setValueAtTime(340, now);
+          osc3.frequency.exponentialRampToValueAtTime(1120, now + 0.09);
+          osc3.frequency.exponentialRampToValueAtTime(760, now + 0.16);
+          gain3.gain.setValueAtTime(0.18, now);
+          gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc3.connect(gain3);
+          gain3.connect(ctx.destination);
+          osc3.start(now);
+          osc3.stop(now + 0.19);
         }
       } catch (e) {}
     }
@@ -1740,7 +2092,8 @@
     function triggerConfetti() {
       playSound('fanfare');
       confettiParticles = [];
-      var colors = ['#ef4444', '#3b82f6', '#ffffff', '#60a5fa', '#dc2626'];
+      var activeThemeObj = (typeof HERO_THEMES !== 'undefined' && HERO_THEMES[currentHeroTheme]) ? HERO_THEMES[currentHeroTheme] : null;
+      var colors = activeThemeObj ? activeThemeObj.confetti : ['#ef4444', '#3b82f6', '#ffffff', '#60a5fa', '#dc2626'];
       for (var i = 0; i < 90; i++) {
         confettiParticles.push({
           x: confettiCanvas.width / 2,
@@ -2531,7 +2884,7 @@
           var locEl = document.createElement('p');
           locEl.className = "text-xs text-slate-400 mt-1 flex items-center gap-1 flex-wrap";
           var pinSpan = document.createElement('span');
-          pinSpan.className = "text-red-500";
+          pinSpan.className = "theme-pin-accent";
           pinSpan.setAttribute('aria-hidden', 'true');
           pinSpan.textContent = "📍";
           locEl.appendChild(pinSpan);
@@ -4835,8 +5188,137 @@
       transition.finished.finally(routeHeadingFocus);
     }
 
+    // SPIDER-VERSE HERO COLOR SCHEME TOGGLE (PETER PARKER / GWEN STACY / MILES MORALES)
+    var HERO_THEME_STORAGE_KEY = 'gill_daily_bugle_hero_theme';
+    var HERO_THEME_ORDER = ['peter', 'gwen', 'miles'];
+    var HERO_THEMES = {
+      peter: {
+        id: 'peter',
+        name: 'Peter Parker',
+        subtitle: 'Classic Spider-Man • Red & Blue',
+        icon: '🕷️',
+        swatches: ['#dc2626', '#2563eb', '#f8fafc'],
+        confetti: ['#ef4444', '#3b82f6', '#ffffff', '#60a5fa', '#dc2626']
+      },
+      gwen: {
+        id: 'gwen',
+        name: 'Gwen Stacy',
+        subtitle: 'Ghost-Spider • White, Hot Pink & Teal',
+        icon: '🕸️',
+        swatches: ['#ffffff', '#ec4899', '#22d3ee'],
+        confetti: ['#ec4899', '#22d3ee', '#ffffff', '#f472b6', '#06b6d4']
+      },
+      miles: {
+        id: 'miles',
+        name: 'Miles Morales',
+        subtitle: 'Brooklyn Suit • Black, Crimson & Venom Gold',
+        icon: '⚡',
+        swatches: ['#18181b', '#dc2626', '#facc15'],
+        confetti: ['#ef4444', '#facc15', '#18181b', '#ffffff', '#dc2626']
+      }
+    };
+    var currentHeroTheme = (function() {
+      var initial = document.documentElement.dataset.theme;
+      return HERO_THEMES[initial] ? initial : 'peter';
+    })();
+    var themeToastTimer = null;
+    var themeSpinTimer = null;
+
+    function getSavedHeroTheme() {
+      try {
+        var saved = localStorage.getItem(HERO_THEME_STORAGE_KEY);
+        if (saved && HERO_THEMES[saved]) return saved;
+      } catch (e) {}
+      return 'peter';
+    }
+
+    function showThemeToast(theme) {
+      var toast = document.getElementById('themeToast');
+      if (!toast || !theme) return;
+      var iconEl = document.getElementById('themeToastIcon');
+      var titleEl = document.getElementById('themeToastTitle');
+      var subEl = document.getElementById('themeToastSub');
+      var swatchesEl = document.getElementById('themeToastSwatches');
+
+      if (iconEl) iconEl.textContent = theme.icon;
+      if (titleEl) titleEl.textContent = theme.name + ' Theme';
+      if (subEl) subEl.textContent = theme.subtitle;
+
+      if (swatchesEl) {
+        swatchesEl.textContent = '';
+        theme.swatches.forEach(function(hex) {
+          var dot = document.createElement('span');
+          dot.className = 'w-2.5 h-2.5 rounded-full border border-white/40 inline-block';
+          dot.style.backgroundColor = hex;
+          swatchesEl.appendChild(dot);
+        });
+      }
+
+      toast.classList.add('is-visible');
+      if (themeToastTimer) clearTimeout(themeToastTimer);
+      themeToastTimer = setTimeout(function() {
+        toast.classList.remove('is-visible');
+      }, 2200);
+    }
+
+    function applyHeroTheme(themeId, options) {
+      var opts = options || {};
+      var resolvedId = HERO_THEMES[themeId] ? themeId : 'peter';
+      var theme = HERO_THEMES[resolvedId];
+      var nextIndex = (HERO_THEME_ORDER.indexOf(resolvedId) + 1) % HERO_THEME_ORDER.length;
+      var nextTheme = HERO_THEMES[HERO_THEME_ORDER[nextIndex]];
+
+      currentHeroTheme = resolvedId;
+      document.documentElement.dataset.theme = resolvedId;
+
+      try {
+        localStorage.setItem(HERO_THEME_STORAGE_KEY, resolvedId);
+      } catch (e) {}
+
+      var toggleBtn = document.getElementById('themeToggleBtn');
+      if (toggleBtn) {
+        toggleBtn.setAttribute('aria-label', 'Switch Spider-Verse theme (Current: ' + theme.name + '. Click for ' + nextTheme.name + ')');
+        toggleBtn.title = theme.name + ' Theme — Click 🕸️ to switch to ' + nextTheme.name;
+        if (!opts.silent) {
+          toggleBtn.classList.remove('is-switching');
+          void toggleBtn.offsetWidth;
+          toggleBtn.classList.add('is-switching');
+          if (themeSpinTimer) clearTimeout(themeSpinTimer);
+          themeSpinTimer = setTimeout(function() {
+            toggleBtn.classList.remove('is-switching');
+          }, 450);
+        }
+      }
+
+      var badgeIcon = document.getElementById('themeBadgeIcon');
+      var badgeText = document.getElementById('themeBadgeText');
+      var badgeBtn = document.getElementById('themeBadgeBtn');
+      if (badgeIcon) badgeIcon.textContent = theme.icon;
+      if (badgeText) badgeText.textContent = theme.name;
+      if (badgeBtn) {
+        badgeBtn.setAttribute('aria-label', 'Active color scheme: ' + theme.name + '. Click to switch to ' + nextTheme.name);
+        badgeBtn.title = 'Current theme: ' + theme.name + ' • Click to switch to ' + nextTheme.name;
+      }
+
+      if (!opts.silent) {
+        playSound('web');
+        showThemeToast(theme);
+      }
+    }
+
+    function cycleHeroTheme() {
+      var currentIdx = HERO_THEME_ORDER.indexOf(currentHeroTheme);
+      var nextId = HERO_THEME_ORDER[(currentIdx + 1) % HERO_THEME_ORDER.length];
+      applyHeroTheme(nextId, { silent: false });
+    }
+
+    // Sync theme button labels immediately before onload finishes
+    applyHeroTheme(getSavedHeroTheme(), { silent: true });
+
     // INITIALIZATION & EVENT BINDINGS
     window.onload = function() {
+      applyHeroTheme(getSavedHeroTheme(), { silent: true });
+
       document.getElementById('lockBtn').onclick = function() {
         if (!isParent) {
           requestParentAuth();
